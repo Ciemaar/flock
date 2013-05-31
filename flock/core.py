@@ -5,16 +5,16 @@ from itertools import chain
 __author__ = 'andriod'
 
 
-class LiveDict(MutableMapping):
+class FlockDict(MutableMapping):
     def __init__(self, indict={}):
-        super(LiveDict, self).__init__()
+        super(FlockDict, self).__init__()
         self.promises = {}
         for key in indict:
             self[key] = indict[key]
 
     def __setitem__(self, key, val):
         if isinstance(val, Mapping):
-            value = LiveDict(val)
+            value = FlockDict(val)
         elif not callable(val):
             value = lambda: val
         else:
