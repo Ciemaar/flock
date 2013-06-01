@@ -5,6 +5,7 @@ from itertools import chain
 __author__ = 'andriod'
 
 
+
 class FlockDict(MutableMapping):
     def __init__(self, indict={}):
         super(FlockDict, self).__init__()
@@ -39,11 +40,11 @@ class FlockDict(MutableMapping):
     def __call__(self):
         return self
 
-    def check(self,path=[]):
+    def check(self, path=[]):
         ret = {}
         for key, value in self.promises.items():
             if hasattr(value, 'check'):
-                ret[key] = value.check(path+[key])
+                ret[key] = value.check(path + [key])
             assert callable(value)
         return ret
 
@@ -66,23 +67,24 @@ class Aggregator(object):
 
     def __getitem__(self, key):
         return self.function(source[key] for source in self.sources if key in source)
-    #
+
     # def __getattr__(self, key):
     #     return self[key]()
 
     def __call__(self):
         return self.resolve()
 
-    def check(self,path=[]):
+    def check(self, path=[]):
         ret = {}
         for key in set(chain.from_iterable(source.keys() for source in self.sources)):
-            for sourceNo,source in enumerate(self.sources):
+            for sourceNo, source in enumerate(self.sources):
                 if key in source:
                     value = source[key]
                     try:
                         self.function([value])
                     except:
-                        print("{path}: Source: {sourceNo} is not compatible with function (value={value})".format(value=value,path=path+[key],sourceNo=sourceNo))
+                        print("{path}: Source: {sourceNo} is not compatible with function (value={value})".format(
+                            value=value, path=path + [key], sourceNo=sourceNo))
                         raise
         return ret
 
@@ -100,7 +102,7 @@ class MetaAggregator(object):
 
     def __getitem__(self, key):
         return lambda: self.function(source[key] for source in self.source_function() if key in source)
-    #
+
     # def __getattr__(self, key):
     #     return self[key]()
 
