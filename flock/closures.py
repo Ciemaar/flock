@@ -3,7 +3,7 @@ __author__ = 'andriod'
 
 def lookup(mapping, index, table):
     """
-    Create a lambda that looks up the specified value from the table
+    Create a closure that looks up the specified value from the table
     :type mapping: Mapping the FlockDict or other Mapping to look up from
     :type index: str the index in the Mapping to check
     :type table: Mapping the table to lookup from
