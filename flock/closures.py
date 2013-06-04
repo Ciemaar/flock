@@ -1,5 +1,24 @@
 __author__ = 'andriod'
 
+"""
+The closures module provides helper functions for creating common sorts of closures that you might need in
+working with flock.
+
+>>> def outer_func(param):
+...     def closure():
+...         print(param)
+...     return closure
+...
+>>> stuffPrinter = outer_func("stuff")
+>>> stuffPrinter()
+stuff
+>>> sgPrinter = outer_func("StarGate")
+>>> stuffPrinter()
+stuff
+>>> sgPrinter()
+StarGate
+"""
+
 
 def lookup(mapping, index, table):
     """
