@@ -17,6 +17,19 @@ stuff
 stuff
 >>> sgPrinter()
 StarGate
+
+The way closures actually work is that each function in python has a table of local variables.  This is what you see
+when you call locals().  When you return a function from within a function any local variables needed by the internal
+function are preserved for when it is called later.
+
+You can see these captured variables in the function's __closure__ field i.e.
+
+>>> sgPrinter.__closure__[0].cell_contents
+'StarGate'
+
+and the names are separately at:
+>>> sgPrinter.__code__.co_freevars
+('param',)
 """
 
 
