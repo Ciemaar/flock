@@ -3,12 +3,12 @@ import csv
 from collections import defaultdict
 from fractions import Fraction
 
-#set the recursion limit low for safety
 from pprint import pprint
 import sys
 from flock.core import FlockDict, Aggregator, MetaAggregator
 from flock.closures import lookup, reference
 
+#set the recursion limit low for safety
 sys.setrecursionlimit(100)
 
 _attribute_table = None
@@ -42,6 +42,8 @@ def get_attribute_table():
 
 
 def apply_attribute_table(character):
+    if 'Attribute_Bonuses' not in character:
+        character['Attribute_Bonuses'] = FlockDict()
     for (attribute, bonus), table in get_attribute_table().items():
         character['Attribute_Bonuses'][bonus] = lookup(character, attribute, table)
     character['bonuses'] = Aggregator([character['Attribute_Bonuses']], sum)
@@ -73,7 +75,7 @@ def apply_level_allotments(character):
 
     character['points']['total']['physical'] = lambda: character['level'] * character['bonuses']['Phy Skill Points']
     character['points']['total']['heroic'] = lambda: character['level'] * (
-    character['level'] + 1 + character['bonuses']['heroics'])
+        character['level'] + 1 + character['bonuses']['heroics'])
 
 
 def apply_skills(character):
@@ -103,24 +105,28 @@ def apply_heroics(character):
     character.promises['bonuses'].sources.append(character['Heroic Bonuses'])
 
 
+def apply_rules(character):
+    # pprint(ret.resolve())
+    apply_attribs(character)
+    # pprint(ret.resolve())
+    apply_attribute_table(character)
+    # pprint(ret.check())
+    # pprint(ret.resolve())
+    apply_racial_bonuses(character)
+    # pprint(ret.resolve())
+    apply_level_allotments(character)
+    # pprint(ret.resolve())
+    apply_skills(character)
+    # pprint(ret.resolve())
+    apply_heroics(character)
+    # pprint(ret.resolve())
+    return character
+
+
 def load_character(filename):
     sheet = pickle.load(open(filename, 'rb'))
     ret = FlockDict(sheet)
-    # pprint(ret.resolve())
-    apply_attribs(ret)
-    # pprint(ret.resolve())
-    apply_attribute_table(ret)
-    # pprint(ret.check())
-    # pprint(ret.resolve())
-    apply_racial_bonuses(ret)
-    # pprint(ret.resolve())
-    apply_level_allotments(ret)
-    # pprint(ret.resolve())
-    apply_skills(ret)
-    # pprint(ret.resolve())
-    apply_heroics(ret)
-    # pprint(ret.resolve())
-    return ret
+    return apply_rules(ret)
 
 
 def save_character(character, filename):
@@ -128,7 +134,13 @@ def save_character(character, filename):
 
 
 if __name__ == "__main__":
-    char = load_character("Mondavite2.pkl")
+    # char = load_character("Mondavite2.pkl")
+    char = FlockDict()
+    char['base_stats'] = {'Combat Skill': 13, 'Dexterity': 16, 'Health': 11, 'Intelligence': 18, 'Magic': 17,
+                          'Perception': 20, 'Presence': 11, 'Speed': 13, 'Spirit': 10, 'Strength': 10, 'Luck': 10}
+    char['Race'] = "Human"
+
+    apply_rules(char)
     char.check()
     pprint(char.shear())
     char['level'] = 8
