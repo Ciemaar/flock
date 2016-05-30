@@ -19,11 +19,15 @@ class BasicFlockTestCase(unittest.TestCase):
         Test that simple(non-dict, non-callable) values are stored and retrieved transparently.
 
         """
+        assert len(self.flock) == 0
         self.flock[3] = 3
         assert self.flock[3] == 3
+        assert len(self.flock) == 1
         self.flock["Shepherd"] = "Mary"
+        assert len(self.flock) == 2
         self.assertEqual(self.flock["Shepherd"], "Mary")
         self.flock["Management"] = ["Mary", "Joshua", "Isaac"]
+        assert len(self.flock) == 3
         self.assertEqual(self.flock["Management"], ["Mary", "Joshua", "Isaac"])
 
     def test_simple_dict(self):
