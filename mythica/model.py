@@ -1,12 +1,12 @@
-import pickle
 import csv
-from collections import defaultdict, namedtuple
-from fractions import Fraction
-
-from pprint import pprint
+import pickle
 import sys
-from flock.core import FlockDict, Aggregator, MetaAggregator
+from collections import defaultdict
+from fractions import Fraction
+from pprint import pprint
+
 from flock.closures import lookup, reference
+from flock.core import FlockDict, Aggregator, MetaAggregator
 
 #set the recursion limit low for safety
 HEROIC = "Heroic"
@@ -160,6 +160,7 @@ class Skill(object):
     @property
     def isHeroic(self):
         return self.skill_type == HEROIC
+
 
 class HeroicSkill(Skill):
     def __init__(self, name, skill_type, cost=1, xp=0, level=1, bonuses={}):
