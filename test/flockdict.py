@@ -1,4 +1,4 @@
-from flock.core import FlockDict
+from flock.core import FlockDict, Aggregator
 
 __author__ = 'andriod'
 
@@ -46,6 +46,40 @@ class BasicFlockTestCase(unittest.TestCase):
         """
         self.flock["lamb"] = lambda: "little"
         self.assertEqual(self.flock["lamb"], "little")
+
+    def test_shear(self):
+        """
+        Test trivial shear opperation
+        """
+        self.flock[3] = 15
+        assert not self.flock.check()
+        sheared = self.flock.shear()
+        assert len(sheared) == 1
+        assert isinstance(sheared, dict)
+        assert sheared[3] == 15
+
+        self.flock['cat'] = lambda: 'Abbey'
+        assert not self.flock.check()
+        sheared = self.flock.shear()
+        assert len(sheared) == 2
+        assert isinstance(sheared, dict)
+        assert sheared['cat'] == 'Abbey'
+
+
+class AggregatorTestCase(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.flock = FlockDict()
+        self.flock['x'] = {x: x for x in range(1, 10)}
+        self.flock['y'] = {x: 2 * x for x in range(1, 10)}
+
+    def test_total(self):
+        self.flock['sum'] = Aggregator([self.flock['x'], self.flock['y']], lambda x: sum(x))
+        # assert not self.flock.check()
+        sheared = self.flock.shear()
+        assert len(sheared) == 3
+        assert isinstance(sheared, dict)
+        assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
 
 
 if __name__ == '__main__':
