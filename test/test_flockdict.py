@@ -73,7 +73,7 @@ class AggregatorTestCase(unittest.TestCase):
         self.flock['x'] = {x: x for x in range(1, 10)}
         self.flock['y'] = {x: 2 * x for x in range(1, 10)}
 
-    def test_total(self):
+    def test_shear(self):
         self.flock['sum'] = Aggregator([self.flock['x'], self.flock['y']], lambda x: sum(x))
         assert not self.flock.check()
         sheared = self.flock.shear()
@@ -98,7 +98,7 @@ class MetaAggregatorTestCase(unittest.TestCase):
         self.flock['x'] = {x: x for x in range(1, 10)}
         self.flock['y'] = {x: 2 * x for x in range(1, 10)}
 
-    def test_total(self):
+    def test_shear(self):
         self.flock['sum'] = MetaAggregator(lambda: [self.flock[ls] for ls in ['x', 'y']], sum)
         assert not self.flock.check()
         sheared = self.flock.shear()
