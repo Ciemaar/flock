@@ -75,7 +75,7 @@ class AggregatorTestCase(unittest.TestCase):
 
     def test_total(self):
         self.flock['sum'] = Aggregator([self.flock['x'], self.flock['y']], lambda x: sum(x))
-        # assert not self.flock.check()
+        assert not self.flock.check()
         sheared = self.flock.shear()
         assert len(sheared) == 3
         assert isinstance(sheared, dict)

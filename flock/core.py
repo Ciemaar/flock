@@ -91,7 +91,9 @@ class FlockDict(MutableMapping):
         ret = {}
         for key, value in self.promises.items():
             if hasattr(value, 'check'):
-                ret[key] = value.check(path + [key])
+                value_check = value.check(path + [key])
+                if value_check:  # if anything showed up wrong in the check
+                    ret[key] = value_check
             assert callable(value)
         return ret
 
