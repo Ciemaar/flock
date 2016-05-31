@@ -160,7 +160,7 @@ class Skill(object):
     @property
     def isHeroic(self):
         return self.skill_type == HEROIC
-    
+
 class HeroicSkill(Skill):
     def __init__(self, name, skill_type, cost=1, xp=0, level=1, bonuses={}):
         super(HeroicSkill,self).__init__(name, skill_type, cost, xp, level)
