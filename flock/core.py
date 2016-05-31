@@ -123,9 +123,10 @@ class Aggregator(object):
         """
         Aggregate across parallel maps.
 
-        :type sources: list of sources to aggregate across, each source should be a map, generally a list, dict, or FlockDict, not all keys need to be present in all sources.
+        :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
         :type fn: function must take a generator, there is no constraint on the return value
         """
+        ##TODO:  Allow lists as arguments
         self.sources = sources
         self.function = fn
 
