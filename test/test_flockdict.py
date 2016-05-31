@@ -1,4 +1,4 @@
-from flock.core import FlockDict, Aggregator
+from flock.core import FlockDict, Aggregator, MetaAggregator
 
 __author__ = 'andriod'
 
@@ -82,5 +82,19 @@ class AggregatorTestCase(unittest.TestCase):
         assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
 
 
+class MetaAggregatorTestCase(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.flock = FlockDict()
+        self.flock['x'] = {x: x for x in range(1, 10)}
+        self.flock['y'] = {x: 2 * x for x in range(1, 10)}
+
+    def test_total(self):
+        self.flock['sum'] = MetaAggregator(lambda: [self.flock[ls] for ls in ['x', 'y']], sum)
+        assert not self.flock.check()
+        sheared = self.flock.shear()
+        assert len(sheared) == 3
+        assert isinstance(sheared, dict)
+        assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
 if __name__ == '__main__':
     unittest.main()
