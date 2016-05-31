@@ -1,6 +1,7 @@
-from collections import MutableMapping, Mapping
+from collections import MutableMapping, Mapping, defaultdict
 from copy import copy
 from itertools import chain
+
 
 __author__ = 'andriod'
 
@@ -117,7 +118,7 @@ class FlockDict(MutableMapping):
         return ret
 
 
-class Aggregator(object):
+class Aggregator():
     """
     Aggregate across parallel maps.
     """
@@ -159,17 +160,22 @@ class Aggregator(object):
 
         NOT YET PROPERLY IMPLEMENTED
         """
-        ret = {}
+        ret = defaultdict(dict)
         for key in set(chain.from_iterable(source.keys() for source in self.sources)):
             for sourceNo, source in enumerate(self.sources):
                 if key in source:
                     value = source[key]
                     try:
                         self.function([value])
-                    except:
-                        print("{path}: Source: {sourceNo} is not compatible with function (value={value})".format(
-                            value=value, path=path + [key], sourceNo=sourceNo))
-                        raise
+                    except Exception as e:
+                        msg = "function {function} incompatible with value {value} exception: {e}".format(e=str(e),
+                                                                                                          value=value,
+                                                                                                          path=path + [
+                                                                                                              key],
+                                                                                                          sourceNo=sourceNo,
+                                                                                                          function=self.function.__name__)
+                        ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
+                        # raise
         return ret
 
     def shear(self):
@@ -184,7 +190,7 @@ class Aggregator(object):
         return ret
 
 
-class MetaAggregator(object):
+class MetaAggregator():
     """
     Misnamed class that should be merged with the normal aggregator
     """

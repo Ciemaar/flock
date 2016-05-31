@@ -81,6 +81,15 @@ class AggregatorTestCase(unittest.TestCase):
         assert isinstance(sheared, dict)
         assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
 
+    def test_check(self):
+        self.flock['sum'] = Aggregator([self.flock['x'], self.flock['y']], lambda x: int(x))
+        check = self.flock.check()
+        assert check
+        assert len(check['sum']) == 9
+        for value in check['sum'].values():
+            assert len(value) == 2
+
+
 
 class MetaAggregatorTestCase(unittest.TestCase):
     def setUp(self):
@@ -96,5 +105,7 @@ class MetaAggregatorTestCase(unittest.TestCase):
         assert len(sheared) == 3
         assert isinstance(sheared, dict)
         assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
+
+
 if __name__ == '__main__':
     unittest.main()
