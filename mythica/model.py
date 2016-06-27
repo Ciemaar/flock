@@ -1,8 +1,13 @@
+import argparse
 import csv
+import logging
 import pickle
 import sys
-from collections import defaultdict
+import yaml
+from collections import defaultdict, Counter
 from fractions import Fraction
+from functools import reduce
+from operator import add
 from pprint import pprint
 
 from flock.closures import lookup, reference
@@ -51,7 +56,9 @@ def apply_attribute_table(character):
         character['Attribute_Bonuses'] = FlockDict()
     for (attribute, bonus), table in get_attribute_table().items():
         character['Attribute_Bonuses'][bonus] = lookup(character, attribute, table)
-    character['bonuses'] = Aggregator([character['Attribute_Bonuses']], sum)
+    character['base_bonuses'] = {'Spell Points Multiple': {'General': 1}}
+    character['bonuses'] = Aggregator([character['Attribute_Bonuses'], character['base_bonuses']], cross_total)
+
 
 
 def apply_attribs(character):
@@ -75,7 +82,7 @@ def apply_level_allotments(character):
     if 'level' not in character:
         character['level'] = 1
     character.setdefault('points', FlockDict())
-    character['points'].setdefault('total', FlockDict())
+    character['points'].setdefault('total', FlockDict({'universal': 10}))
     character['points']['total']['mental'] = lambda: character['level'] * character['bonuses']['Mental Skill Points']
 
     character['points']['total']['physical'] = lambda: character['level'] * character['bonuses']['Phy Skill Points']
@@ -102,11 +109,26 @@ def apply_skills(character):
     character['points']['spent']['heroic'] = lambda: sum(skill.cost for skill in character['skills'] if skill.isHeroic)
     character['points']['available']['heroic'] = lambda: character['points']['total']['heroic'] - \
                                                          character['points']['spent']['heroic']
+    character['points']['spent']['universal'] = lambda: -sum(
+        min(0, character['points']['available'][pt_type]) for pt_type in character['points']['available'] if
+        pt_type != 'universal')
+    character['points']['available']['universal'] = lambda: character['points']['total']['universal'] - \
+                                                            character['points']['spent']['universal']
+
+
+def cross_total(inputs):
+    inputs = list(inputs)
+    if len(inputs) == 1:
+        return inputs[0]
+    try:
+        return sum(inputs)
+    except TypeError:
+        return dict(reduce(add, (Counter(y) for y in inputs), Counter()))
 
 
 def apply_heroics(character):
     character['Heroic Bonuses'] = MetaAggregator(
-        lambda: (skill.bonuses for skill in character['skills'] if skill.isHeroic), sum)
+        lambda: (skill.bonuses for skill in character['skills'] if skill.isHeroic), cross_total)
     character.promises['bonuses'].sources.append(character['Heroic Bonuses'])
 
 
@@ -125,7 +147,10 @@ def apply_rules(character):
     # pprint(ret.resolve())
     apply_heroics(character)
     # pprint(ret.resolve())
+    character['Spell Points'] = Aggregator([character['bonuses']['Spell Points Multiple']],
+                                           lambda x: sum(x) * character['bonuses']['Spell Points'])
     return character
+
 
 
 def load_character(filename):
@@ -166,80 +191,101 @@ class HeroicSkill(Skill):
     def __init__(self, name, skill_type, cost=1, xp=0, level=1, bonuses={}):
         super(HeroicSkill,self).__init__(name, skill_type, cost, xp, level)
         self.bonuses = bonuses
+        self.xp = None
 
     def __repr__(self):
         return "Skill('{name}', {skill_type}, {cost}, {xp}, {level}, {bonuses})".format(name=self.name, skill_type=self.skill_type,
                                                                            cost=self.cost, xp=self.xp, level=self.level, bonuses=self.bonuses)
 
 
+def get_parser():
+    parser = argparse.ArgumentParser(description='Mythica Character manager', )
+
+    parser.add_argument("--infile", type=argparse.FileType('r'), default=None, help="File to read character from.")
+    parser.add_argument("--outfile", type=argparse.FileType('w'), default=None, help="File to read character from.")
+    return parser
+
 if __name__ == "__main__":
+    logging.basicConfig()
+    parser = get_parser()
+    opt = parser.parse_args()
+
     # char = load_character("Mondavite2.pkl")
     char = FlockDict()
-    char['base_stats'] = {'Combat Skill': 13, 'Dexterity': 16, 'Health': 11, 'Intelligence': 18, 'Magic': 17,
-                          'Perception': 20, 'Presence': 11, 'Speed': 13, 'Spirit': 10, 'Strength': 10, 'Luck': 10}
-    char['practice_sessions'] = {'Combat Skill': 9, 'Dexterity': 2}
-    char['skills'] = [
-        Skill('Read Common', MENTAL),
-        Skill('Bargaining', MENTAL),
-        Skill('Begging',MENTAL, 2),
-        Skill('Appraisal', MENTAL),
-        Skill('Local History', MENTAL),
-        Skill('Endow Plants', MENTAL),
-        Skill('Fishing', MENTAL),
-        Skill('Artificer', MENTAL, 2),
-        Skill('Stiletto', WEAPON, 2),
-        Skill('Pick Pockets', PHYSICAL, 2),
-        Skill('Tumbling', PHYSICAL),
-        Skill('Disguise', PHYSICAL, 2),
-        Skill('Armor', PHYSICAL, xp=4),
-        Skill('Ranged Spell', WEAPON, 4, 1),
-        Skill('Rope Use', PHYSICAL),
-        Skill('Scattershot', SPELL),
-        Skill('Spell Craft', MENTAL, 2, xp=2, level=3),
-        Skill('Spell Theory', MENTAL, 2, xp=2, level=3),
-        Skill('Smithing', PHYSICAL, 2, 4),
-        Skill('Weapon Smithing', MENTAL,2),
-        Skill('Dust Bolt',SPELL),
-        Skill('Deep Bolt',SPELL, xp=1),
-        Skill('Armor',SPELL, xp=4),
-        Skill('Jewel Smithing',MENTAL, cost=1, level=2),
-        Skill('Research',MENTAL),
-        Skill('Cartography',MENTAL, xp=1),
-        Skill('Ice Bolt', SPELL, cost=0, xp=4),
-        Skill('Geomancy', SPELL, cost=0, xp=2, level=2),
-        Skill('Detect Magic', SPELL, cost=0, xp=11),
-        Skill('Ice Bolt', SPELL, cost=0, xp=4),
-        Skill('Endow with Element',SPELL, level=2, xp=5,cost=0),
-        Skill('Imposing Image',SPELL, level=1),
-        Skill('Reality Leak',SPELL, level=2, cost=0),
 
-        HeroicSkill('First Circle Access', HEROIC, 1),
-        HeroicSkill('Nimble', HEROIC, 2,bonuses={'Dodge':1,'Parry':1}),
-        HeroicSkill('First Tier Arcane', HEROIC, 1),
-        HeroicSkill('Second Tier Arcane', HEROIC, 3),
-        HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points':1}),
-        HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points':1}),
-        HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points':1}),
-        HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points':1}),
-        HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points':1}),
-        HeroicSkill('Uncanny Strike', HEROIC, 1, bonuses={'Hit Bonus':1}),
-        HeroicSkill('Grevious Blow', HEROIC, 8, bonuses={'Base Damage':1}),
-        HeroicSkill('Rapidity', HEROIC, 6, bonuses={'Initiative':-1}),
-        HeroicSkill('Vicous Blow', HEROIC, 1,  bonuses={'Damage':1}),
-        HeroicSkill('Stealth Strike', HEROIC, 3),
-        HeroicSkill('Aura Extension', HEROIC, 1),
-        HeroicSkill('3rd Tier', HEROIC, 5),
-        HeroicSkill('Nimble', HEROIC, 4,bonuses={'Dodge':1,'Parry':1}),
-        HeroicSkill('Flurry', HEROIC, 6),
-        HeroicSkill('2nd Circle', HEROIC, 10),
-        HeroicSkill('4th Tier', HEROIC, 10),
+    if not opt.infile:
+        char['base_stats'] = {'Combat Skill': 13, 'Dexterity': 16, 'Health': 11, 'Intelligence': 18, 'Magic': 17,
+                              'Perception': 20, 'Presence': 11, 'Speed': 13, 'Spirit': 10, 'Strength': 10, 'Luck': 10}
+        char['practice_sessions'] = {'Combat Skill': 9, 'Dexterity': 2}
+        char['skills'] = [
+            Skill('Read Common', MENTAL),
+            Skill('Bargaining', MENTAL),
+            Skill('Begging', MENTAL, 2),
+            Skill('Appraisal', MENTAL),
+            Skill('Local History', MENTAL),
+            Skill('Endow Plants', MENTAL),
+            Skill('Fishing', MENTAL),
+            Skill('Artificer', MENTAL, 2),
+            Skill('Stiletto', WEAPON, 2),
+            Skill('Pick Pockets', PHYSICAL, 2),
+            Skill('Tumbling', PHYSICAL),
+            Skill('Disguise', PHYSICAL, 2),
+            Skill('Armor', PHYSICAL, xp=4),
+            Skill('Ranged Spell', WEAPON, 4, 1),
+            Skill('Rope Use', PHYSICAL),
+            Skill('Scattershot', SPELL),
+            Skill('Spell Craft', MENTAL, 2, xp=2, level=3),
+            Skill('Spell Theory', MENTAL, 2, xp=2, level=3),
+            Skill('Smithing', PHYSICAL, 2, 4),
+            Skill('Weapon Smithing', MENTAL, 2),
+            Skill('Dust Bolt', SPELL),
+            Skill('Deep Bolt', SPELL, xp=1),
+            Skill('Armor', SPELL, xp=4),
+            Skill('Jewel Smithing', MENTAL, cost=1, level=2),
+            Skill('Research', MENTAL),
+            Skill('Cartography', MENTAL, xp=1),
+            Skill('Ice Bolt', SPELL, cost=0, xp=4),
+            Skill('Geomancy', SPELL, cost=0, xp=2, level=2),
+            Skill('Detect Magic', SPELL, cost=0, xp=11),
+            Skill('Ice Bolt', SPELL, cost=0, xp=4),
+            Skill('Endow with Element', SPELL, level=2, xp=5, cost=0),
+            Skill('Imposing Image', SPELL, level=1),
+            Skill('Reality Leak', SPELL, level=2, cost=0),
 
+            HeroicSkill('First Circle Access', HEROIC, 1),
+            HeroicSkill('Nimble', HEROIC, 2, bonuses={'Dodge': 1, 'Parry': 1}),
+            HeroicSkill('First Tier Arcane', HEROIC, 1),
+            HeroicSkill('Second Tier Arcane', HEROIC, 3),
+            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
+            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
+            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
+            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
+            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
+            HeroicSkill('Uncanny Strike', HEROIC, 1, bonuses={'Hit Bonus': 1}),
+            HeroicSkill('Grevious Blow', HEROIC, 8, bonuses={'Base Damage': 1}),
+            HeroicSkill('Rapidity', HEROIC, 6, bonuses={'Initiative': -1}),
+            HeroicSkill('Vicous Blow', HEROIC, 1, bonuses={'Damage': 1}),
+            HeroicSkill('Stealth Strike', HEROIC, 3),
+            HeroicSkill('Aura Extension', HEROIC, 1),
+            HeroicSkill('3rd Tier', HEROIC, 5),
+            HeroicSkill('Nimble', HEROIC, 4, bonuses={'Dodge': 1, 'Parry': 1}),
+            HeroicSkill('Flurry', HEROIC, 6),
+            HeroicSkill('2nd Circle', HEROIC, 10),
+            HeroicSkill('4th Tier', HEROIC, 10),
 
-    ]
-    char['Race'] = "Human"
+        ]
+        char['Race'] = "Human"
+        char['level'] = 8
+    else:
+        for key, value in yaml.load(opt.infile).items():
+            char[key] = value
 
     apply_rules(char)
     char.check()
     # pprint(char.shear())
-    char['level'] = 8
-    pprint(char.shear())
+    sheared = char.shear()
+    pprint(sheared)
+    if opt.outfile:
+        # sheared['skills'] = []
+        # for skill in sheared.skill:
+        yaml.dump(sheared, opt.outfile, width=80)
