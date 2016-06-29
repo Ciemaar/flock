@@ -7,6 +7,7 @@ import yaml
 from collections import defaultdict, Counter
 from fractions import Fraction
 from functools import reduce
+from itertools import chain
 from operator import add
 from pprint import pprint
 
@@ -188,7 +189,8 @@ class Skill(object):
 
 
 class HeroicSkill(Skill):
-    def __init__(self, name, skill_type, cost=1, xp=0, level=1, bonuses={}):
+    def __init__(self, name, skill_type=HEROIC, cost=1, xp=0, level=1, bonuses={}):
+        assert skill_type == HEROIC
         super(HeroicSkill,self).__init__(name, skill_type, cost, xp, level)
         self.bonuses = bonuses
         self.xp = None
@@ -196,6 +198,15 @@ class HeroicSkill(Skill):
     def __repr__(self):
         return "Skill('{name}', {skill_type}, {cost}, {xp}, {level}, {bonuses})".format(name=self.name, skill_type=self.skill_type,
                                                                            cost=self.cost, xp=self.xp, level=self.level, bonuses=self.bonuses)
+
+
+class Conduit(HeroicSkill):
+    def __init__(self, name='Conduit', skill_type=HEROIC, cost=1, xp=0, level=1, spell_type=''):
+        if spell_type:
+            name = 'Conduit == %s' % spell_type
+        else:
+            name = 'Conduit'
+        super().__init__(name, skill_type, cost, xp, level, {'Spell Points Multiple': {'General': cost}})
 
 
 def get_parser():
@@ -256,11 +267,7 @@ if __name__ == "__main__":
             HeroicSkill('Nimble', HEROIC, 2, bonuses={'Dodge': 1, 'Parry': 1}),
             HeroicSkill('First Tier Arcane', HEROIC, 1),
             HeroicSkill('Second Tier Arcane', HEROIC, 3),
-            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
-            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
-            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
-            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
-            HeroicSkill('Conduit', HEROIC, 1, bonuses={'Spell Points Multiple': {'General': 1}}),
+            Conduit(cost=5),
             HeroicSkill('Uncanny Strike', HEROIC, 1, bonuses={'Hit Bonus': 1}),
             HeroicSkill('Grevious Blow', HEROIC, 8, bonuses={'Base Damage': 1}),
             HeroicSkill('Rapidity', HEROIC, 6, bonuses={'Initiative': -1}),
@@ -284,6 +291,8 @@ if __name__ == "__main__":
     char.check()
     # pprint(char.shear())
     sheared = char.shear()
+    for attribute in chain([], sheared['base_stats'].keys()):
+        print("%s: %s" % (attribute, sheared.pop(attribute)))
     pprint(sheared)
     if opt.outfile:
         # sheared['skills'] = []

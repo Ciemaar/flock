@@ -1,0 +1,272 @@
+Attribute_Bonuses: {Bearing: 0.0, Brawn: -1.0, Charisma: 0.0, Damage: 0.0, Dex Mod: 2.0,
+  Dodge: 2.0, HP Critical: 6.0, HP Minor: 11.0, Health Mod: 0.0, Hit Bonus: 1.0, Initiative: -1.0,
+  Level Mod: 1.0, Max Tier: 3 / 7, Max Weight: 200.0, Memory: 2.0, Mental Skill Points: 1.5,
+  Miscast: 0.0, Movement: 13.0, Negative HP: -12.0, Parry: 0.0, Perception Bonus: 3.0,
+  Phy Skill Points: 1.5, Reason: 2.0, Recovery: 3.0, Regen: 6 / hour, Roll Bonus: 1.0,
+  Spell Points: 3.0, Stealth: 3.0, Will Power: 3.0}
+Heroic Bonuses:
+  Base Damage: 1
+  Damage: 1
+  Dodge: 2
+  Hit Bonus: 1
+  Initiative: -1
+  Parry: 2
+  Spell Points Multiple: {General: 5}
+Race: Human
+Racial Bonuses: {heroics: 1}
+Spell Points: {General: 18.0}
+base_bonuses:
+  Spell Points Multiple: {General: 1}
+base_stats: {Combat Skill: 13, Dexterity: 16, Health: 11, Intelligence: 18, Luck: 10,
+  Magic: 17, Perception: 20, Presence: 11, Speed: 13, Spirit: 10, Strength: 10}
+bonuses:
+  Base Damage: 1
+  Bearing: 0.0
+  Brawn: -1.0
+  Charisma: 0.0
+  Damage: 1.0
+  Dex Mod: 2.0
+  Dodge: 4.0
+  HP Critical: 6.0
+  HP Minor: 11.0
+  Health Mod: 0.0
+  Hit Bonus: 2.0
+  Initiative: -2.0
+  Level Mod: 1.0
+  Max Tier: 3 / 7
+  Max Weight: 200.0
+  Memory: 2.0
+  Mental Skill Points: 1.5
+  Miscast: 0.0
+  Movement: 13.0
+  Negative HP: -12.0
+  Parry: 2.0
+  Perception Bonus: 3.0
+  Phy Skill Points: 1.5
+  Reason: 2.0
+  Recovery: 3.0
+  Regen: 6 / hour
+  Roll Bonus: 1.0
+  Spell Points: 3.0
+  Spell Points Multiple: {General: 6}
+  Stealth: 3.0
+  Will Power: 3.0
+  heroics: 1
+level: 8
+points:
+  available: {heroic: 13, mental: -12.0, physical: -3.0, universal: -5.0}
+  spent: {heroic: 67, mental: 24, physical: 15, universal: 15.0}
+  total: {heroic: 80, mental: 12.0, physical: 12.0, universal: 10}
+practice_sessions: {Combat Skill: 9, Dexterity: 2}
+skills:
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Read Common, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Bargaining, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Begging, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Appraisal, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Local History, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Endow Plants, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Fishing, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Artificer, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Stiletto, skill_type: Weapon,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Pick Pockets, skill_type: Physical,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Tumbling, skill_type: Physical,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Disguise, skill_type: Physical,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Armor, skill_type: Physical,
+  xp: 4}
+- !!python/object:__main__.Skill {cost: 4, level: 4, name: Ranged Spell, skill_type: Weapon,
+  xp: 1}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Rope Use, skill_type: Physical,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Scattershot, skill_type: Spell,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 3, name: Spell Craft, skill_type: Mental,
+  xp: 2}
+- !!python/object:__main__.Skill {cost: 2, level: 3, name: Spell Theory, skill_type: Mental,
+  xp: 2}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Smithing, skill_type: Physical,
+  xp: 4}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Weapon Smithing, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Dust Bolt, skill_type: Spell,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Deep Bolt, skill_type: Spell,
+  xp: 1}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Armor, skill_type: Spell,
+  xp: 4}
+- !!python/object:__main__.Skill {cost: 1, level: 2, name: Jewel Smithing, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Research, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Cartography, skill_type: Mental,
+  xp: 1}
+- !!python/object:__main__.Skill {cost: 0, level: 1, name: Ice Bolt, skill_type: Spell,
+  xp: 4}
+- !!python/object:__main__.Skill {cost: 0, level: 2, name: Geomancy, skill_type: Spell,
+  xp: 2}
+- !!python/object:__main__.Skill {cost: 0, level: 1, name: Detect Magic, skill_type: Spell,
+  xp: 11}
+- !!python/object:__main__.Skill {cost: 0, level: 1, name: Ice Bolt, skill_type: Spell,
+  xp: 4}
+- !!python/object:__main__.Skill {cost: 0, level: 2, name: Endow with Element, skill_type: Spell,
+  xp: 5}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Imposing Image, skill_type: Spell,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 0, level: 2, name: Reality Leak, skill_type: Spell,
+  xp: 0}
+- !!python/object:__main__.HeroicSkill
+  bonuses: &id001 {}
+  cost: 1
+  level: 1
+  name: First Circle Access
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: {Dodge: 1, Parry: 1}
+  cost: 2
+  level: 2
+  name: Nimble
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 1
+  level: 1
+  name: First Tier Arcane
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 3
+  level: 3
+  name: Second Tier Arcane
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses:
+    Spell Points Multiple: {General: 1}
+  cost: 1
+  level: 1
+  name: Conduit
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses:
+    Spell Points Multiple: {General: 1}
+  cost: 1
+  level: 1
+  name: Conduit
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses:
+    Spell Points Multiple: {General: 1}
+  cost: 1
+  level: 1
+  name: Conduit
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses:
+    Spell Points Multiple: {General: 1}
+  cost: 1
+  level: 1
+  name: Conduit
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses:
+    Spell Points Multiple: {General: 1}
+  cost: 1
+  level: 1
+  name: Conduit
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: {Hit Bonus: 1}
+  cost: 1
+  level: 1
+  name: Uncanny Strike
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: {Base Damage: 1}
+  cost: 8
+  level: 8
+  name: Grevious Blow
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: {Initiative: -1}
+  cost: 6
+  level: 6
+  name: Rapidity
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: {Damage: 1}
+  cost: 1
+  level: 1
+  name: Vicous Blow
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 3
+  level: 3
+  name: Stealth Strike
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 1
+  level: 1
+  name: Aura Extension
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 5
+  level: 5
+  name: 3rd Tier
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: {Dodge: 1, Parry: 1}
+  cost: 4
+  level: 4
+  name: Nimble
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 6
+  level: 6
+  name: Flurry
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 10
+  level: 10
+  name: 2nd Circle
+  skill_type: Heroic
+  xp: null
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 10
+  level: 10
+  name: 4th Tier
+  skill_type: Heroic
+  xp: null
