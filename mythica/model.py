@@ -15,6 +15,7 @@ from flock.closures import lookup, reference
 from flock.core import FlockDict, Aggregator, MetaAggregator
 
 #set the recursion limit low for safety
+GENERAL = 'General'
 HEROIC = "Heroic"
 MENTAL = "Mental"
 SPELL = "Spell"
@@ -191,7 +192,7 @@ class Skill(object):
 class HeroicSkill(Skill):
     def __init__(self, name, skill_type=HEROIC, cost=1, level=1, bonuses={}):
         assert skill_type == HEROIC
-        super(HeroicSkill,self).__init__(name, skill_type, cost, xp, level)
+        super(HeroicSkill, self).__init__(name, skill_type, cost, xp=None, level=level)
         self.bonuses = bonuses
 
     def __repr__(self):
@@ -211,8 +212,10 @@ class HeroicSkill(Skill):
 
 class Conduit(HeroicSkill):
     def __init__(self, skill_type=HEROIC, cost=1, level=1, spell_type=''):
+        if not spell_type:
+            spell_type = 'General'
         self.spell_type = spell_type
-        super().__init__(self.name, skill_type, cost, xp, level, None)
+        super().__init__(self.name, skill_type, cost, level, None)
 
     def __repr__(self):
         return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(name=self.name,
@@ -239,15 +242,30 @@ class Conduit(HeroicSkill):
 
     @property
     def name(self):
-        if self.spell_type:
-            return 'Conduit -- %s' % self.spell_type
-        else:
+        if self.spell_type == GENERAL:
             return 'Conduit'
+        else:
+            return 'Conduit -- %s' % self.spell_type
 
     @name.setter
     def name(self, value):
         return
 
+    @staticmethod
+    def representer(dumper, data):
+        return dumper.represent_scalar(u'!conduit', '{cost} {spt}'.format(cost=data.cost, spt=data.spell_type))
+
+    @classmethod
+    def constructor(cls, loader, node):
+        value = loader.construct_scalar(node)
+        parsed = value.split(' ')
+        cost = int(parsed[0])
+        spell_type = ' '.join(parsed[1:])
+        return cls(cost=cost, spell_type=spell_type)
+
+
+yaml.add_representer(Conduit, Conduit.representer)
+yaml.add_constructor(u'!conduit', Conduit.constructor)
 
 def get_parser():
     parser = argparse.ArgumentParser(description='Mythica Character manager', )
