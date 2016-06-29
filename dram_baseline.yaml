@@ -1,0 +1,138 @@
+Attribute_Bonuses: {Bearing: 0.0, Brawn: -2.0, Charisma: 1.0, Damage: -1.0, Dex Mod: 1.0,
+  Dodge: 1.0, HP Critical: 5.0, HP Minor: 10.0, Health Mod: 0.0, Hit Bonus: 1.0, Initiative: 0.0,
+  Level Mod: 1.0, Max Tier: 3 / 7, Max Weight: 119.0, Memory: 1.0, Mental Skill Points: 1.5,
+  Miscast: 0.0, Movement: 10.0, Negative HP: -13.0, Parry: 1.0, Perception Bonus: 0.0,
+  Phy Skill Points: 1.0, Reason: 1.0, Recovery: 3.0, Regen: 7 / hour, Roll Bonus: 1.0,
+  Spell Points: 3.0, Stealth: 0.0, Will Power: 4.0}
+Heroic Bonuses:
+  Spell Points Multiple: {General: 3, Rune: 4}
+Name: Dram Runescribe
+Race: Human
+Racial Bonuses: {heroics: 1}
+Spell Points: {General: 12.0, Rune: 12.0}
+base_bonuses:
+  Spell Points Multiple: {General: 1}
+base_stats: {Combat Skill: 14, Dexterity: 13, Health: 10, Intelligence: 14, Luck: 12,
+  Magic: 18, Perception: 12, Presence: 12, Speed: 10, Spirit: 11, Strength: 7}
+bonuses:
+  Bearing: 0.0
+  Brawn: -2.0
+  Charisma: 1.0
+  Damage: -1.0
+  Dex Mod: 1.0
+  Dodge: 1.0
+  HP Critical: 5.0
+  HP Minor: 10.0
+  Health Mod: 0.0
+  Hit Bonus: 1.0
+  Initiative: 0.0
+  Level Mod: 1.0
+  Max Tier: 3 / 7
+  Max Weight: 119.0
+  Memory: 1.0
+  Mental Skill Points: 1.5
+  Miscast: 0.0
+  Movement: 10.0
+  Negative HP: -13.0
+  Parry: 1.0
+  Perception Bonus: 0.0
+  Phy Skill Points: 1.0
+  Reason: 1.0
+  Recovery: 3.0
+  Regen: 7 / hour
+  Roll Bonus: 1.0
+  Spell Points: 3.0
+  Spell Points Multiple: {General: 4, Rune: 4}
+  Stealth: 0.0
+  Will Power: 4.0
+  heroics: 1
+level: 7
+points:
+  available: {heroic: 10, mental: -1.5, physical: 3.0, universal: 8.5}
+  spent: {heroic: 53, mental: 12, physical: 4, universal: 1.5}
+  total: {heroic: 63, mental: 10.5, physical: 7.0, universal: 10}
+practice_sessions: {Magic: 2}
+skills:
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Read Human, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Bargaining, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Lore Runes, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Touch Spell, skill_type: Weapon,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Ranged Spell, skill_type: Weapon,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 4, level: 4, name: Rune Crafting, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: 'Lore: Rune', skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 1, name: Riding, skill_type: Physical,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 0, level: 1, name: Puzzle Crafting, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Spell Crafting, skill_type: Mental,
+  xp: 0}
+- !!python/object:__main__.HeroicSkill
+  bonuses: &id001 {}
+  cost: 1
+  level: 1
+  name: First Circle Access
+  skill_type: Heroic
+  xp: 0
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 1
+  level: 1
+  name: First Tier Arcane
+  skill_type: Heroic
+  xp: 0
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 1
+  level: None
+  name: Second Tier Arcane -- Rune Only
+  skill_type: Heroic
+  xp: 0
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 3
+  level: None
+  name: 3rd Tier Arcane  -- Rune Only
+  skill_type: Heroic
+  xp: 0
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 5
+  level: None
+  name: 4th Tier Arcane - Rune Only
+  skill_type: Heroic
+  xp: 0
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 10
+  level: None
+  name: 5th Tier Arcane - Rune Only
+  skill_type: Heroic
+  xp: 0
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 15
+  level: None
+  name: 6th Tier Arcane - Rune Only
+  skill_type: Heroic
+  xp: 0
+- !conduit '1 General'
+- !conduit '1 Rune'
+- !conduit '1 General'
+- !conduit '1 Rune'
+- !conduit '1 General'
+- !conduit '1 Rune'
+- !conduit '1 Rune'
+- !!python/object:__main__.HeroicSkill
+  bonuses: *id001
+  cost: 10
+  level: None
+  name: 2nd Circle
+  skill_type: Heroic
+  xp: 0
