@@ -189,24 +189,64 @@ class Skill(object):
 
 
 class HeroicSkill(Skill):
-    def __init__(self, name, skill_type=HEROIC, cost=1, xp=0, level=1, bonuses={}):
+    def __init__(self, name, skill_type=HEROIC, cost=1, level=1, bonuses={}):
         assert skill_type == HEROIC
         super(HeroicSkill,self).__init__(name, skill_type, cost, xp, level)
         self.bonuses = bonuses
-        self.xp = None
 
     def __repr__(self):
-        return "Skill('{name}', {skill_type}, {cost}, {xp}, {level}, {bonuses})".format(name=self.name, skill_type=self.skill_type,
-                                                                           cost=self.cost, xp=self.xp, level=self.level, bonuses=self.bonuses)
+        return "{cls_name}('{name}', '{skill_type}', {cost}, {level}, {bonuses})".format(name=self.name,
+                                                                                         skill_type=self.skill_type,
+                                                                                         cost=self.cost, xp=self.xp,
+                                                                                         level=self.level,
+                                                                                         bonuses=self.bonuses,
+                                                                                         cls_name=self.__class__.__name__)
+
+    @property
+    def xp(self):
+        return None
+
+    xp = xp.setter(lambda x, y: None)
 
 
 class Conduit(HeroicSkill):
-    def __init__(self, name='Conduit', skill_type=HEROIC, cost=1, xp=0, level=1, spell_type=''):
-        if spell_type:
-            name = 'Conduit == %s' % spell_type
+    def __init__(self, skill_type=HEROIC, cost=1, level=1, spell_type=''):
+        self.spell_type = spell_type
+        super().__init__(self.name, skill_type, cost, xp, level, None)
+
+    def __repr__(self):
+        return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(name=self.name,
+                                                                                  skill_type=self.skill_type,
+                                                                                  spell_type=self.spell_type,
+                                                                                  cost=self.cost, xp=self.xp,
+                                                                                  level=self.level,
+                                                                                  bonuses=self.bonuses,
+                                                                                  cls_name=self.__class__.__name__)
+
+    def __str__(self):
+        return "{name} x{cost} {bonuses})".format(name=self.name, skill_type=self.skill_type,
+                                                  spell_type=self.spell_type,
+                                                  cost=self.cost, xp=self.xp, level=self.level, bonuses=self.bonuses,
+                                                  cls_name=self.__class__.__name__)
+
+    @property
+    def bonuses(self):
+        return {'Spell Points Multiple': {self.spell_type: self.cost}}
+
+    @bonuses.setter
+    def bonuses(self, value):
+        return
+
+    @property
+    def name(self):
+        if self.spell_type:
+            return 'Conduit -- %s' % self.spell_type
         else:
-            name = 'Conduit'
-        super().__init__(name, skill_type, cost, xp, level, {'Spell Points Multiple': {'General': cost}})
+            return 'Conduit'
+
+    @name.setter
+    def name(self, value):
+        return
 
 
 def get_parser():
