@@ -51,7 +51,7 @@ points:
   available: {heroic: 10, mental: -1.5, physical: 3.0, universal: 8.5}
   spent: {heroic: 53, mental: 12, physical: 4, universal: 1.5}
   total: {heroic: 63, mental: 10.5, physical: 7.0, universal: 10}
-practice_sessions: {Magic: 2}
+practice_sessions: {Magic: 7}
 skills:
 - !!python/object:__main__.Skill {cost: 1, level: 1, name: Read Human, skill_type: Mental,
   xp: 0}
@@ -129,6 +129,7 @@ skills:
 - !conduit '1 General'
 - !conduit '1 Rune'
 - !conduit '1 Rune'
+- !conduit '5 Rune'
 - !!python/object:__main__.HeroicSkill
   bonuses: *id001
   cost: 10
