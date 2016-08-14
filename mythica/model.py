@@ -213,7 +213,7 @@ class HeroicSkill(Skill):
 class Conduit(HeroicSkill):
     def __init__(self, skill_type=HEROIC, cost=1, level=1, spell_type=''):
         if not spell_type:
-            spell_type = 'General'
+            spell_type = GENERAL
         self.spell_type = spell_type
         super().__init__(self.name, skill_type, cost, level, None)
 
@@ -234,7 +234,10 @@ class Conduit(HeroicSkill):
 
     @property
     def bonuses(self):
-        return {'Spell Points Multiple': {self.spell_type: self.cost}}
+        ret = {'Spell Points Multiple': {self.spell_type: self.cost}}
+        if self.spell_type != GENERAL:
+            ret['Spell Points Bonus'] = {self.spell_type: self.cost}
+        return ret
 
     @bonuses.setter
     def bonuses(self, value):
