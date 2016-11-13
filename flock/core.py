@@ -33,6 +33,7 @@ class FlockDict(MutableMapping):
         """
         super(FlockDict, self).__init__()
         self.promises = {}
+        self.cache = {}
         for key in indict:
             self[key] = indict[key]
 
@@ -50,6 +51,7 @@ class FlockDict(MutableMapping):
         else:
             value = lambda: val
         self.promises[key] = value
+        self.cache = {}
 
     def __getitem__(self, key):
         """
@@ -58,10 +60,16 @@ class FlockDict(MutableMapping):
         :type key: any hashable type
         :return: the value of the lamba when executed
         """
-        return self.promises[key]()
+        if key in self.cache:
+            return self.cache[key]
+        else:
+            ret = self.promises[key]()
+            self.cache[key] = ret
+            return ret
 
     def __delitem__(self, key):
         del self.promises[key]
+        del self.cache[key]
 
     def __iter__(self):
         return iter(self.promises)
@@ -111,10 +119,13 @@ class FlockDict(MutableMapping):
         for key, value in self.promises.items():
             if hasattr(value, 'shear'):
                 ret[key] = value.shear()
+            elif key in self.cache:
+                ret[key] = self.cache[key]
             elif callable(value):
                 ret[key] = value()
             else:
                 ret[key] = copy(value)
+            self.cache[key] = ret[key]
         return ret
 
 

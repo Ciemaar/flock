@@ -1,3 +1,4 @@
+from flock.closures import toggle
 from flock.core import FlockDict, Aggregator, MetaAggregator
 
 __author__ = 'andriod'
@@ -29,6 +30,8 @@ class BasicFlockTestCase(unittest.TestCase):
         self.flock["Management"] = ["Mary", "Joshua", "Isaac"]
         assert len(self.flock) == 3
         self.assertEqual(self.flock["Management"], ["Mary", "Joshua", "Isaac"])
+        self.flock["Shepherd"] = "John"
+        self.assertEqual(self.flock["Shepherd"], "John")
 
     def test_simple_dict(self):
         """
@@ -65,6 +68,15 @@ class BasicFlockTestCase(unittest.TestCase):
         assert isinstance(sheared, dict)
         assert sheared['cat'] == 'Abbey'
 
+    def test_consistent_shear(self):
+        t = toggle()
+        self.flock['toggle'] = t
+        self.flock['toggle2'] = t
+        self.flock.update({x: lambda: self.flock['toggle'] for x in range(5)})
+        sheared = self.flock.shear()
+        self.assertEqual(sheared['toggle'], not sheared['toggle2'])
+        self.assertEqual([sheared['toggle']] * 5, [sheared[x] for x in range(5)])
+
 
 class AggregatorTestCase(unittest.TestCase):
     def setUp(self):
@@ -91,7 +103,6 @@ class AggregatorTestCase(unittest.TestCase):
             assert len(value) == 2
 
 
-
 class MetaAggregatorTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -107,6 +118,7 @@ class MetaAggregatorTestCase(unittest.TestCase):
         assert isinstance(sheared, dict)
         assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
         assert dict(self.flock()) == sheared
+
 
 if __name__ == '__main__':
     unittest.main()

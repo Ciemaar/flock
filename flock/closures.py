@@ -61,3 +61,13 @@ def reference(flock, *indexes):
         return currObj
 
     return de_ref
+
+
+def toggle():
+    store = [False]
+
+    def inner_toggle():
+        store[0] = not store[0]
+        return store[0]
+
+    return inner_toggle

@@ -1,7 +1,7 @@
 import unittest
 import uuid as uuid
 
-from flock.closures import reference, lookup
+from flock.closures import reference, lookup, toggle
 
 
 class ClosureTestCase(unittest.TestCase):
@@ -18,6 +18,9 @@ class ClosureTestCase(unittest.TestCase):
         table = {table_row: probe}
         assert probe is lookup(base_dict, 'x', table)()
 
+    def test_toggle(self):
+        tt = toggle()
+        self.assertEqual([tt() for x in range(4)], [True, False, True, False])
 
 
 if __name__ == '__main__':
