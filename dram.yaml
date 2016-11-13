@@ -13,7 +13,7 @@ Spell Points: {General: 12.0, Rune: 12.0}
 base_bonuses:
   Spell Points Multiple: {General: 1}
 base_stats: {Combat Skill: 14, Dexterity: 13, Health: 10, Intelligence: 14, Luck: 12,
-  Magic: 19, Perception: 12, Presence: 12, Speed: 10, Spirit: 11, Strength: 7}
+  Magic: 20, Perception: 12, Presence: 12, Speed: 10, Spirit: 11, Strength: 7}
 bonuses:
   Bearing: 0.0
   Brawn: -2.0
@@ -46,7 +46,7 @@ bonuses:
   Stealth: 0.0
   Will Power: 4.0
   heroics: 1
-level: 8
+level: 9
 points:
   available: {heroic: 10, mental: -1.5, physical: 3.0, universal: 8.5}
   spent: {heroic: 53, mental: 12, physical: 4, universal: 1.5}
@@ -68,6 +68,10 @@ skills:
 - !!python/object:__main__.Skill {cost: 2, level: 2, name: 'Lore: Rune', skill_type: Mental,
   xp: 0}
 - !!python/object:__main__.Skill {cost: 2, level: 1, name: Riding, skill_type: Physical,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 1, level: 1, name: Tumbling, skill_type: Physical,
+  xp: 0}
+- !!python/object:__main__.Skill {cost: 2, level: 2, name: Tumbling, skill_type: Physical,
   xp: 0}
 - !!python/object:__main__.Skill {cost: 0, level: 1, name: Puzzle Crafting, skill_type: Mental,
   xp: 0}
