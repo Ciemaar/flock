@@ -116,15 +116,16 @@ class FlockDict(MutableMapping):
         :return: a dict()
         """
         ret = {}
-        for key, value in self.promises.items():
-            if hasattr(value, 'shear'):
-                ret[key] = value.shear()
+        for key in sorted(self.promises):
+            promise = self.promises[key]
+            if hasattr(promise, 'shear'):
+                ret[key] = promise.shear()
             elif key in self.cache:
                 ret[key] = self.cache[key]
-            elif callable(value):
-                ret[key] = value()
+            elif callable(promise):
+                ret[key] = promise()
             else:
-                ret[key] = copy(value)
+                ret[key] = copy(promise)
             self.cache[key] = ret[key]
         return ret
 
@@ -222,4 +223,95 @@ class MetaAggregator():
         ret = {}
         for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
             ret[key] = self[key]()
+        return ret
+
+
+class FlockAggregator(Mapping):
+    def __init__(self, sources, fn, keys=None):
+        """
+        Aggregate across parallel maps.
+
+        :type sources: one of:
+            - list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
+            - Mapping the values in sources are used as the list above, keys are ignored
+            - a callable that returns the list of sources
+
+            Precedence is Mapping, callable, then list
+
+        :type fn: function must take a generator, there is no constraint on the return value
+        """
+        ##TODO:  Allow lists as arguments
+        self.sources = sources
+        self.function = fn
+        if keys is not None:
+            keys = set(keys)
+        self.keys = keys
+
+    def __getitem__(self, key):
+        """
+        Perform the aggregation for the given key across all the sources.
+
+        :type key: str key to aggregate
+        :return: value as returned by the function for that key.
+        """
+        return self.function(source[key] for source in self.get_sources() if key in source)
+
+    def __len__(self):
+        return len(self.__iter__())
+
+    def __iter__(self):
+        if self.keys is not None:
+            return iter(self.keys)
+        return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
+
+    def get_sources(self):
+        if isinstance(self.sources, Mapping):
+            return self.sources.values()
+        elif callable(self.sources):
+            return self.sources()
+        else:
+            return self.sources
+
+    def __call__(self):
+        """
+        When an Aggregator is returned from a FlockDict or otherwise called, shear it.
+        :return:  a sheared version of this Aggregator
+        """
+        return self.shear()
+
+    def check(self, path=[]):
+        """
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        :type path: list the path to this object, will be prepended to any errors generated
+        :return: list of errors that prevent items in this Aggregator from being sheared.
+
+        NOT YET PROPERLY IMPLEMENTED
+        """
+        ret = defaultdict(dict)
+        for key in self.__iter__():
+            for sourceNo, source in enumerate(self.get_sources()):
+                if key in source:
+                    value = source[key]
+                    try:
+                        self.function([value])
+                    except Exception as e:
+                        msg = "function {function} incompatible with value {value} exception: {e}".format(e=str(e),
+                                                                                                          value=value,
+                                                                                                          path=path + [
+                                                                                                              key],
+                                                                                                          sourceNo=sourceNo,
+                                                                                                          function=self.function.__name__)
+                        ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
+                        # raise
+        return ret
+
+    def shear(self):
+        """
+        Convert this Aggregator into a simple dict
+
+        :return: a dict() representation of this Aggregator
+        """
+        ret = {}
+        for key in self.__iter__():
+            ret[key] = self[key]
         return ret
