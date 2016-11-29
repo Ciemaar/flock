@@ -1,4 +1,5 @@
-from collections import MutableMapping, Mapping, defaultdict
+import warnings
+from collections import MutableMapping, Mapping, defaultdict, OrderedDict
 from copy import copy
 from itertools import chain
 
@@ -115,8 +116,8 @@ class FlockDict(MutableMapping):
 
         :return: a dict()
         """
-        ret = {}
-        for key in sorted(self.promises):
+        ret = OrderedDict()
+        for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
             promise = self.promises[key]
             if hasattr(promise, 'shear'):
                 ret[key] = promise.shear()
@@ -125,6 +126,7 @@ class FlockDict(MutableMapping):
             elif callable(promise):
                 ret[key] = promise()
             else:
+                warnings.warn(DeprecationWarning("Non callable in promises"))
                 ret[key] = copy(promise)
             self.cache[key] = ret[key]
         return ret
@@ -315,3 +317,6 @@ class FlockAggregator(Mapping):
         for key in self.__iter__():
             ret[key] = self[key]
         return ret
+
+    def __repr__(self):
+        return "flock.core.FlockDict(%s)" % str(self.shear())

@@ -1,5 +1,5 @@
 from flock.closures import toggle
-from flock.core import FlockDict, Aggregator, MetaAggregator
+from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator
 
 __author__ = 'andriod'
 
@@ -119,6 +119,51 @@ class MetaAggregatorTestCase(unittest.TestCase):
         assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
         assert dict(self.flock()) == sheared
 
+
+class FlockAggregatorTestCase(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.flock = FlockDict()
+        self.flock['x'] = {x: x for x in range(1, 10)}
+        self.flock['y'] = {x: 2 * x for x in range(1, 10)}
+
+    def test_shear_list(self):
+        self.flock['sum'] = FlockAggregator([self.flock['x'], self.flock['y']], lambda x: sum(x))
+        assert not self.flock.check()
+
+        assert len(self.flock['sum']) == 9
+        assert self.flock['sum'] == self.flock.promises['sum'].shear() == self.flock.promises['sum']() == {x: x * 3 for
+                                                                                                           x in
+                                                                                                           range(1, 10)}
+
+        sheared = self.flock.shear()
+        assert len(sheared) == 3
+        assert isinstance(sheared, dict)
+        assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
+        assert dict(self.flock()) == sheared
+
+    def test_shear_func(self):
+        self.flock['sum'] = FlockAggregator(lambda: [self.flock[ls] for ls in ['x', 'y']], sum)
+        assert not self.flock.check()
+
+        assert len(self.flock['sum']) == 9
+        assert self.flock['sum'] == self.flock.promises['sum'].shear() == self.flock.promises['sum']() == {x: x * 3 for
+                                                                                                           x in
+                                                                                                           range(1, 10)}
+
+        sheared = self.flock.shear()
+        assert len(sheared) == 3
+        assert isinstance(sheared, dict)
+        assert sheared['sum'] == {x: x * 3 for x in range(1, 10)}
+        assert dict(self.flock()) == sheared
+
+    def test_check(self):
+        self.flock['sum'] = FlockAggregator([self.flock['x'], self.flock['y']], lambda x: int(x))
+        check = self.flock.check()
+        assert check
+        assert len(check['sum']) == 9
+        for value in check['sum'].values():
+            assert len(value) == 2
 
 if __name__ == '__main__':
     unittest.main()
