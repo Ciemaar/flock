@@ -1,4 +1,4 @@
-from flock.closures import toggle
+from flock.closures import toggle, reference
 from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator
 
 __author__ = 'andriod'
@@ -78,6 +78,44 @@ class BasicFlockTestCase(unittest.TestCase):
         self.assertEqual([sheared['toggle']] * 5, [sheared[x] for x in range(5)])
 
 
+class FlockCacheTestCase(unittest.TestCase):
+    """
+    Tests of the basic operations of a flock
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.flock = FlockDict()
+        self.flock['source'] = 'Original Value'
+        self.flock['nested_source'] = {'source': 'Original Value'}
+
+    def test_nested_cache(self):
+        self.flock['dest'] = reference(self.flock, 'source')
+        self.flock['nested_dest'] = {'dest': reference(self.flock, 'nested_source', 'source')}
+        self.flock['jump_dest'] = {'dest': reference(self.flock['nested_source'], 'source')}
+        assert self.flock['dest'] == self.flock['nested_dest']['dest'] == 'Original Value'
+        self.flock['source'] = '1st New Value'
+        assert self.flock['dest'] == '1st New Value'
+        assert self.flock['nested_dest']['dest'] == self.flock['jump_dest']['dest'] == 'Original Value'
+        self.flock['nested_source']['source'] = '2nd New Value'
+        assert self.flock['dest'] == '1st New Value'
+        assert self.flock['nested_dest']['dest'] == '2nd New Value'
+        assert self.flock['jump_dest']['dest'] == '2nd New Value'
+
+    def test_split_cache(self):
+        self.flock2 = FlockDict()
+        self.flock2['dest'] = reference(self.flock, 'source')
+        self.flock2['nested_dest'] = {'dest': reference(self.flock, 'nested_source', 'source')}
+        self.flock2['jump_dest'] = {'dest': reference(self.flock['nested_source'], 'source')}
+        assert self.flock2['dest'] == self.flock2['nested_dest']['dest'] == 'Original Value'
+        self.flock['source'] = '1st New Value'
+        assert self.flock2['dest'] == '1st New Value'
+        assert self.flock2['nested_dest']['dest'] == self.flock2['jump_dest']['dest'] == 'Original Value'
+        self.flock['nested_source']['source'] = '2nd New Value'
+        assert self.flock2['dest'] == '1st New Value'
+        assert self.flock2['nested_dest']['dest'] == '2nd New Value'
+        assert self.flock2['jump_dest']['dest'] == '2nd New Value'
+
 class AggregatorTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -132,9 +170,11 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert not self.flock.check()
 
         assert len(self.flock['sum']) == 9
-        assert self.flock['sum'] == self.flock.promises['sum'].shear() == self.flock.promises['sum']() == {x: x * 3 for
-                                                                                                           x in
-                                                                                                           range(1, 10)}
+        assert self.flock['sum'] == {x: x * 3 for x in range(1, 10)}
+        assert self.flock['sum'].shear() == {x: x * 3 for x in range(1, 10)}
+        assert self.flock['sum']() == {x: x * 3 for x in range(1, 10)}
+        assert self.flock.promises['sum'].shear() == {x: x * 3 for x in range(1, 10)}
+        assert self.flock.promises['sum']() == {x: x * 3 for x in range(1, 10)}
 
         sheared = self.flock.shear()
         assert len(sheared) == 3
@@ -164,6 +204,7 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert len(check['sum']) == 9
         for value in check['sum'].values():
             assert len(value) == 2
+
 
 if __name__ == '__main__':
     unittest.main()

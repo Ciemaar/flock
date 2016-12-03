@@ -48,7 +48,7 @@ def reference(flock, *indexes):
     """
     return closure that references values stored elsewhere in the Flock
     :type flock: flock.core.FlockDict
-    :param indexes: lambdas to be resolved in order
+    :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 

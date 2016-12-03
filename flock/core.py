@@ -1,8 +1,8 @@
 import warnings
+from abc import abstractmethod, ABCMeta
 from collections import MutableMapping, Mapping, defaultdict, OrderedDict
 from copy import copy
 from itertools import chain
-
 
 __author__ = 'andriod'
 
@@ -17,13 +17,45 @@ __author__ = 'andriod'
 """
 
 
-class FlockDict(MutableMapping):
+class FlockMapping(Mapping, metaclass=ABCMeta):
+    @abstractmethod
+    def check(self, path):
+        """
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        :type path: list the path to this object, will be prepended to any errors generated
+        :return: list of errors that prevent items in this Aggregator from being sheared.
+        """
+        pass
+
+    @abstractmethod
+    def shear(self):
+        """
+        Convert this Mapping into a simple dict
+
+        :return: a dict() representation of this Aggregator
+        """
+        pass
+
+    def __call__(self):
+        """
+        Call must be specified so that FlockMappings can be nested within eachother
+
+        :return: self
+        """
+        return self
+
+    def __hash__(self, *args, **kwargs):
+        return id(self)
+
+
+class FlockDict(MutableMapping, FlockMapping):
     """
     A mutable mapping that contains lambdas which will be evaluated when indexed
 
     The actual lambdas must take 0 params and are accessible in the .promises attribute
     """
-    def __init__(self, indict={}):
+
+    def __init__(self, indict={}, root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -35,6 +67,8 @@ class FlockDict(MutableMapping):
         super(FlockDict, self).__init__()
         self.promises = {}
         self.cache = {}
+        self.root = root
+        self.peers = set()
         for key in indict:
             self[key] = indict[key]
 
@@ -47,12 +81,38 @@ class FlockDict(MutableMapping):
         """
         if callable(val):
             value = val
+            # if it's a closuer and there is something in there
+            if hasattr(val, '__closure__') and val.__closure__:
+                for closure in val.__closure__:
+                    if isinstance(closure.cell_contents, FlockMapping):
+                        closure.cell_contents.peers.add(self)
         elif isinstance(val, Mapping):
-            value = FlockDict(val)
+            value = FlockDict(val, root=self.root if self.root is not None else self)
         else:
             value = lambda: val
         self.promises[key] = value
-        self.cache = {}
+        self.clear_cache()
+
+    def clear_cache(self):
+        if self.root is not None:
+            self.root.clear_cache()
+            return
+
+        to_collect = set([self])
+        to_clear = set()
+        while to_collect:
+            curr = to_collect.pop()
+            if curr not in to_clear:
+                to_clear.add(curr)
+                to_collect.update(curr.get_relatives())
+
+        for peer in to_clear:
+            peer.cache = {}
+
+    def get_relatives(self):
+        rels = {promise for promise in self.promises.values() if hasattr(promise, 'clear_cache')}
+        rels.update(peer for peer in self.peers if hasattr(peer, 'clear_cache'))
+        return rels
 
     def __getitem__(self, key):
         """
@@ -77,17 +137,11 @@ class FlockDict(MutableMapping):
 
     def __len__(self):
         return len(self.promises)
+
     #
     # def __hash__(self):
     #     return id(self)
 
-    def __call__(self):
-        """
-        Call must be specified so that FlockDicts can be nested within eachother
-
-        :return: self
-        """
-        return self
 
     def check(self, path=[]):
         """
@@ -136,6 +190,7 @@ class Aggregator():
     """
     Aggregate across parallel maps.
     """
+
     def __init__(self, sources, fn):
         """
         Aggregate across parallel maps.
@@ -208,6 +263,7 @@ class MetaAggregator():
     """
     Misnamed class that should be merged with the normal aggregator
     """
+
     def __init__(self, source_function, fn):
         self.source_function = source_function
         self.function = fn
@@ -228,7 +284,7 @@ class MetaAggregator():
         return ret
 
 
-class FlockAggregator(Mapping):
+class FlockAggregator(FlockMapping):
     def __init__(self, sources, fn, keys=None):
         """
         Aggregate across parallel maps.
@@ -259,7 +315,7 @@ class FlockAggregator(Mapping):
         return self.function(source[key] for source in self.get_sources() if key in source)
 
     def __len__(self):
-        return len(self.__iter__())
+        return sum(1 for x in self.__iter__())
 
     def __iter__(self):
         if self.keys is not None:
@@ -273,13 +329,6 @@ class FlockAggregator(Mapping):
             return self.sources()
         else:
             return self.sources
-
-    def __call__(self):
-        """
-        When an Aggregator is returned from a FlockDict or otherwise called, shear it.
-        :return:  a sheared version of this Aggregator
-        """
-        return self.shear()
 
     def check(self, path=[]):
         """
