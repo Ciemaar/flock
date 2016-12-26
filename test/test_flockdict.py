@@ -1,5 +1,5 @@
 from flock.closures import toggle, reference
-from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator
+from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
 
 __author__ = 'andriod'
 
@@ -76,6 +76,78 @@ class BasicFlockTestCase(unittest.TestCase):
         sheared = self.flock.shear()
         self.assertEqual(sheared['toggle'], not sheared['toggle2'])
         self.assertEqual([sheared['toggle']] * 5, [sheared[x] for x in range(5)])
+
+
+class FlockListTestCase(unittest.TestCase):
+    """
+    Tests of the basic operations of a flock
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.flock = FlockList()
+
+    def test_simple_values(self):
+        """
+        Test that simple(non-dict, non-callable) values are stored and retrieved transparently.
+
+        """
+        assert len(self.flock) == 0
+        self.flock.append(3)
+        assert self.flock[0] == 3
+        assert len(self.flock) == 1
+        self.flock.append("Mary")
+        assert len(self.flock) == 2
+        self.assertEqual(self.flock[1], "Mary")
+        self.flock.append(["Mary", "Joshua", "Isaac"])
+        assert len(self.flock) == 3
+        self.assertEqual(self.flock[2], ["Mary", "Joshua", "Isaac"])
+        self.flock[1] = "John"
+        self.assertEqual(self.flock[1], "John")
+
+    def test_simple_list(self):
+        """
+        Test that nested dicts still look like dicts.
+
+        """
+        self.flock.append({"Mary": {"lambs": 1, "size": 'little'}})
+        assert self.flock[0]["Mary"]['lambs'] == 1
+        assert self.flock[0]["Mary"]['size'] == 'little'
+
+    def test_simple_closure(self):
+        """
+        Test that simple closures are stored without mangling and evaluated on retrieval
+
+        """
+        self.flock.append(lambda: "little")
+        self.assertEqual(self.flock[0], "little")
+
+    def test_shear(self):
+        """
+        Test trivial shear opperation
+        """
+        self.flock.append(15)
+        assert not self.flock.check()
+        sheared = self.flock.shear()
+        assert len(sheared) == 1
+        assert isinstance(sheared, list)
+        assert sheared[0] == 15
+
+        self.flock.append(lambda: 'Abbey')
+        assert not self.flock.check()
+        sheared = self.flock.shear()
+        assert len(sheared) == 2
+        assert isinstance(sheared, list)
+        assert sheared[1] == 'Abbey'
+
+    def test_consistent_shear(self):
+        t = toggle()
+        self.flock.append(t)
+        self.flock.append(t)
+        self.flock.extend([lambda: self.flock[0] for x in range(5)])
+        sheared = self.flock.shear()
+        self.assertEqual(sheared[0], not sheared[1])
+        self.assertEqual([sheared[0]] * 5, [sheared[x] for x in range(2, 7)])
 
 
 class FlockCacheTestCase(unittest.TestCase):
