@@ -3,7 +3,6 @@ import csv
 import logging
 import pickle
 import sys
-import yaml
 from collections import defaultdict, Counter
 from fractions import Fraction
 from functools import reduce
@@ -11,16 +10,18 @@ from itertools import chain
 from operator import add
 from pprint import pprint
 
+import yaml
+
 from flock.closures import lookup, reference
 from flock.core import FlockDict, Aggregator, MetaAggregator
 
-#set the recursion limit low for safety
 GENERAL = 'General'
 HEROIC = "Heroic"
 MENTAL = "Mental"
 SPELL = "Spell"
 PHYSICAL = "Physical"
 WEAPON = "Weapon"
+# set the recursion limit low for safety
 sys.setrecursionlimit(100)
 
 _attribute_table = None
