@@ -1,6 +1,6 @@
 import warnings
 from abc import abstractmethod, ABCMeta
-from collections import MutableMapping, Mapping, defaultdict, OrderedDict, MutableSequence
+from collections import MutableMapping, Mapping, defaultdict, OrderedDict, MutableSequence, Iterable
 from copy import copy
 from itertools import chain
 
@@ -17,7 +17,7 @@ __author__ = 'andriod'
 """
 
 
-class FlockMapping(Mapping, metaclass=ABCMeta):
+class FlockBase(Iterable, metaclass=ABCMeta):
     @abstractmethod
     def check(self, path):
         """
@@ -48,7 +48,7 @@ class FlockMapping(Mapping, metaclass=ABCMeta):
         return id(self)
 
 
-class MutableFlock(object):
+class MutableFlock(FlockBase):
 
     def __setitem__(self, key, val):
         """
@@ -67,7 +67,7 @@ class MutableFlock(object):
             # if it's a closuer and there is something in there
             if hasattr(value, '__closure__') and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, FlockMapping):
+                    if isinstance(closure.cell_contents, FlockBase):
                         closure.cell_contents.peers.add(self)
         elif isinstance(value, Mapping):
             ret = FlockDict(value, root=self.root if self.root is not None else self)
@@ -129,10 +129,10 @@ class FlockList(MutableFlock, MutableSequence):
         self.root = root
         self.peers = set()
         for key in inlist:
-            self[key] = inlist[key]
+            self.append(key)
 
     def __iter__(self):
-        return iter(self.promises)
+        return (self[x] for x in range(len(self)))
 
     def insert(self, index, value):
         """
@@ -192,7 +192,7 @@ class FlockList(MutableFlock, MutableSequence):
         return ret
 
 
-class FlockDict(MutableFlock, MutableMapping, FlockMapping):
+class FlockDict(MutableFlock, MutableMapping):
     """
     A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -375,7 +375,7 @@ class MetaAggregator():
         return ret
 
 
-class FlockAggregator(FlockMapping):
+class FlockAggregator(FlockBase):
     def __init__(self, sources, fn, keys=None):
         """
         Aggregate across parallel maps.
@@ -392,7 +392,7 @@ class FlockAggregator(FlockMapping):
         ##TODO:  Allow lists as arguments
         self.sources = sources
         self.function = fn
-        if keys is not None:
+        if keys is not None and not callable(keys):
             keys = set(keys)
         self.keys = keys
 
@@ -410,7 +410,10 @@ class FlockAggregator(FlockMapping):
 
     def __iter__(self):
         if self.keys is not None:
-            return iter(self.keys)
+            if callable(self.keys):
+                return iter(set(self.keys()))
+            else:
+                return iter(self.keys)
         return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
 
     def get_sources(self):
