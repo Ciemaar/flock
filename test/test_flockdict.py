@@ -188,6 +188,7 @@ class FlockCacheTestCase(unittest.TestCase):
         assert self.flock2['nested_dest']['dest'] == '2nd New Value'
         assert self.flock2['jump_dest']['dest'] == '2nd New Value'
 
+
 class AggregatorTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
@@ -242,8 +243,12 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert not self.flock.check()
 
         assert len(self.flock['sum']) == 9
-        assert self.flock['sum'] == {x: x * 3 for x in range(1, 10)}
+        self.assertContentsEqual(self.flock['sum'].keys(), set(range(1, 10)))
+        self.assertContentsEqual(self.flock['sum'].values(), (x * 3 for x in range(1, 10)))
+        self.assertContentsEqual(self.flock['sum'].items(), ((x,x * 3) for x in range(1, 10)))
+
         assert self.flock['sum'].shear() == {x: x * 3 for x in range(1, 10)}
+        assert self.flock['sum'] == {x: x * 3 for x in range(1, 10)}
         assert self.flock['sum']() == {x: x * 3 for x in range(1, 10)}
         assert self.flock.promises['sum'].shear() == {x: x * 3 for x in range(1, 10)}
         assert self.flock.promises['sum']() == {x: x * 3 for x in range(1, 10)}
@@ -259,9 +264,13 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert not self.flock.check()
 
         assert len(self.flock['sum']) == 9
-        assert self.flock['sum'] == self.flock.promises['sum'].shear() == self.flock.promises['sum']() == {x: x * 3 for
-                                                                                                           x in
-                                                                                                           range(1, 10)}
+        self.assertContentsEqual(self.flock['sum'].keys(), range(1, 10))
+        self.assertContentsEqual(self.flock['sum'].values(), (x * 3 for x in range(1, 10)))
+        self.assertContentsEqual(self.flock['sum'].items(), ((x,x * 3) for x in range(1, 10)))
+
+        assert self.flock.promises['sum'].shear() == {x: x * 3 for x in range(1, 10)}
+        assert self.flock.promises['sum']() == {x: x * 3 for x in range(1, 10)}
+        assert self.flock['sum'] == {x: x * 3 for x in range(1, 10)}
 
         sheared = self.flock.shear()
         assert len(sheared) == 3
@@ -276,6 +285,9 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert len(check['sum']) == 9
         for value in check['sum'].values():
             assert len(value) == 2
+
+    def assertContentsEqual(self, param, param1, *args, **kwargs):
+        return self.assertSetEqual(set(param), set(param1), *args, **kwargs)
 
 
 if __name__ == '__main__':
