@@ -49,7 +49,6 @@ class FlockBase(Iterable, metaclass=ABCMeta):
 
 
 class MutableFlock(FlockBase):
-
     def __setitem__(self, key, val):
         """
         Add value to MutableFlock
@@ -221,8 +220,6 @@ class FlockDict(MutableFlock, MutableMapping):
         rels.update(peer for peer in self.peers if hasattr(peer, 'clear_cache'))
         return rels
 
-
-
     def __iter__(self):
         return iter(self.promises)
 
@@ -375,7 +372,7 @@ class MetaAggregator():
         return ret
 
 
-class FlockAggregator(FlockBase):
+class FlockAggregator(FlockBase, Mapping):
     def __init__(self, sources, fn, keys=None):
         """
         Aggregate across parallel maps.
@@ -394,7 +391,7 @@ class FlockAggregator(FlockBase):
         self.function = fn
         if keys is not None and not callable(keys):
             keys = set(keys)
-        self.keys = keys
+        self.source_keys = keys
 
     def __getitem__(self, key):
         """
@@ -409,11 +406,11 @@ class FlockAggregator(FlockBase):
         return sum(1 for x in self.__iter__())
 
     def __iter__(self):
-        if self.keys is not None:
-            if callable(self.keys):
-                return iter(set(self.keys()))
+        if self.source_keys is not None:
+            if callable(self.source_keys):
+                return iter(set(self.source_keys()))
             else:
-                return iter(self.keys)
+                return iter(self.source_keys)
         return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
 
     def get_sources(self):
