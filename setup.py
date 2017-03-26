@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='flock',
-    version='0.0.1',
+    version='0.0.2',
     packages=['test', 'flock'],
     url='http://ciemaar.com/flock',
     license='GPL v3',
