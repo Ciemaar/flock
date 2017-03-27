@@ -28,6 +28,16 @@ class PatchTestCase(unittest.TestCase):
         patch(self.d, ['mid',], 8)
         assert self.d == {'outer': 4, 'mid': 8}
 
+    def test_patch_missingkeys(self):
+        assert self.d=={'outer':1,'mid':{'sub':2,'inner':{'most_inner':3}}}
+        patch(self.d, ('outer',), 4)
+        assert self.d == {'outer': 4, 'mid': {'sub': 2, 'inner': {'most_inner': 3}}}
+        patch(self.d, ['newmid','sub'], 5)
+        assert self.d == {'outer': 4, 'newmid': {'sub':5}, 'mid': {'sub': 2, 'inner': {'most_inner': 3}}}
+        patch(self.d, ['strata','inner','most_inner'], 6)
+        assert self.d == {'strata':{'inner':{'most_inner':6}},'outer': 4, 'newmid': {'sub':5}, 'mid': {'sub': 2, 'inner': {'most_inner': 3}}}
+
+
 
 if __name__ == '__main__':
     unittest.main()
