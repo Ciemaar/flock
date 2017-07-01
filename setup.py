@@ -8,5 +8,6 @@ setup(
     license='GPL v3',
     author='Andy Fundinger',
     author_email='Andy@ciemaar.com',
-    description=''
+    description='',
+    requires='PyYAML'
 )
