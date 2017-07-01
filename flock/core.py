@@ -66,7 +66,7 @@ class MutableFlock(FlockBase):
             # if it's a closuer and there is something in there
             if hasattr(value, '__closure__') and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, FlockBase):
+                    if isinstance(closure.cell_contents, MutableFlock):
                         closure.cell_contents.peers.add(self)
         elif isinstance(value, Mapping):
             ret = FlockDict(value, root=self.root if self.root is not None else self)
@@ -90,7 +90,7 @@ class MutableFlock(FlockBase):
 
     def __delitem__(self, key):
         del self.promises[key]
-        del self.cache[key]
+        self.clear_cache()
 
     def __len__(self):
         return len(self.promises)
