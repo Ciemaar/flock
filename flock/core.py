@@ -372,6 +372,10 @@ class MetaAggregator():
         return ret
 
 
+class FlockException(Exception):
+    pass
+
+
 class FlockAggregator(FlockBase, Mapping):
     def __init__(self, sources, fn, keys=None):
         """
@@ -400,7 +404,15 @@ class FlockAggregator(FlockBase, Mapping):
         :type key: str key to aggregate
         :return: value as returned by the function for that key.
         """
-        return self.function(source[key] for source in self.get_sources() if key in source)
+        try:
+            cross_items = [source[key] for source in self.get_sources() if key in source]
+            if not cross_items:
+                raise KeyError('Key %s not found'%key)
+            return self.function(cross_items)
+        except KeyError:
+            raise
+        except Exception as e:
+            raise FlockException( 'Error Calculating %s:  '%key+str(e)+'\n'+','.join('%s:%s'%(source,source[key])  for source in self.get_sources() if key in source)) from eo
 
     def __len__(self):
         return sum(1 for x in self.__iter__())
@@ -459,4 +471,4 @@ class FlockAggregator(FlockBase, Mapping):
         return ret
 
     def __repr__(self):
-        return "flock.core.FlockDict(%s)" % str(self.shear())
+        return "flock.core.FlockAggregator(%s)" % str(self.shear())
