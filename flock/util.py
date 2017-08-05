@@ -11,4 +11,7 @@ def patch(map, key_list, val):
         except KeyError:
              map[key] = {}
              map = map[key]
-    map[key_list[-1]] = val
+    if key_list[-1] == 'append':
+        map.append(val)
+    else:
+        map[key_list[-1]] = val
