@@ -113,7 +113,7 @@ class MutableFlock(FlockBase):
 
 
 class FlockList(MutableFlock, MutableSequence):
-    def __init__(self, inlist={}, root=None):
+    def __init__(self, inlist=[], root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -412,7 +412,7 @@ class FlockAggregator(FlockBase, Mapping):
         except KeyError:
             raise
         except Exception as e:
-            raise FlockException( 'Error Calculating %s:  '%key+str(e)+'\n'+','.join('%s:%s'%(source,source[key])  for source in self.get_sources() if key in source)) from eo
+            raise FlockException( 'Error Calculating %s:  '%key+str(e)+'\n'+','.join('%s:%s'%(source,source[key])  for source in self.get_sources() if key in source)) from e
 
     def __len__(self):
         return sum(1 for x in self.__iter__())
