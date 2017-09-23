@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from abc import abstractmethod, ABCMeta
 from collections import MutableMapping, Mapping, defaultdict, OrderedDict, MutableSequence, Iterable
@@ -61,9 +62,9 @@ class MutableFlock(FlockBase):
         self.clear_cache()
 
     def make_callable(self, value):
-        if callable(value):
+        if callable(value) and len(inspect.signature(value).parameters) == 0:
             ret = value
-            # if it's a closuer and there is something in there
+            # if it's a closure and there is something in there
             if hasattr(value, '__closure__') and value.__closure__:
                 for closure in value.__closure__:
                     if isinstance(closure.cell_contents, MutableFlock):
@@ -84,9 +85,15 @@ class MutableFlock(FlockBase):
         if key in self.cache:
             return self.cache[key]
         else:
-            ret = self.promises[key]()
+            try:
+                ret = self.promises[key]()
+            except Exception as e:
+                raise FlockException('Error calculating key:%s' % key) from e
             self.cache[key] = ret
             return ret
+
+    def __contains__(self, key):
+        return key in self.promises
 
     def __delitem__(self, key):
         del self.promises[key]
@@ -372,8 +379,7 @@ class MetaAggregator():
         return ret
 
 
-class FlockException(Exception):
-    pass
+class FlockException(Exception): pass
 
 
 class FlockAggregator(FlockBase, Mapping):
@@ -407,12 +413,13 @@ class FlockAggregator(FlockBase, Mapping):
         try:
             cross_items = [source[key] for source in self.get_sources() if key in source]
             if not cross_items:
-                raise KeyError('Key %s not found'%key)
+                raise KeyError('Key %s not found' % key)
             return self.function(cross_items)
         except KeyError:
             raise
         except Exception as e:
-            raise FlockException( 'Error Calculating %s:  '%key+str(e)+'\n'+','.join('%s:%s'%(source,source[key])  for source in self.get_sources() if key in source)) from e
+            raise FlockException('Error Calculating %s:  ' % key + str(e) + '\n' + ','.join(
+                '%s:%s' % (source, source[key]) for source in self.get_sources() if key in source)) from e
 
     def __len__(self):
         return sum(1 for x in self.__iter__())
