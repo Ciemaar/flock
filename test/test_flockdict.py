@@ -77,6 +77,14 @@ class BasicFlockTestCase(unittest.TestCase):
             self.flock['bad']
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
+        with raises(FlockException) as exc_info:
+            self.flock.shear()
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
+
+        error = self.flock.shear(record_errors=True)['bad']
+        assert isinstance(error, FlockException)
+        assert isinstance(error.__cause__, ZeroDivisionError)
+
     def test_shear(self):
         """
         Test trivial shear opperation

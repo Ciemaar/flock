@@ -29,9 +29,12 @@ class FlockBase(Iterable, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Convert this Mapping into a simple dict
+
+        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+        than continuing up the call stack
 
         :return: a dict() representation of this Aggregator
         """
@@ -174,23 +177,30 @@ class FlockList(MutableFlock, MutableSequence):
             assert callable(value)
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Recursively convert this FlockList into a normal python dict.
 
         Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
          with a shear() function.
 
+        :param record_errors:
         :return: a dict()
         """
         ret = []
         for key, promise in enumerate(self.promises):
             if hasattr(promise, 'shear'):
-                ret.append(promise.shear())
+                ret.append(promise.shear(record_errors=record_errors))
             elif key in self.cache:
                 ret.append(self.cache[key])
             elif callable(promise):
-                ret.append(promise())
+                try:
+                    ret.append(promise())
+                except Exception as e:
+                    if record_errors:
+                        ret.append(e)
+                    else:
+                        raise
             else:
                 warnings.warn(DeprecationWarning("Non callable in promises"))
                 ret.append(copy(promise))
@@ -256,27 +266,31 @@ class FlockDict(MutableFlock, MutableMapping):
             assert callable(value)
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Recursively convert this FlockDict into a normal python dict.
 
         Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
          with a shear() function.
 
+        :param record_errors:
         :return: a dict()
         """
         ret = OrderedDict()
         for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
             promise = self.promises[key]
             if hasattr(promise, 'shear'):
-                ret[key] = promise.shear()
+                ret[key] = promise.shear(record_errors=record_errors)
             elif key in self.cache:
                 ret[key] = self.cache[key]
-            elif callable(promise):
-                ret[key] = promise()
             else:
-                warnings.warn(DeprecationWarning("Non callable in promises"))
-                ret[key] = copy(promise)
+                try:
+                    ret[key] = self[key]
+                except FlockException as e:
+                    if record_errors:
+                        ret[key] = e
+                    else:
+                        raise
             self.cache[key] = ret[key]
         return ret
 
@@ -342,7 +356,7 @@ class Aggregator():
                         # raise
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Convert this Aggregator into a simple dict
 
@@ -350,7 +364,13 @@ class Aggregator():
         """
         ret = {}
         for key in set(chain.from_iterable(source.keys() for source in self.sources)):
-            ret[key] = self[key]
+            try:
+                ret[key] = self[key]
+            except Exception as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
         return ret
 
 
@@ -372,10 +392,16 @@ class MetaAggregator():
     def __call__(self):
         return self.shear()
 
-    def shear(self):
+    def shear(self, record_errors=False):
         ret = {}
         for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
-            ret[key] = self[key]()
+            try:
+                ret[key] = self[key]()
+            except Exception as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
         return ret
 
 
@@ -466,15 +492,22 @@ class FlockAggregator(FlockBase, Mapping):
                         # raise
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Convert this Aggregator into a simple dict
 
-        :return: a dict() representation of this Aggregator
+        :param record_errors:
+        :return: a dict() wmrepresentation of this Aggregator
         """
         ret = {}
         for key in self.__iter__():
-            ret[key] = self[key]
+            try:
+                ret[key] = self[key]
+            except Exception as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
         return ret
 
     def __repr__(self):
