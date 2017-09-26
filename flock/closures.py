@@ -1,3 +1,5 @@
+from flock.core import FlockException
+
 __author__ = 'andriod'
 
 """
@@ -60,7 +62,9 @@ def reference(flock, *indexes, **kwargs):
             for index in indexes:
                 currObj = currObj[index]
             return currObj
-        except KeyError:
+        except (KeyError, FlockException) as e:
+            if isinstance(e, FlockException) and not isinstance(e.__cause__, KeyError):
+                raise
             if 'default' in kwargs:
                 return kwargs['default']
             else:

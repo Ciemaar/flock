@@ -1,5 +1,6 @@
 import logging
 
+from flock import FlockDict
 from flock.util import patch
 
 log = logging.getLogger(__name__)
@@ -36,6 +37,12 @@ class PatchTestCase(unittest.TestCase):
         assert self.d == {'outer': 4, 'newmid': {'sub':5}, 'mid': {'sub': 2, 'inner': {'most_inner': 3}}}
         patch(self.d, ['strata','inner','most_inner'], 6)
         assert self.d == {'strata':{'inner':{'most_inner':6}},'outer': 4, 'newmid': {'sub':5}, 'mid': {'sub': 2, 'inner': {'most_inner': 3}}}
+
+
+class PatchFlockTestCase(PatchTestCase):
+    def setUp(self):
+        super().setUp()
+        self.d = FlockDict({'outer': 1, 'mid': {'sub': 2, 'inner': {'most_inner': 3}}})
 
 
 
