@@ -1,4 +1,5 @@
 import logging
+from types import FunctionType
 
 log = logging.getLogger(__name__)
 
@@ -12,3 +13,23 @@ def patch(map, key_list, val):
              map[key] = {}
              map = map[key]
     map[key_list[-1]] = val
+
+
+def is_rule(func):
+    if not callable(func):
+        return False
+
+    if getattr(func, '__closure__', False):
+        return True
+    try:
+        if set(func.__globals__).intersection(func.__code__.co_names):
+            return True
+    except AttributeError:
+        pass  # not a function object
+    if isinstance(func, FunctionType):
+        return False
+
+    # Classes with extra properties are considered rules
+    if len(dir(func)) > 26:
+        return True
+    return False
