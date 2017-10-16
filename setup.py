@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='flock',
-    version='0.0.5',
+    version='0.0.8',
     packages=['test', 'flock'],
     url='http://ciemaar.com/flock',
     license='GPL v3',

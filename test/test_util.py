@@ -4,6 +4,8 @@ import unittest
 import pytest
 
 from flock.util import patch, is_rule
+from flock import FlockDict
+from flock.util import patch
 
 log = logging.getLogger(__name__)
 
@@ -66,6 +68,12 @@ class PatchTestCase(unittest.TestCase):
         patch(self.d, ['strata', 'inner', 'most_inner'], 6)
         assert self.d == {'strata': {'inner': {'most_inner': 6}}, 'outer': 4, 'newmid': {'sub': 5},
                           'mid': {'sub': 2, 'inner': {'most_inner': 3}}}
+
+class PatchFlockTestCase(PatchTestCase):
+    def setUp(self):
+        super().setUp()
+        self.d = FlockDict({'outer': 1, 'mid': {'sub': 2, 'inner': {'most_inner': 3}}})
+
 
 
 if __name__ == '__main__':

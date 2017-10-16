@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from abc import abstractmethod, ABCMeta
 from collections import MutableMapping, Mapping, defaultdict, OrderedDict, MutableSequence, Iterable
@@ -30,9 +31,12 @@ class FlockBase(Iterable, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Convert this Mapping into a simple dict
+
+        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+        than continuing up the call stack
 
         :return: a dict() representation of this Aggregator
         """
@@ -63,9 +67,9 @@ class MutableFlock(FlockBase):
         self.clear_cache()
 
     def make_callable(self, value):
-        if callable(value):
+        if callable(value) and len(inspect.signature(value).parameters) == 0:
             ret = value
-            # if it's a closuer and there is something in there
+            # if it's a closure and there is something in there
             if hasattr(value, '__closure__') and value.__closure__:
                 for closure in value.__closure__:
                     if isinstance(closure.cell_contents, MutableFlock):
@@ -86,9 +90,15 @@ class MutableFlock(FlockBase):
         if key in self.cache:
             return self.cache[key]
         else:
-            ret = self.promises[key]()
+            try:
+                ret = self.promises[key]()
+            except Exception as e:
+                raise FlockException('Error calculating key:%s' % key) from e
             self.cache[key] = ret
             return ret
+
+    def __contains__(self, key):
+        return key in self.promises
 
     def __delitem__(self, key):
         del self.promises[key]
@@ -115,7 +125,7 @@ class MutableFlock(FlockBase):
 
 
 class FlockList(MutableFlock, MutableSequence):
-    def __init__(self, inlist={}, root=None):
+    def __init__(self, inlist=[], root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -169,23 +179,30 @@ class FlockList(MutableFlock, MutableSequence):
             assert callable(value)
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Recursively convert this FlockList into a normal python dict.
 
         Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
          with a shear() function.
 
+        :param record_errors:
         :return: a dict()
         """
         ret = []
         for key, promise in enumerate(self.promises):
             if hasattr(promise, 'shear'):
-                ret.append(promise.shear())
+                ret.append(promise.shear(record_errors=record_errors))
             elif key in self.cache:
                 ret.append(self.cache[key])
             elif callable(promise):
-                ret.append(promise())
+                try:
+                    ret.append(promise())
+                except Exception as e:
+                    if record_errors:
+                        ret.append(e)
+                    else:
+                        raise
             else:
                 warnings.warn(DeprecationWarning("Non callable in promises"))
                 ret.append(copy(promise))
@@ -251,27 +268,31 @@ class FlockDict(MutableFlock, MutableMapping):
             assert callable(value)
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Recursively convert this FlockDict into a normal python dict.
 
         Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
          with a shear() function.
 
+        :param record_errors:
         :return: a dict()
         """
         ret = OrderedDict()
         for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
             promise = self.promises[key]
             if hasattr(promise, 'shear'):
-                ret[key] = promise.shear()
+                ret[key] = promise.shear(record_errors=record_errors)
             elif key in self.cache:
                 ret[key] = self.cache[key]
-            elif callable(promise):
-                ret[key] = promise()
             else:
-                warnings.warn(DeprecationWarning("Non callable in promises"))
-                ret[key] = copy(promise)
+                try:
+                    ret[key] = self[key]
+                except FlockException as e:
+                    if record_errors:
+                        ret[key] = e
+                    else:
+                        raise
             self.cache[key] = ret[key]
         return ret
 
@@ -342,7 +363,7 @@ class Aggregator():
                         # raise
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Convert this Aggregator into a simple dict
 
@@ -350,7 +371,13 @@ class Aggregator():
         """
         ret = {}
         for key in set(chain.from_iterable(source.keys() for source in self.sources)):
-            ret[key] = self[key]
+            try:
+                ret[key] = self[key]
+            except Exception as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
         return ret
 
 
@@ -372,15 +399,20 @@ class MetaAggregator():
     def __call__(self):
         return self.shear()
 
-    def shear(self):
+    def shear(self, record_errors=False):
         ret = {}
         for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
-            ret[key] = self[key]()
+            try:
+                ret[key] = self[key]()
+            except Exception as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
         return ret
 
 
-class FlockException(Exception):
-    pass
+class FlockException(Exception): pass
 
 
 class FlockAggregator(FlockBase, Mapping):
@@ -414,12 +446,13 @@ class FlockAggregator(FlockBase, Mapping):
         try:
             cross_items = [source[key] for source in self.get_sources() if key in source]
             if not cross_items:
-                raise KeyError('Key %s not found'%key)
+                raise KeyError('Key %s not found' % key)
             return self.function(cross_items)
         except KeyError:
             raise
         except Exception as e:
-            raise FlockException( 'Error Calculating %s:  '%key+str(e)+'\n'+','.join('%s:%s'%(source,source[key])  for source in self.get_sources() if key in source)) from eo
+            raise FlockException('Error Calculating %s:  ' % key + str(e) + '\n' + ','.join(
+                '%s:%s' % (source, source[key]) for source in self.get_sources() if key in source)) from e
 
     def __len__(self):
         return sum(1 for x in self.__iter__())
@@ -466,15 +499,22 @@ class FlockAggregator(FlockBase, Mapping):
                         # raise
         return ret
 
-    def shear(self):
+    def shear(self, record_errors=False):
         """
         Convert this Aggregator into a simple dict
 
-        :return: a dict() representation of this Aggregator
+        :param record_errors:
+        :return: a dict() wmrepresentation of this Aggregator
         """
         ret = {}
         for key in self.__iter__():
-            ret[key] = self[key]
+            try:
+                ret[key] = self[key]
+            except Exception as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
         return ret
 
     def __repr__(self):

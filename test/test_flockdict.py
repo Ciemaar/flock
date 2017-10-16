@@ -1,7 +1,9 @@
+from pytest import raises
+
 from types import FunctionType
 
 from flock.closures import toggle, reference
-from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
+from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList, FlockException
 
 __author__ = 'andriod'
 
@@ -20,7 +22,6 @@ class BasicFlockTestCase(unittest.TestCase):
     def test_simple_values(self):
         """
         Test that simple(non-dict, non-callable) values are stored and retrieved transparently.
-
         """
         assert len(self.flock) == 0
         self.flock[3] = 3
@@ -34,11 +35,14 @@ class BasicFlockTestCase(unittest.TestCase):
         self.assertEqual(self.flock["Management"], ["Mary", "Joshua", "Isaac"])
         self.flock["Shepherd"] = "John"
         self.assertEqual(self.flock["Shepherd"], "John")
+        assert "Shepherd" in self.flock
+        assert 'missing' not in self.flock
+        del self.flock["Shepherd"]
+        assert "Shepherd" not in self.flock
 
     def test_simple_dict(self):
         """
         Test that nested dicts still look like dicts.
-
         """
         self.flock["Management"] = {"Mary": {"lambs": 1, "size": 'little'}}
         assert self.flock["Management"]["Mary"]['lambs'] == 1
@@ -47,10 +51,41 @@ class BasicFlockTestCase(unittest.TestCase):
     def test_simple_closure(self):
         """
         Test that simple closures are stored without mangling and evaluated on retrieval
-
         """
         self.flock["lamb"] = lambda: "little"
         self.assertEqual(self.flock["lamb"], "little")
+
+    def test_callable_with_arguments(self):
+        """
+        Test that callables with arguments are passed transparently and never called
+        """
+        self.flock["func"] = lambda x, y: x + y
+        self.assertEqual(self.flock["func"](1, 2), 3)
+
+        def test2(x, y):
+            assert False
+
+        self.flock["test2"] = test2
+        self.flock["test2"]  # Testing that this is not called
+
+    def test_error(self):
+        self.flock["bad"] = lambda: 1 / 0
+        assert 'bad' in self.flock
+        with raises(FlockException) as exc_info:
+            self.flock.pop('bad')
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
+
+        with raises(FlockException) as exc_info:
+            self.flock['bad']
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
+
+        with raises(FlockException) as exc_info:
+            self.flock.shear()
+        assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
+
+        error = self.flock.shear(record_errors=True)['bad']
+        assert isinstance(error, FlockException)
+        assert isinstance(error.__cause__, ZeroDivisionError)
 
     def test_shear(self):
         """
@@ -256,7 +291,7 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert len(self.flock['sum']) == 9
         self.assertContentsEqual(self.flock['sum'].keys(), set(range(1, 10)))
         self.assertContentsEqual(self.flock['sum'].values(), (x * 3 for x in range(1, 10)))
-        self.assertContentsEqual(self.flock['sum'].items(), ((x,x * 3) for x in range(1, 10)))
+        self.assertContentsEqual(self.flock['sum'].items(), ((x, x * 3) for x in range(1, 10)))
 
         assert self.flock['sum'].shear() == {x: x * 3 for x in range(1, 10)}
         assert self.flock['sum'] == {x: x * 3 for x in range(1, 10)}
@@ -277,7 +312,7 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert len(self.flock['sum']) == 9
         self.assertContentsEqual(self.flock['sum'].keys(), range(1, 10))
         self.assertContentsEqual(self.flock['sum'].values(), (x * 3 for x in range(1, 10)))
-        self.assertContentsEqual(self.flock['sum'].items(), ((x,x * 3) for x in range(1, 10)))
+        self.assertContentsEqual(self.flock['sum'].items(), ((x, x * 3) for x in range(1, 10)))
 
         assert self.flock.promises['sum'].shear() == {x: x * 3 for x in range(1, 10)}
         assert self.flock.promises['sum']() == {x: x * 3 for x in range(1, 10)}

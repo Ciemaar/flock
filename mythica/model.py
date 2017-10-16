@@ -13,7 +13,7 @@ from pprint import pprint
 import yaml
 
 from flock.closures import lookup, reference
-from flock.core import FlockDict, Aggregator, MetaAggregator
+from flock.core import FlockDict, Aggregator, MetaAggregator, FlockException
 
 GENERAL = 'General'
 HEROIC = "Heroic"
@@ -125,7 +125,9 @@ def cross_total(inputs):
         return inputs[0]
     try:
         return sum(inputs)
-    except TypeError:
+    except (TypeError, FlockException) as e:
+        if isinstance(e, FlockException) and not isinstance(e.__cause__, TypeError):
+            raise
         return dict(reduce(add, (Counter(y) for y in inputs), Counter()))
 
 

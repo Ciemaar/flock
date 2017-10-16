@@ -1,3 +1,5 @@
+from flock.core import FlockException
+
 __author__ = 'andriod'
 
 """
@@ -44,7 +46,7 @@ def lookup(mapping, index, table):
     return lambda: table.get(mapping[index], None)
 
 
-def reference(flock, *indexes):
+def reference(flock, *indexes, **kwargs):
     """
     return closure that references values stored elsewhere in the Flock
     :type flock: flock.core.FlockDict
@@ -55,11 +57,18 @@ def reference(flock, *indexes):
     def de_ref():
         currObj = flock
 
-        # recursively resolve indexes
-        for index in indexes:
-            currObj = currObj[index]
-        return currObj
-
+        try:
+            # recursively resolve indexes
+            for index in indexes:
+                currObj = currObj[index]
+            return currObj
+        except (KeyError, FlockException) as e:
+            if isinstance(e, FlockException) and not isinstance(e.__cause__, KeyError):
+                raise
+            if 'default' in kwargs:
+                return kwargs['default']
+            else:
+                raise
     return de_ref
 
 
