@@ -3,12 +3,11 @@ from numbers import Number
 
 from types import FunctionType
 
-from flock.core import FlockException
-
 log = logging.getLogger(__name__)
 
-__author__ = 'andriod'
+__author__ = 'Andy Fundinger'
 
+class FlockException(Exception): pass
 
 def patch(map, key_list, val):
     for key in key_list[0:-1]:

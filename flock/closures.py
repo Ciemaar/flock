@@ -1,6 +1,6 @@
-from flock.core import FlockException
+from flock.util import FlockException
 
-__author__ = 'andriod'
+__author__ = 'Andy Fundinger'
 
 """
 The closures module provides helper functions for creating common sorts of closures that you might need in

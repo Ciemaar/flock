@@ -13,7 +13,8 @@ from pprint import pprint
 import yaml
 
 from flock.closures import lookup, reference
-from flock.core import FlockDict, Aggregator, MetaAggregator, FlockException
+from flock.core import FlockDict, Aggregator, MetaAggregator
+from flock.util import FlockException
 
 GENERAL = 'General'
 HEROIC = "Heroic"

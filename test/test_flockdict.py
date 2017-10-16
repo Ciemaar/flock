@@ -3,9 +3,10 @@ from pytest import raises
 from types import FunctionType
 
 from flock.closures import toggle, reference
-from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList, FlockException
+from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
+from flock.util import FlockException
 
-__author__ = 'andriod'
+__author__ = 'Andy Fundinger'
 
 import unittest
 

@@ -5,9 +5,10 @@ from collections import MutableMapping, Mapping, defaultdict, OrderedDict, Mutab
 from copy import copy
 from itertools import chain
 
-from flock.util import is_rule
+from flock.util import FlockException
+from .util import is_rule
 
-__author__ = 'andriod'
+__author__ = 'Andy Fundinger'
 
 """
 >>> myList = []
@@ -410,9 +411,6 @@ class MetaAggregator():
                 else:
                     raise
         return ret
-
-
-class FlockException(Exception): pass
 
 
 class FlockAggregator(FlockBase, Mapping):

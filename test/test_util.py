@@ -9,7 +9,7 @@ from flock.util import patch
 
 log = logging.getLogger(__name__)
 
-__author__ = 'andriod'
+__author__ = 'Andy Fundinger'
 logging.basicConfig()
 
 
