@@ -10,25 +10,31 @@ log = logging.getLogger(__name__)
 __author__ = 'andriod'
 logging.basicConfig()
 
+
 class ProbeObject:
     def __call__(self): pass
 
+
 class ProbeClassRule(ProbeObject):
     kr = log
+
 
 class ProbeInstanceRule(ProbeObject):
     def __init__(self, inst_var):
         self.inst_var = inst_var
 
+
 tir = ProbeInstanceRule(log)
 
-def mk_closure():
-    kr = 5
+
+def mk_closure(kr):
     return lambda: kr
 
-@pytest.mark.parametrize(('func', 'is_it'), [(3, False), (lambda: 3, False), (lambda: log, True), (mk_closure(), True),
-                                             (ProbeObject, False), (ProbeObject(), False), (ProbeClassRule(), True),
-                                             (ProbeClassRule, True), (tir, True)])
+
+@pytest.mark.parametrize(('func', 'is_it'),
+                         [(3, False), (lambda: 3, False), (lambda: log, True), (mk_closure(5), False),
+                          (mk_closure({}), True), (ProbeObject, False), (ProbeObject(), False),
+                          (ProbeClassRule(), True), (ProbeClassRule, True), (tir, True)])
 def test_is_rule(func, is_it):
     assert is_rule(func) == is_it
 

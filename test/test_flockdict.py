@@ -1,3 +1,5 @@
+from types import FunctionType
+
 from flock.closures import toggle, reference
 from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
 
@@ -52,7 +54,7 @@ class BasicFlockTestCase(unittest.TestCase):
 
     def test_shear(self):
         """
-        Test trivial shear opperation
+        Test trivial shear operation
         """
         self.flock[3] = 15
         assert not self.flock.check()
@@ -67,6 +69,11 @@ class BasicFlockTestCase(unittest.TestCase):
         assert len(sheared) == 2
         assert isinstance(sheared, dict)
         assert sheared['cat'] == 'Abbey'
+        assert sheared[3] == 15
+
+        assert self.flock.dataset() == {'cat':'Abbey',3:15}
+        assert len(self.flock.ruleset()) == 0
+        assert not self.flock.ruleset()
 
     def test_consistent_shear(self):
         t = toggle()
@@ -77,6 +84,10 @@ class BasicFlockTestCase(unittest.TestCase):
         self.assertEqual(sheared['toggle'], not sheared['toggle2'])
         self.assertEqual([sheared['toggle']] * 5, [sheared[x] for x in range(5)])
 
+        assert len(self.flock.dataset()) == 0
+        assert not self.flock.dataset()
+        assert len(self.flock.ruleset()) == 7
+        assert all(isinstance(x, FunctionType) for x in self.flock.ruleset().values())
 
 class FlockListTestCase(unittest.TestCase):
     """

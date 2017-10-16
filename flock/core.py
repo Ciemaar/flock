@@ -4,6 +4,8 @@ from collections import MutableMapping, Mapping, defaultdict, OrderedDict, Mutab
 from copy import copy
 from itertools import chain
 
+from flock.util import is_rule
+
 __author__ = 'andriod'
 
 """
@@ -273,6 +275,11 @@ class FlockDict(MutableFlock, MutableMapping):
             self.cache[key] = ret[key]
         return ret
 
+    def dataset(self):
+        return  {k:v() for k,v in self.promises.items() if not is_rule(v)}
+
+    def ruleset(self):
+        return {k:v for k,v in self.promises.items() if is_rule(v)}
 
 class Aggregator():
     """

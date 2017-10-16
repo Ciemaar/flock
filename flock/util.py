@@ -1,4 +1,6 @@
 import logging
+from numbers import Number
+
 from types import FunctionType
 
 log = logging.getLogger(__name__)
@@ -14,13 +16,14 @@ def patch(map, key_list, val):
              map = map[key]
     map[key_list[-1]] = val
 
-
 def is_rule(func):
     if not callable(func):
         return False
 
     if getattr(func, '__closure__', False):
-        return True
+        for cell in func.__closure__:
+            if not isinstance(cell.cell_contents,(str, Number, bytes, tuple, frozenset)):
+                return True
     try:
         if set(func.__globals__).intersection(func.__code__.co_names):
             return True
