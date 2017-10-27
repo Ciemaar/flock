@@ -126,7 +126,7 @@ class MutableFlock(FlockBase):
 
 
 class FlockList(MutableFlock, MutableSequence):
-    def __init__(self, inlist=[], root=None):
+    def __init__(self, inlist=(), root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 

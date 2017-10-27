@@ -1,5 +1,4 @@
 from pytest import raises
-
 from types import FunctionType
 
 from flock.closures import toggle, reference
@@ -67,7 +66,7 @@ class BasicFlockTestCase(unittest.TestCase):
             assert False
 
         self.flock["test2"] = test2
-        self.flock["test2"]  # Testing that this is not called
+        assert test2 == self.flock["test2"]  # Testing that this is not called
 
     def test_error(self):
         self.flock["bad"] = lambda: 1 / 0
@@ -77,7 +76,8 @@ class BasicFlockTestCase(unittest.TestCase):
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         with raises(FlockException) as exc_info:
-            self.flock['bad']
+            assert self.flock['bad'] != (
+            lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         with raises(FlockException) as exc_info:
