@@ -405,7 +405,7 @@ class MetaAggregator():
         return ret
 
 
-class FlockException(Exception): pass
+class FlockException(KeyError): pass
 
 
 class FlockAggregator(FlockBase, Mapping):
