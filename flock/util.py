@@ -7,15 +7,16 @@ log = logging.getLogger(__name__)
 
 __author__ = 'Andy Fundinger'
 
-class FlockException(Exception): pass
+
+class FlockException(KeyError): pass
 
 def patch(map, key_list, val):
     for key in key_list[0:-1]:
         try:
             map = map[key]
-        except (KeyError, FlockException) as e:
-            if isinstance(e, FlockException) and not isinstance(e.__cause__, KeyError):
-                raise
+        except FlockException as e:
+            raise
+        except KeyError as e:
             map[key] = {}
             map = map[key]
     if key_list[-1] == 'append':
