@@ -1,5 +1,6 @@
-from pytest import raises
 from types import FunctionType
+
+from pytest import raises
 
 from flock.closures import toggle, reference
 from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
@@ -335,6 +336,27 @@ class FlockAggregatorTestCase(unittest.TestCase):
 
     def assertContentsEqual(self, param, param1, *args, **kwargs):
         return self.assertSetEqual(set(param), set(param1), *args, **kwargs)
+
+
+class ShearTestCase(unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.flock = FlockDict()
+        self.flock['a'] = 'Original Value'
+        self.flock['b'] = {'i': 'Original Value', 'ii': 42}
+
+    def test_consistent_types(self):
+        pre_shear_type = type(self.flock['b'])
+        self.flock.shear()
+        post_shear_type = type(self.flock['b'])
+        assert pre_shear_type is post_shear_type
+
+    def test_edit_post_shear(self):
+        self.flock.shear()
+        self.flock['b']['i'] = 'New Value'
+        assert self.flock['b']['i'] == 'New Value'
+        self.flock['unreleated'] = 'Something'
+        assert self.flock['b']['i'] == 'New Value'
 
 
 if __name__ == '__main__':

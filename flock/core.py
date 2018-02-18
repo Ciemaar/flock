@@ -91,8 +91,9 @@ class MutableFlock(FlockBase):
         if key in self.cache:
             return self.cache[key]
         else:
+            promise = self.promises[key]
             try:
-                ret = self.promises[key]()
+                ret = promise()
             except Exception as e:
                 raise FlockException('Error calculating key:%s' % key) from e
             self.cache[key] = ret
@@ -294,7 +295,8 @@ class FlockDict(MutableFlock, MutableMapping):
                         ret[key] = e
                     else:
                         raise
-            self.cache[key] = ret[key]
+            if not isinstance(ret, MutableMapping):
+                self.cache[key] = ret[key]
         return ret
 
     def dataset(self):
