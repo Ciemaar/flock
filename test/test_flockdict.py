@@ -344,20 +344,28 @@ class ShearTestCase(unittest.TestCase):
         self.flock = FlockDict()
         self.flock['a'] = 'Original Value'
         self.flock['b'] = {'i': 'Original Value', 'ii': 42}
+        self.flock['c'] = [1, 2, 3]
+        self.flock['d'] = set('ABC')
 
     def test_consistent_types(self):
-        pre_shear_type = type(self.flock['b'])
-        self.flock.shear()
-        post_shear_type = type(self.flock['b'])
-        assert pre_shear_type is post_shear_type
+        for collection in 'bcd':
+            pre_shear_type = type(self.flock[collection])
+            self.flock.shear()
+            post_shear_type = type(self.flock[collection])
+            assert pre_shear_type is post_shear_type
 
     def test_edit_post_shear(self):
         self.flock.shear()
         self.flock['b']['i'] = 'New Value'
+        self.flock['c'].append(4)
+        self.flock['d'].add('D')
+        assert self.flock['c'] == [1, 2, 3, 4]
         assert self.flock['b']['i'] == 'New Value'
+        assert 'D' in self.flock['d']
         self.flock['unreleated'] = 'Something'
         assert self.flock['b']['i'] == 'New Value'
-
+        assert self.flock['c'] == [1, 2, 3, 4]
+        assert 'D' in self.flock['d']
 
 if __name__ == '__main__':
     unittest.main()
