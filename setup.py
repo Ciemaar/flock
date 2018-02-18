@@ -9,5 +9,5 @@ setup(
     author='Andy Fundinger',
     author_email='Andy@ciemaar.com',
     description='',
-    requires='PyYAML, wheel, pytest'
+    requires=['PyYAML', 'wheel', 'pytest']
 )
