@@ -62,9 +62,9 @@ def reference(flock, *indexes, **kwargs):
             for index in indexes:
                 currObj = currObj[index]
             return currObj
-        except (KeyError, FlockException) as e:
-            if isinstance(e, FlockException) and not isinstance(e.__cause__, KeyError):
-                raise
+        except FlockException:
+            raise
+        except KeyError as e:
             if 'default' in kwargs:
                 return kwargs['default']
             else:
