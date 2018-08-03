@@ -251,7 +251,6 @@ class FlockDict(MutableFlock, MutableMapping):
     # def __hash__(self):
     #     return id(self)
 
-
     def check(self, path=[]):
         """
         check for any contents that would prevent this FlockDict from being used normally, esp sheared.
@@ -300,10 +299,11 @@ class FlockDict(MutableFlock, MutableMapping):
         return ret
 
     def dataset(self):
-        return  {k:v() for k,v in self.promises.items() if not is_rule(v)}
+        return {k: v() for k, v in self.promises.items() if not is_rule(v)}
 
     def ruleset(self):
-        return {k:v for k,v in self.promises.items() if is_rule(v)}
+        return {k: v for k, v in self.promises.items() if is_rule(v)}
+
 
 class Aggregator():
     """
