@@ -317,6 +317,7 @@ class Aggregator():
         :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
         :type fn: function must take a generator, there is no constraint on the return value
         """
+        warnings.warn('Aggregator is generally replaced with FlockAggregator and will be removed.', DeprecationWarning)
         ##TODO:  Allow lists as arguments
         self.sources = sources
         self.function = fn
@@ -390,6 +391,8 @@ class MetaAggregator():
     """
 
     def __init__(self, source_function, fn):
+        warnings.warn('MetaAggregator is generally replaced with FlockAggregator and will be removed.',
+                      DeprecationWarning)
         self.source_function = source_function
         self.function = fn
 
