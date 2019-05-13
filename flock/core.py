@@ -308,6 +308,8 @@ class FlockDict(MutableFlock, MutableMapping):
 class Aggregator():
     """
     Aggregate across parallel maps.
+
+    Deprecated - use FlockAggregator
     """
 
     def __init__(self, sources, fn):
@@ -388,6 +390,8 @@ class Aggregator():
 class MetaAggregator():
     """
     Misnamed class that should be merged with the normal aggregator
+
+    Deprecated -  use FlockAggregator
     """
 
     def __init__(self, source_function, fn):

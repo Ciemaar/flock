@@ -1,11 +1,12 @@
 import argparse
 import csv
 import logging
+import os.path
 import pickle
 import sys
 from collections import defaultdict, Counter
 from fractions import Fraction
-from functools import reduce
+from functools import reduce, partial
 from itertools import chain
 from operator import add
 from pprint import pprint
@@ -13,7 +14,7 @@ from pprint import pprint
 import yaml
 
 from flock.closures import lookup, reference
-from flock.core import FlockDict, Aggregator, MetaAggregator
+from flock.core import FlockDict, FlockAggregator
 from flock.util import FlockException
 
 GENERAL = 'General'
@@ -33,7 +34,7 @@ def get_attribute_table():
     if _attribute_table:
         return _attribute_table
     _attribute_table = defaultdict(dict)
-    table_file = open("mythica/Attribute Tables.csv")
+    table_file = open(os.path.join(os.path.dirname(__file__), "Attribute Tables.csv"))
     plainReader = csv.reader(table_file)
     fieldNames = list(zip(plainReader.__next__(), plainReader.__next__()))
     dReader = csv.DictReader(table_file, fieldnames=fieldNames)
@@ -61,8 +62,7 @@ def apply_attribute_table(character):
     for (attribute, bonus), table in get_attribute_table().items():
         character['Attribute_Bonuses'][bonus] = lookup(character, attribute, table)
     character['base_bonuses'] = {'Spell Points Multiple': {'General': 1}}
-    character['bonuses'] = Aggregator([character['Attribute_Bonuses'], character['base_bonuses']], cross_total)
-
+    character['bonuses'] = FlockAggregator([character['Attribute_Bonuses'], character['base_bonuses']], cross_total)
 
 
 def apply_attribs(character):
@@ -91,14 +91,14 @@ def apply_level_allotments(character):
 
     character['points']['total']['physical'] = lambda: character['level'] * character['bonuses']['Phy Skill Points']
     character['points']['total']['heroic'] = lambda: character['level'] * (
-        character['level'] + 1 + character['bonuses']['heroics'])
+            character['level'] + 1 + character['bonuses']['heroics'])
 
 
 def apply_skills(character):
     character.setdefault('skills', [])
     for skill in list(character['skills']):
         pass
-        #character['skills'] = ......
+        # character['skills'] = ......
 
     character['points'].setdefault('spent', FlockDict())
     character['points'].setdefault('available', FlockDict())
@@ -133,7 +133,7 @@ def cross_total(inputs):
 
 
 def apply_heroics(character):
-    character['Heroic Bonuses'] = MetaAggregator(
+    character['Heroic Bonuses'] = FlockAggregator(
         lambda: (skill.bonuses for skill in character['skills'] if skill.isHeroic), cross_total)
     character.promises['bonuses'].sources.append(character['Heroic Bonuses'])
 
@@ -153,10 +153,9 @@ def apply_rules(character):
     # pprint(ret.resolve())
     apply_heroics(character)
     # pprint(ret.resolve())
-    character['Spell Points'] = Aggregator([character['bonuses']['Spell Points Multiple']],
-                                           lambda x: sum(x) * character['bonuses']['Spell Points'])
+    character['Spell Points'] = FlockAggregator([character['bonuses']['Spell Points Multiple']],
+                                                lambda x: sum(x) * character['bonuses']['Spell Points'])
     return character
-
 
 
 def load_character(filename):
@@ -168,21 +167,23 @@ def load_character(filename):
 def save_character(character, filename):
     pickle.dump(character.shear(), open(filename, 'wb'))
 
+
 class Skill(object):
     def __init__(self, name, skill_type, cost=1, xp=0, level=1):
         self.name = name
         self.skill_type = skill_type
         self.cost = cost
         self.xp = xp
-        self.level = max(level,cost)
+        self.level = max(level, cost)
 
     def __repr__(self):
         return "Skill('{name}', {skill_type}, {cost}, {xp}, {level})".format(name=self.name, skill_type=self.skill_type,
-                                                                           cost=self.cost, xp=self.xp, level=self.level)
+                                                                             cost=self.cost, xp=self.xp,
+                                                                             level=self.level)
 
     @property
     def isPhysical(self):
-         return self.skill_type == PHYSICAL or self.skill_type == WEAPON
+        return self.skill_type == PHYSICAL or self.skill_type == WEAPON
 
     @property
     def isMental(self):
@@ -274,12 +275,18 @@ class Conduit(HeroicSkill):
 yaml.add_representer(Conduit, Conduit.representer)
 yaml.add_constructor(u'!conduit', Conduit.constructor)
 
+PhysicalSkill = partial(Skill, skill_type=PHYSICAL)
+MentalSkill = partial(Skill, skill_type=MENTAL)
+WeaponSkill = partial(Skill, skill_type=WEAPON)
+
+
 def get_parser():
     parser = argparse.ArgumentParser(description='Mythica Character manager', )
 
     parser.add_argument("--infile", type=argparse.FileType('r'), default=None, help="File to read character from.")
     parser.add_argument("--outfile", type=argparse.FileType('w'), default=None, help="File to read character from.")
     return parser
+
 
 if __name__ == "__main__":
     logging.basicConfig()
