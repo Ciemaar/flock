@@ -251,7 +251,6 @@ class FlockDict(MutableFlock, MutableMapping):
     # def __hash__(self):
     #     return id(self)
 
-
     def check(self, path=[]):
         """
         check for any contents that would prevent this FlockDict from being used normally, esp sheared.
@@ -300,14 +299,17 @@ class FlockDict(MutableFlock, MutableMapping):
         return ret
 
     def dataset(self):
-        return  {k:v() for k,v in self.promises.items() if not is_rule(v)}
+        return {k: v() for k, v in self.promises.items() if not is_rule(v)}
 
     def ruleset(self):
-        return {k:v for k,v in self.promises.items() if is_rule(v)}
+        return {k: v for k, v in self.promises.items() if is_rule(v)}
+
 
 class Aggregator():
     """
     Aggregate across parallel maps.
+
+    Deprecated - use FlockAggregator
     """
 
     def __init__(self, sources, fn):
@@ -317,6 +319,7 @@ class Aggregator():
         :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
         :type fn: function must take a generator, there is no constraint on the return value
         """
+        warnings.warn('Aggregator is generally replaced with FlockAggregator and will be removed.', DeprecationWarning)
         ##TODO:  Allow lists as arguments
         self.sources = sources
         self.function = fn
@@ -387,9 +390,13 @@ class Aggregator():
 class MetaAggregator():
     """
     Misnamed class that should be merged with the normal aggregator
+
+    Deprecated -  use FlockAggregator
     """
 
     def __init__(self, source_function, fn):
+        warnings.warn('MetaAggregator is generally replaced with FlockAggregator and will be removed.',
+                      DeprecationWarning)
         self.source_function = source_function
         self.function = fn
 
