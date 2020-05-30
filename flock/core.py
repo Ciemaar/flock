@@ -1,8 +1,10 @@
-import inspect
 import warnings
-from abc import abstractmethod, ABCMeta
-from collections import MutableMapping, Mapping, defaultdict, OrderedDict, MutableSequence, Iterable
+from collections import defaultdict, OrderedDict
 from copy import copy
+
+import inspect
+from abc import abstractmethod, ABCMeta
+from collections.abc import MutableMapping, Mapping, MutableSequence, Iterable
 from itertools import chain
 
 from flock.util import FlockException
