@@ -3,8 +3,8 @@ import unittest
 
 import pytest
 
-from flock.util import patch, is_rule
 from flock import FlockDict
+from flock.util import is_rule
 from flock.util import patch
 
 log = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def mk_closure(kr):
 
 @pytest.mark.parametrize(('func', 'is_it'),
                          [(3, False), (lambda: 3, False), (lambda: log, True), (mk_closure(5), False),
-                          (mk_closure({}), True), (ProbeObject, False), (ProbeObject(), False),
+                          (mk_closure({}), True), (ProbeObject, True), (ProbeObject(), True),
                           (ProbeClassRule(), True), (ProbeClassRule, True), (tir, True)])
 def test_is_rule(func, is_it):
     assert is_rule(func) == is_it
