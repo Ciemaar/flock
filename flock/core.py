@@ -58,16 +58,37 @@ class FlockBase(Iterable, metaclass=ABCMeta):
 
 
 class MutableFlock(FlockBase):
-    def __setitem__(self, key, val):
-        """
-        Add value to MutableFlock
+    '''The abstract base class for flocks with items that can be set
+    '''
 
-        if value is callable it will be added directly to promises, if not it will be converted to  a simple lambda.
-        Mappings are converted into MutableFlocks, any other handling should be dealt with via direct access to the promises dict.
+    def __init__(self, root=None):
         """
-        value = self.make_callable(val)
-        self.promises[key] = value
-        self.clear_cache()
+        """
+        super(MutableFlock, self).__init__()
+        self.root = root
+
+    @abstractmethod
+    def __setitem__(self, key, val):
+        """Set a value in a MutableFlock
+        
+        some amount of processing may need to be done."""
+        pass
+
+    @abstractmethod
+    def __getitem__(self, key):
+        pass
+
+    @abstractmethod
+    def __contains__(self, key):
+        pass
+
+    @abstractmethod
+    def __delitem__(self, key):
+        pass
+
+    @abstractmethod
+    def __len__(self):
+        pass
 
     def make_callable(self, value):
         if callable(value) and len(inspect.signature(value).parameters) == 0:
@@ -82,6 +103,49 @@ class MutableFlock(FlockBase):
         else:
             ret = lambda: value
         return ret
+
+    def clear_cache(self):
+        if self.root is not None:
+            self.root.clear_cache()
+            return
+
+        to_collect = set([self])
+        to_clear = set()
+        while to_collect:
+            curr = to_collect.pop()
+            if curr not in to_clear:
+                to_clear.add(curr)
+                to_collect.update(curr.get_relatives())
+
+        for peer in to_clear:
+            peer.cache = {}
+
+    @abstractmethod
+    def get_relatives(self):
+        pass
+
+
+class PromiseFlock(MutableFlock):
+    '''A convenience class for default implementations of methods from MutableFlock'''
+
+    def __init__(self, root=None):
+        """
+        """
+        super(PromiseFlock, self).__init__(root=root)
+        self.promises = {}
+
+    def __setitem__(self, key, val):
+        """
+        Set a value in a MutableFlock
+
+        default implementation:
+        
+        if value is callable it will be added directly to promises, if not it will be converted to a simple lambda.
+        Mappings are converted into MutableFlocks, any other handling should be dealt with via direct access to the promises dict.
+        """
+        value = self.make_callable(val)
+        self.promises[key] = value
+        self.clear_cache()
 
     def __getitem__(self, key):
         """
@@ -111,24 +175,8 @@ class MutableFlock(FlockBase):
     def __len__(self):
         return len(self.promises)
 
-    def clear_cache(self):
-        if self.root is not None:
-            self.root.clear_cache()
-            return
 
-        to_collect = set([self])
-        to_clear = set()
-        while to_collect:
-            curr = to_collect.pop()
-            if curr not in to_clear:
-                to_clear.add(curr)
-                to_collect.update(curr.get_relatives())
-
-        for peer in to_clear:
-            peer.cache = {}
-
-
-class FlockList(MutableFlock, MutableSequence):
+class FlockList(PromiseFlock, MutableSequence):
     def __init__(self, inlist=(), root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
@@ -214,7 +262,7 @@ class FlockList(MutableFlock, MutableSequence):
         return ret
 
 
-class FlockDict(MutableFlock, MutableMapping):
+class FlockDict(PromiseFlock, MutableMapping):
     """
     A mutable mapping that contains lambdas which will be evaluated when indexed
 
