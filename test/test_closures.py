@@ -6,21 +6,21 @@ from flock.closures import reference, lookup, toggle
 
 
 class ClosureTestCase(unittest.TestCase):
-    def __init__(self, methodName='runTest'):
+    def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.base_dict = {}
 
     def test_reference(self):
         probe = uuid.uuid4()
-        self.base_dict['x'] = probe
-        assert probe is reference(self.base_dict, 'x')()
+        self.base_dict["x"] = probe
+        assert probe is reference(self.base_dict, "x")()
 
     def test_lookup(self):
         probe = uuid.uuid4()
         table_row = 5
-        base_dict = {'x': table_row}
+        base_dict = {"x": table_row}
         table = {table_row: probe}
-        assert probe is lookup(base_dict, 'x', table)()
+        assert probe is lookup(base_dict, "x", table)()
 
     def test_toggle(self):
         tt = toggle()
@@ -28,10 +28,10 @@ class ClosureTestCase(unittest.TestCase):
 
 
 class FlockClosureTestCase(ClosureTestCase):
-    def __init__(self, methodName='runTest'):
+    def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.base_dict = FlockDict()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

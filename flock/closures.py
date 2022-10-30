@@ -1,6 +1,6 @@
 from flock.util import FlockException
 
-__author__ = 'Andy Fundinger'
+__author__ = "Andy Fundinger"
 
 """
 The closures module provides helper functions for creating common sorts of closures that you might need in
@@ -65,10 +65,11 @@ def reference(flock, *indexes, **kwargs):
         except FlockException:
             raise
         except KeyError as e:
-            if 'default' in kwargs:
-                return kwargs['default']
+            if "default" in kwargs:
+                return kwargs["default"]
             else:
                 raise
+
     return de_ref
 
 

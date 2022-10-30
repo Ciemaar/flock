@@ -17,7 +17,7 @@ from flock.closures import lookup, reference
 from flock.core import FlockDict, FlockAggregator
 from flock.util import FlockException
 
-GENERAL = 'General'
+GENERAL = "General"
 HEROIC = "Heroic"
 MENTAL = "Mental"
 SPELL = "Spell"
@@ -41,83 +41,105 @@ def get_attribute_table():
     table = [x for x in dReader]
     for row in table:
         for lookup, value in row.items():
-            if lookup == ('', ''):
+            if lookup == ("", ""):
                 continue
             try:
                 value = float(Fraction(value))
             except ValueError:
-                if value[-1] == '%':
+                if value[-1] == "%":
                     value = float(value[:-1]) / 100
                 elif value[-4:] == "/day":
                     value = float(value[:-4])
                 elif value[-5:] == "/hour":
                     value = float(value[:-5])
-            _attribute_table[lookup][int(row[('', '')])] = value
+            _attribute_table[lookup][int(row[("", "")])] = value
     return _attribute_table
 
 
 def apply_attribute_table(character):
-    if 'Attribute_Bonuses' not in character:
-        character['Attribute_Bonuses'] = FlockDict()
+    if "Attribute_Bonuses" not in character:
+        character["Attribute_Bonuses"] = FlockDict()
     for (attribute, bonus), table in get_attribute_table().items():
-        character['Attribute_Bonuses'][bonus] = lookup(character, attribute, table)
-    character['base_bonuses'] = {'Spell Points Multiple': {'General': 1}}
-    character['bonuses'] = FlockAggregator([character['Attribute_Bonuses'], character['base_bonuses']], cross_total)
+        character["Attribute_Bonuses"][bonus] = lookup(character, attribute, table)
+    character["base_bonuses"] = {"Spell Points Multiple": {"General": 1}}
+    character["bonuses"] = FlockAggregator(
+        [character["Attribute_Bonuses"], character["base_bonuses"]], cross_total
+    )
 
 
 def apply_attribs(character):
-    for attribute in character['base_stats']:
-        character[attribute] = reference(character, 'base_stats', attribute)
+    for attribute in character["base_stats"]:
+        character[attribute] = reference(character, "base_stats", attribute)
 
 
 def apply_racial_bonuses(character):
     if character["Race"] == "Human":
         preVal = character["Spirit"]
         character["Spirit"] = lambda: preVal + 2
-        character.setdefault('Racial Bonuses', FlockDict())
-        character['Racial Bonuses']['heroics'] = 1
+        character.setdefault("Racial Bonuses", FlockDict())
+        character["Racial Bonuses"]["heroics"] = 1
     # print("character bonuses {ct_type} sources {sources} bonuses {rb_type}".format(
     #     ct_type=type(character.promises['bonuses']), rb_type=type(character.promises['Racial Bonuses']),
     #     sources=character.promises['bonuses'].sources))
-    character.promises['bonuses'].sources.append(character['Racial Bonuses'])
+    character.promises["bonuses"].sources.append(character["Racial Bonuses"])
 
 
 def apply_level_allotments(character):
-    if 'level' not in character:
-        character['level'] = 1
-    character.setdefault('points', FlockDict())
-    character['points'].setdefault('total', FlockDict({'universal': 10}))
-    character['points']['total']['mental'] = lambda: character['level'] * character['bonuses']['Mental Skill Points']
+    if "level" not in character:
+        character["level"] = 1
+    character.setdefault("points", FlockDict())
+    character["points"].setdefault("total", FlockDict({"universal": 10}))
+    character["points"]["total"]["mental"] = (
+        lambda: character["level"] * character["bonuses"]["Mental Skill Points"]
+    )
 
-    character['points']['total']['physical'] = lambda: character['level'] * character['bonuses']['Phy Skill Points']
-    character['points']['total']['heroic'] = lambda: character['level'] * (
-            character['level'] + 1 + character['bonuses']['heroics'])
+    character["points"]["total"]["physical"] = (
+        lambda: character["level"] * character["bonuses"]["Phy Skill Points"]
+    )
+    character["points"]["total"]["heroic"] = lambda: character["level"] * (
+            character["level"] + 1 + character["bonuses"]["heroics"]
+    )
 
 
 def apply_skills(character):
-    character.setdefault('skills', [])
-    for skill in list(character['skills']):
+    character.setdefault("skills", [])
+    for skill in list(character["skills"]):
         pass
         # character['skills'] = ......
 
-    character['points'].setdefault('spent', FlockDict())
-    character['points'].setdefault('available', FlockDict())
+    character["points"].setdefault("spent", FlockDict())
+    character["points"].setdefault("available", FlockDict())
 
-    character['points']['spent']['mental'] = lambda: sum(skill.cost for skill in character['skills'] if skill.isMental)
-    character['points']['available']['mental'] = lambda: character['points']['total']['mental'] - \
-                                                         character['points']['spent']['mental']
-    character['points']['spent']['physical'] = lambda: sum(
-        skill.cost for skill in character['skills'] if skill.isPhysical)
-    character['points']['available']['physical'] = lambda: character['points']['total']['physical'] - \
-                                                           character['points']['spent']['physical']
-    character['points']['spent']['heroic'] = lambda: sum(skill.cost for skill in character['skills'] if skill.isHeroic)
-    character['points']['available']['heroic'] = lambda: character['points']['total']['heroic'] - \
-                                                         character['points']['spent']['heroic']
-    character['points']['spent']['universal'] = lambda: -sum(
-        min(0, character['points']['available'][pt_type]) for pt_type in character['points']['available'] if
-        pt_type != 'universal')
-    character['points']['available']['universal'] = lambda: character['points']['total']['universal'] - \
-                                                            character['points']['spent']['universal']
+    character["points"]["spent"]["mental"] = lambda: sum(
+        skill.cost for skill in character["skills"] if skill.isMental
+    )
+    character["points"]["available"]["mental"] = (
+        lambda: character["points"]["total"]["mental"]
+                - character["points"]["spent"]["mental"]
+    )
+    character["points"]["spent"]["physical"] = lambda: sum(
+        skill.cost for skill in character["skills"] if skill.isPhysical
+    )
+    character["points"]["available"]["physical"] = (
+        lambda: character["points"]["total"]["physical"]
+                - character["points"]["spent"]["physical"]
+    )
+    character["points"]["spent"]["heroic"] = lambda: sum(
+        skill.cost for skill in character["skills"] if skill.isHeroic
+    )
+    character["points"]["available"]["heroic"] = (
+        lambda: character["points"]["total"]["heroic"]
+                - character["points"]["spent"]["heroic"]
+    )
+    character["points"]["spent"]["universal"] = lambda: -sum(
+        min(0, character["points"]["available"][pt_type])
+        for pt_type in character["points"]["available"]
+        if pt_type != "universal"
+    )
+    character["points"]["available"]["universal"] = (
+        lambda: character["points"]["total"]["universal"]
+                - character["points"]["spent"]["universal"]
+    )
 
 
 def cross_total(inputs):
@@ -133,9 +155,11 @@ def cross_total(inputs):
 
 
 def apply_heroics(character):
-    character['Heroic Bonuses'] = FlockAggregator(
-        lambda: (skill.bonuses for skill in character['skills'] if skill.isHeroic), cross_total)
-    character.promises['bonuses'].sources.append(character['Heroic Bonuses'])
+    character["Heroic Bonuses"] = FlockAggregator(
+        lambda: (skill.bonuses for skill in character["skills"] if skill.isHeroic),
+        cross_total,
+    )
+    character.promises["bonuses"].sources.append(character["Heroic Bonuses"])
 
 
 def apply_rules(character):
@@ -153,19 +177,21 @@ def apply_rules(character):
     # pprint(ret.resolve())
     apply_heroics(character)
     # pprint(ret.resolve())
-    character['Spell Points'] = FlockAggregator([character['bonuses']['Spell Points Multiple']],
-                                                lambda x: sum(x) * character['bonuses']['Spell Points'])
+    character["Spell Points"] = FlockAggregator(
+        [character["bonuses"]["Spell Points Multiple"]],
+        lambda x: sum(x) * character["bonuses"]["Spell Points"],
+    )
     return character
 
 
 def load_character(filename):
-    sheet = pickle.load(open(filename, 'rb'))
+    sheet = pickle.load(open(filename, "rb"))
     ret = FlockDict(sheet)
     return apply_rules(ret)
 
 
 def save_character(character, filename):
-    pickle.dump(character.shear(), open(filename, 'wb'))
+    pickle.dump(character.shear(), open(filename, "wb"))
 
 
 class Skill(object):
@@ -177,9 +203,13 @@ class Skill(object):
         self.level = max(level, cost)
 
     def __repr__(self):
-        return "Skill('{name}', {skill_type}, {cost}, {xp}, {level})".format(name=self.name, skill_type=self.skill_type,
-                                                                             cost=self.cost, xp=self.xp,
-                                                                             level=self.level)
+        return "Skill('{name}', {skill_type}, {cost}, {xp}, {level})".format(
+            name=self.name,
+            skill_type=self.skill_type,
+            cost=self.cost,
+            xp=self.xp,
+            level=self.level,
+        )
 
     @property
     def isPhysical(self):
@@ -201,12 +231,17 @@ class HeroicSkill(Skill):
         self.bonuses = bonuses
 
     def __repr__(self):
-        return "{cls_name}('{name}', '{skill_type}', {cost}, {level}, {bonuses})".format(name=self.name,
-                                                                                         skill_type=self.skill_type,
-                                                                                         cost=self.cost, xp=self.xp,
-                                                                                         level=self.level,
-                                                                                         bonuses=self.bonuses,
-                                                                                         cls_name=self.__class__.__name__)
+        return (
+            "{cls_name}('{name}', '{skill_type}', {cost}, {level}, {bonuses})".format(
+                name=self.name,
+                skill_type=self.skill_type,
+                cost=self.cost,
+                xp=self.xp,
+                level=self.level,
+                bonuses=self.bonuses,
+                cls_name=self.__class__.__name__,
+            )
+        )
 
     @property
     def xp(self):
@@ -216,32 +251,41 @@ class HeroicSkill(Skill):
 
 
 class Conduit(HeroicSkill):
-    def __init__(self, skill_type=HEROIC, cost=1, level=1, spell_type=''):
+    def __init__(self, skill_type=HEROIC, cost=1, level=1, spell_type=""):
         if not spell_type:
             spell_type = GENERAL
         self.spell_type = spell_type
         super().__init__(self.name, skill_type, cost, level, None)
 
     def __repr__(self):
-        return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(name=self.name,
-                                                                                  skill_type=self.skill_type,
-                                                                                  spell_type=self.spell_type,
-                                                                                  cost=self.cost, xp=self.xp,
-                                                                                  level=self.level,
-                                                                                  bonuses=self.bonuses,
-                                                                                  cls_name=self.__class__.__name__)
+        return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(
+            name=self.name,
+            skill_type=self.skill_type,
+            spell_type=self.spell_type,
+            cost=self.cost,
+            xp=self.xp,
+            level=self.level,
+            bonuses=self.bonuses,
+            cls_name=self.__class__.__name__,
+        )
 
     def __str__(self):
-        return "{name} x{cost} {bonuses})".format(name=self.name, skill_type=self.skill_type,
-                                                  spell_type=self.spell_type,
-                                                  cost=self.cost, xp=self.xp, level=self.level, bonuses=self.bonuses,
-                                                  cls_name=self.__class__.__name__)
+        return "{name} x{cost} {bonuses})".format(
+            name=self.name,
+            skill_type=self.skill_type,
+            spell_type=self.spell_type,
+            cost=self.cost,
+            xp=self.xp,
+            level=self.level,
+            bonuses=self.bonuses,
+            cls_name=self.__class__.__name__,
+        )
 
     @property
     def bonuses(self):
-        ret = {'Spell Points Multiple': {self.spell_type: self.cost}}
+        ret = {"Spell Points Multiple": {self.spell_type: self.cost}}
         if self.spell_type != GENERAL:
-            ret['Spell Points Bonus'] = {self.spell_type: self.cost}
+            ret["Spell Points Bonus"] = {self.spell_type: self.cost}
         return ret
 
     @bonuses.setter
@@ -251,9 +295,9 @@ class Conduit(HeroicSkill):
     @property
     def name(self):
         if self.spell_type == GENERAL:
-            return 'Conduit'
+            return "Conduit"
         else:
-            return 'Conduit -- %s' % self.spell_type
+            return "Conduit -- %s" % self.spell_type
 
     @name.setter
     def name(self, value):
@@ -261,19 +305,21 @@ class Conduit(HeroicSkill):
 
     @staticmethod
     def representer(dumper, data):
-        return dumper.represent_scalar(u'!conduit', '{cost} {spt}'.format(cost=data.cost, spt=data.spell_type))
+        return dumper.represent_scalar(
+            "!conduit", "{cost} {spt}".format(cost=data.cost, spt=data.spell_type)
+        )
 
     @classmethod
     def constructor(cls, loader, node):
         value = loader.construct_scalar(node)
-        parsed = value.split(' ')
+        parsed = value.split(" ")
         cost = int(parsed[0])
-        spell_type = ' '.join(parsed[1:])
+        spell_type = " ".join(parsed[1:])
         return cls(cost=cost, spell_type=spell_type)
 
 
 yaml.add_representer(Conduit, Conduit.representer)
-yaml.add_constructor(u'!conduit', Conduit.constructor)
+yaml.add_constructor("!conduit", Conduit.constructor)
 
 PhysicalSkill = partial(Skill, skill_type=PHYSICAL)
 MentalSkill = partial(Skill, skill_type=MENTAL)
@@ -281,10 +327,22 @@ WeaponSkill = partial(Skill, skill_type=WEAPON)
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='Mythica Character manager', )
+    parser = argparse.ArgumentParser(
+        description="Mythica Character manager",
+    )
 
-    parser.add_argument("--infile", type=argparse.FileType('r'), default=None, help="File to read character from.")
-    parser.add_argument("--outfile", type=argparse.FileType('w'), default=None, help="File to read character from.")
+    parser.add_argument(
+        "--infile",
+        type=argparse.FileType("r"),
+        default=None,
+        help="File to read character from.",
+    )
+    parser.add_argument(
+        "--outfile",
+        type=argparse.FileType("w"),
+        default=None,
+        help="File to read character from.",
+    )
     return parser
 
 
@@ -297,64 +355,73 @@ if __name__ == "__main__":
     char = FlockDict()
 
     if not opt.infile:
-        char['base_stats'] = {'Combat Skill': 13, 'Dexterity': 16, 'Health': 11, 'Intelligence': 18, 'Magic': 17,
-                              'Perception': 20, 'Presence': 11, 'Speed': 13, 'Spirit': 10, 'Strength': 10, 'Luck': 10}
-        char['practice_sessions'] = {'Combat Skill': 9, 'Dexterity': 2}
-        char['skills'] = [
-            Skill('Read Common', MENTAL),
-            Skill('Bargaining', MENTAL),
-            Skill('Begging', MENTAL, 2),
-            Skill('Appraisal', MENTAL),
-            Skill('Local History', MENTAL),
-            Skill('Endow Plants', MENTAL),
-            Skill('Fishing', MENTAL),
-            Skill('Artificer', MENTAL, 2),
-            Skill('Stiletto', WEAPON, 2),
-            Skill('Pick Pockets', PHYSICAL, 2),
-            Skill('Tumbling', PHYSICAL),
-            Skill('Disguise', PHYSICAL, 2),
-            Skill('Armor', PHYSICAL, xp=4),
-            Skill('Ranged Spell', WEAPON, 4, 1),
-            Skill('Rope Use', PHYSICAL),
-            Skill('Scattershot', SPELL),
-            Skill('Spell Craft', MENTAL, 2, xp=2, level=3),
-            Skill('Spell Theory', MENTAL, 2, xp=2, level=3),
-            Skill('Smithing', PHYSICAL, 2, 4),
-            Skill('Weapon Smithing', MENTAL, 2),
-            Skill('Dust Bolt', SPELL),
-            Skill('Deep Bolt', SPELL, xp=1),
-            Skill('Armor', SPELL, xp=4),
-            Skill('Jewel Smithing', MENTAL, cost=1, level=2),
-            Skill('Research', MENTAL),
-            Skill('Cartography', MENTAL, xp=1),
-            Skill('Ice Bolt', SPELL, cost=0, xp=4),
-            Skill('Geomancy', SPELL, cost=0, xp=2, level=2),
-            Skill('Detect Magic', SPELL, cost=0, xp=11),
-            Skill('Ice Bolt', SPELL, cost=0, xp=4),
-            Skill('Endow with Element', SPELL, level=2, xp=5, cost=0),
-            Skill('Imposing Image', SPELL, level=1),
-            Skill('Reality Leak', SPELL, level=2, cost=0),
-
-            HeroicSkill('First Circle Access', HEROIC, 1),
-            HeroicSkill('Nimble', HEROIC, 2, bonuses={'Dodge': 1, 'Parry': 1}),
-            HeroicSkill('First Tier Arcane', HEROIC, 1),
-            HeroicSkill('Second Tier Arcane', HEROIC, 3),
+        char["base_stats"] = {
+            "Combat Skill": 13,
+            "Dexterity": 16,
+            "Health": 11,
+            "Intelligence": 18,
+            "Magic": 17,
+            "Perception": 20,
+            "Presence": 11,
+            "Speed": 13,
+            "Spirit": 10,
+            "Strength": 10,
+            "Luck": 10,
+        }
+        char["practice_sessions"] = {"Combat Skill": 9, "Dexterity": 2}
+        char["skills"] = [
+            Skill("Read Common", MENTAL),
+            Skill("Bargaining", MENTAL),
+            Skill("Begging", MENTAL, 2),
+            Skill("Appraisal", MENTAL),
+            Skill("Local History", MENTAL),
+            Skill("Endow Plants", MENTAL),
+            Skill("Fishing", MENTAL),
+            Skill("Artificer", MENTAL, 2),
+            Skill("Stiletto", WEAPON, 2),
+            Skill("Pick Pockets", PHYSICAL, 2),
+            Skill("Tumbling", PHYSICAL),
+            Skill("Disguise", PHYSICAL, 2),
+            Skill("Armor", PHYSICAL, xp=4),
+            Skill("Ranged Spell", WEAPON, 4, 1),
+            Skill("Rope Use", PHYSICAL),
+            Skill("Scattershot", SPELL),
+            Skill("Spell Craft", MENTAL, 2, xp=2, level=3),
+            Skill("Spell Theory", MENTAL, 2, xp=2, level=3),
+            Skill("Smithing", PHYSICAL, 2, 4),
+            Skill("Weapon Smithing", MENTAL, 2),
+            Skill("Dust Bolt", SPELL),
+            Skill("Deep Bolt", SPELL, xp=1),
+            Skill("Armor", SPELL, xp=4),
+            Skill("Jewel Smithing", MENTAL, cost=1, level=2),
+            Skill("Research", MENTAL),
+            Skill("Cartography", MENTAL, xp=1),
+            Skill("Ice Bolt", SPELL, cost=0, xp=4),
+            Skill("Geomancy", SPELL, cost=0, xp=2, level=2),
+            Skill("Detect Magic", SPELL, cost=0, xp=11),
+            Skill("Ice Bolt", SPELL, cost=0, xp=4),
+            Skill("Endow with Element", SPELL, level=2, xp=5, cost=0),
+            Skill("Imposing Image", SPELL, level=1),
+            Skill("Reality Leak", SPELL, level=2, cost=0),
+            HeroicSkill("First Circle Access", HEROIC, 1),
+            HeroicSkill("Nimble", HEROIC, 2, bonuses={"Dodge": 1, "Parry": 1}),
+            HeroicSkill("First Tier Arcane", HEROIC, 1),
+            HeroicSkill("Second Tier Arcane", HEROIC, 3),
             Conduit(cost=5),
-            HeroicSkill('Uncanny Strike', HEROIC, 1, bonuses={'Hit Bonus': 1}),
-            HeroicSkill('Grevious Blow', HEROIC, 8, bonuses={'Base Damage': 1}),
-            HeroicSkill('Rapidity', HEROIC, 6, bonuses={'Initiative': -1}),
-            HeroicSkill('Vicous Blow', HEROIC, 1, bonuses={'Damage': 1}),
-            HeroicSkill('Stealth Strike', HEROIC, 3),
-            HeroicSkill('Aura Extension', HEROIC, 1),
-            HeroicSkill('3rd Tier', HEROIC, 5),
-            HeroicSkill('Nimble', HEROIC, 4, bonuses={'Dodge': 1, 'Parry': 1}),
-            HeroicSkill('Flurry', HEROIC, 6),
-            HeroicSkill('2nd Circle', HEROIC, 10),
-            HeroicSkill('4th Tier', HEROIC, 10),
-
+            HeroicSkill("Uncanny Strike", HEROIC, 1, bonuses={"Hit Bonus": 1}),
+            HeroicSkill("Grevious Blow", HEROIC, 8, bonuses={"Base Damage": 1}),
+            HeroicSkill("Rapidity", HEROIC, 6, bonuses={"Initiative": -1}),
+            HeroicSkill("Vicous Blow", HEROIC, 1, bonuses={"Damage": 1}),
+            HeroicSkill("Stealth Strike", HEROIC, 3),
+            HeroicSkill("Aura Extension", HEROIC, 1),
+            HeroicSkill("3rd Tier", HEROIC, 5),
+            HeroicSkill("Nimble", HEROIC, 4, bonuses={"Dodge": 1, "Parry": 1}),
+            HeroicSkill("Flurry", HEROIC, 6),
+            HeroicSkill("2nd Circle", HEROIC, 10),
+            HeroicSkill("4th Tier", HEROIC, 10),
         ]
-        char['Race'] = "Human"
-        char['level'] = 8
+        char["Race"] = "Human"
+        char["level"] = 8
     else:
         for key, value in yaml.load(opt.infile).items():
             char[key] = value
@@ -363,7 +430,7 @@ if __name__ == "__main__":
     char.check()
     # pprint(char.shear())
     sheared = char.shear()
-    for attribute in chain([], sheared['base_stats'].keys()):
+    for attribute in chain([], sheared["base_stats"].keys()):
         print("%s: %s" % (attribute, sheared.pop(attribute)))
     pprint(sheared)
     if opt.outfile:

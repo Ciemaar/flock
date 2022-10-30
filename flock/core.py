@@ -1,16 +1,16 @@
-import warnings
-from collections import defaultdict, OrderedDict
-from copy import copy
-
 import inspect
+import warnings
 from abc import abstractmethod, ABCMeta
+from collections import defaultdict, OrderedDict
 from collections.abc import MutableMapping, Mapping, MutableSequence, Iterable
+from copy import copy
 from itertools import chain
+from typing import Sequence
 
 from flock.util import FlockException
 from .util import is_rule
 
-__author__ = 'Andy Fundinger'
+__author__ = "Andy Fundinger"
 
 """
 >>> myList = []
@@ -58,19 +58,17 @@ class FlockBase(Iterable, metaclass=ABCMeta):
 
 
 class MutableFlock(FlockBase):
-    '''The abstract base class for flocks with items that can be set
-    '''
+    """The abstract base class for flocks with items that can be set"""
 
     def __init__(self, root=None):
-        """
-        """
+        """ """
         super(MutableFlock, self).__init__()
         self.root = root
 
     @abstractmethod
     def __setitem__(self, key, val):
         """Set a value in a MutableFlock
-        
+
         some amount of processing may need to be done."""
         pass
 
@@ -94,7 +92,7 @@ class MutableFlock(FlockBase):
         if callable(value) and len(inspect.signature(value).parameters) == 0:
             ret = value
             # if it's a closure and there is something in there
-            if hasattr(value, '__closure__') and value.__closure__:
+            if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
                     if isinstance(closure.cell_contents, MutableFlock):
                         closure.cell_contents.peers.add(self)
@@ -126,11 +124,10 @@ class MutableFlock(FlockBase):
 
 
 class PromiseFlock(MutableFlock):
-    '''A convenience class for default implementations of methods from MutableFlock'''
+    """A convenience class for default implementations of methods from MutableFlock"""
 
     def __init__(self, root=None):
-        """
-        """
+        """ """
         super(PromiseFlock, self).__init__(root=root)
         self.promises = {}
 
@@ -139,7 +136,7 @@ class PromiseFlock(MutableFlock):
         Set a value in a MutableFlock
 
         default implementation:
-        
+
         if value is callable it will be added directly to promises, if not it will be converted to a simple lambda.
         Mappings are converted into MutableFlocks, any other handling should be dealt with via direct access to the promises dict.
         """
@@ -161,7 +158,7 @@ class PromiseFlock(MutableFlock):
             try:
                 ret = promise()
             except Exception as e:
-                raise FlockException('Error calculating key:%s' % key) from e
+                raise FlockException("Error calculating key:%s" % key) from e
             self.cache[key] = ret
             return ret
 
@@ -177,11 +174,11 @@ class PromiseFlock(MutableFlock):
 
 
 class FlockList(PromiseFlock, MutableSequence):
-    def __init__(self, inlist=(), root=None):
+    def __init__(self, inlist: Sequence = (), root: FlockBase = None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
-        :type inlist: MutableMapping to be used to create the new FlockList
+        :type inlist: List to be used to create the new FlockList
 
         Values from indict are assigned to self one at a time.
 
@@ -209,8 +206,8 @@ class FlockList(PromiseFlock, MutableSequence):
         self.clear_cache()
 
     def get_relatives(self):
-        rels = {promise for promise in self.promises if hasattr(promise, 'clear_cache')}
-        rels.update(peer for peer in self.peers if hasattr(peer, 'clear_cache'))
+        rels = {promise for promise in self.promises if hasattr(promise, "clear_cache")}
+        rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
         return rels
 
     def check(self, path=[]):
@@ -224,7 +221,7 @@ class FlockList(PromiseFlock, MutableSequence):
         """
         ret = {}
         for key, value in enumerate(self.promises):
-            if hasattr(value, 'check'):
+            if hasattr(value, "check"):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
@@ -243,7 +240,7 @@ class FlockList(PromiseFlock, MutableSequence):
         """
         ret = []
         for key, promise in enumerate(self.promises):
-            if hasattr(promise, 'shear'):
+            if hasattr(promise, "shear"):
                 ret.append(promise.shear(record_errors=record_errors))
             elif key in self.cache:
                 ret.append(self.cache[key])
@@ -269,11 +266,11 @@ class FlockDict(PromiseFlock, MutableMapping):
     The actual lambdas must take 0 params and are accessible in the .promises attribute
     """
 
-    def __init__(self, indict={}, root=None):
+    def __init__(self, indict: Mapping | list[tuple] = {}, root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
-        :type indict: MutableMapping to be used to create the new FlockDict
+        :type indict: Mapping to be used to create the new FlockDict
 
         Values from indict are assigned to self one at a time.
 
@@ -283,12 +280,18 @@ class FlockDict(PromiseFlock, MutableMapping):
         self.cache = {}
         self.root = root
         self.peers = set()
-        for key in indict:
-            self[key] = indict[key]
+        if not hasattr(indict, "items"):
+            indict = dict(indict)
+        for key, value in indict.items():
+            self[key] = value
 
     def get_relatives(self):
-        rels = {promise for promise in self.promises.values() if hasattr(promise, 'clear_cache')}
-        rels.update(peer for peer in self.peers if hasattr(peer, 'clear_cache'))
+        rels = {
+            promise
+            for promise in self.promises.values()
+            if hasattr(promise, "clear_cache")
+        }
+        rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
         return rels
 
     def __iter__(self):
@@ -296,6 +299,9 @@ class FlockDict(PromiseFlock, MutableMapping):
 
     def __len__(self):
         return len(self.promises)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.shear()},{self.root})"
 
     #
     # def __hash__(self):
@@ -312,7 +318,7 @@ class FlockDict(PromiseFlock, MutableMapping):
         """
         ret = {}
         for key, value in self.promises.items():
-            if hasattr(value, 'check'):
+            if hasattr(value, "check"):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
@@ -332,7 +338,7 @@ class FlockDict(PromiseFlock, MutableMapping):
         ret = OrderedDict()
         for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
             promise = self.promises[key]
-            if hasattr(promise, 'shear'):
+            if hasattr(promise, "shear"):
                 ret[key] = promise.shear(record_errors=record_errors)
             elif key in self.cache:
                 ret[key] = self.cache[key]
@@ -355,7 +361,7 @@ class FlockDict(PromiseFlock, MutableMapping):
         return {k: v for k, v in self.promises.items() if is_rule(v)}
 
 
-class Aggregator():
+class Aggregator:
     """
     Aggregate across parallel maps.
 
@@ -369,7 +375,10 @@ class Aggregator():
         :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
         :type fn: function must take a generator, there is no constraint on the return value
         """
-        warnings.warn('Aggregator is generally replaced with FlockAggregator and will be removed.', DeprecationWarning)
+        warnings.warn(
+            "Aggregator is generally replaced with FlockAggregator and will be removed.",
+            DeprecationWarning,
+        )
         ##TODO:  Allow lists as arguments
         self.sources = sources
         self.function = fn
@@ -409,12 +418,13 @@ class Aggregator():
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(e=str(e),
-                                                                                                          value=value,
-                                                                                                          path=path + [
-                                                                                                              key],
-                                                                                                          sourceNo=sourceNo,
-                                                                                                          function=self.function.__name__)
+                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                            e=str(e),
+                            value=value,
+                            path=path + [key],
+                            sourceNo=sourceNo,
+                            function=self.function.__name__,
+                        )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
                         # raise
         return ret
@@ -437,7 +447,7 @@ class Aggregator():
         return ret
 
 
-class MetaAggregator():
+class MetaAggregator:
     """
     Misnamed class that should be merged with the normal aggregator
 
@@ -445,13 +455,17 @@ class MetaAggregator():
     """
 
     def __init__(self, source_function, fn):
-        warnings.warn('MetaAggregator is generally replaced with FlockAggregator and will be removed.',
-                      DeprecationWarning)
+        warnings.warn(
+            "MetaAggregator is generally replaced with FlockAggregator and will be removed.",
+            DeprecationWarning,
+        )
         self.source_function = source_function
         self.function = fn
 
     def __getitem__(self, key):
-        return lambda: self.function(source[key] for source in self.source_function() if key in source)
+        return lambda: self.function(
+            source[key] for source in self.source_function() if key in source
+        )
 
     # def __getattr__(self, key):
     #     return self[key]()
@@ -461,7 +475,9 @@ class MetaAggregator():
 
     def shear(self, record_errors=False):
         ret = {}
-        for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
+        for key in set(
+                chain.from_iterable(source.keys() for source in self.source_function())
+        ):
             try:
                 ret[key] = self[key]()
             except Exception as e:
@@ -501,15 +517,25 @@ class FlockAggregator(FlockBase, Mapping):
         :return: value as returned by the function for that key.
         """
         try:
-            cross_items = [source[key] for source in self.get_sources() if key in source]
+            cross_items = [
+                source[key] for source in self.get_sources() if key in source
+            ]
             if not cross_items:
-                raise KeyError('Key %s not found' % key)
+                raise KeyError("Key %s not found" % key)
             return self.function(cross_items)
         except KeyError:
             raise
         except Exception as e:
-            raise FlockException('Error Calculating %s:  ' % key + str(e) + '\n' + ','.join(
-                '%s:%s' % (source, source[key]) for source in self.get_sources() if key in source)) from e
+            raise FlockException(
+                "Error Calculating %s:  " % key
+                + str(e)
+                + "\n"
+                + ",".join(
+                    "%s:%s" % (source, source[key])
+                    for source in self.get_sources()
+                    if key in source
+                )
+            ) from e
 
     def __len__(self):
         return sum(1 for x in self.__iter__())
@@ -520,7 +546,9 @@ class FlockAggregator(FlockBase, Mapping):
                 return iter(set(self.source_keys()))
             else:
                 return iter(self.source_keys)
-        return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
+        return iter(
+            set(chain.from_iterable(source.keys() for source in self.get_sources()))
+        )
 
     def get_sources(self):
         if isinstance(self.sources, Mapping):
@@ -546,12 +574,13 @@ class FlockAggregator(FlockBase, Mapping):
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(e=str(e),
-                                                                                                          value=value,
-                                                                                                          path=path + [
-                                                                                                              key],
-                                                                                                          sourceNo=sourceNo,
-                                                                                                          function=self.function.__name__)
+                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                            e=str(e),
+                            value=value,
+                            path=path + [key],
+                            sourceNo=sourceNo,
+                            function=self.function.__name__,
+                        )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
                         # raise
         return ret
