@@ -220,14 +220,14 @@ class FlockCacheTestCase(unittest.TestCase):
             "dest": reference(self.flock["nested_source"], "source")
         }
         assert (
-                self.flock["dest"] == self.flock["nested_dest"]["dest"] == "Original Value"
+            self.flock["dest"] == self.flock["nested_dest"]["dest"] == "Original Value"
         )
         self.flock["source"] = "1st New Value"
         assert self.flock["dest"] == "1st New Value"
         assert (
-                self.flock["nested_dest"]["dest"]
-                == self.flock["jump_dest"]["dest"]
-                == "Original Value"
+            self.flock["nested_dest"]["dest"]
+            == self.flock["jump_dest"]["dest"]
+            == "Original Value"
         )
         self.flock["nested_source"]["source"] = "2nd New Value"
         assert self.flock["dest"] == "1st New Value"
@@ -244,16 +244,16 @@ class FlockCacheTestCase(unittest.TestCase):
             "dest": reference(self.flock["nested_source"], "source")
         }
         assert (
-                self.flock2["dest"]
-                == self.flock2["nested_dest"]["dest"]
-                == "Original Value"
+            self.flock2["dest"]
+            == self.flock2["nested_dest"]["dest"]
+            == "Original Value"
         )
         self.flock["source"] = "1st New Value"
         assert self.flock2["dest"] == "1st New Value"
         assert (
-                self.flock2["nested_dest"]["dest"]
-                == self.flock2["jump_dest"]["dest"]
-                == "Original Value"
+            self.flock2["nested_dest"]["dest"]
+            == self.flock2["jump_dest"]["dest"]
+            == "Original Value"
         )
         self.flock["nested_source"]["source"] = "2nd New Value"
         assert self.flock2["dest"] == "1st New Value"

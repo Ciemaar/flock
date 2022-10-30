@@ -8,6 +8,7 @@ import flock
 import flock.closures
 import flock.core
 import flock.util
+
 # TODO: replace st.nothing() with appropriate strategies
 from flock import FlockDict
 
@@ -90,5 +91,6 @@ def test_fuzz_patch(map_obj, key_list, val):
             if callable(val) and isinstance(map_iter, FlockDict):
                 val = val()
             assert stored_value == val or (math.isnan(stored_value) and math.isnan(val))
+
 
 # TODO: replace st.nothing() with appropriate strategies

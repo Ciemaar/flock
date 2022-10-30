@@ -97,7 +97,7 @@ def apply_level_allotments(character):
         lambda: character["level"] * character["bonuses"]["Phy Skill Points"]
     )
     character["points"]["total"]["heroic"] = lambda: character["level"] * (
-            character["level"] + 1 + character["bonuses"]["heroics"]
+        character["level"] + 1 + character["bonuses"]["heroics"]
     )
 
 
@@ -115,21 +115,21 @@ def apply_skills(character):
     )
     character["points"]["available"]["mental"] = (
         lambda: character["points"]["total"]["mental"]
-                - character["points"]["spent"]["mental"]
+        - character["points"]["spent"]["mental"]
     )
     character["points"]["spent"]["physical"] = lambda: sum(
         skill.cost for skill in character["skills"] if skill.isPhysical
     )
     character["points"]["available"]["physical"] = (
         lambda: character["points"]["total"]["physical"]
-                - character["points"]["spent"]["physical"]
+        - character["points"]["spent"]["physical"]
     )
     character["points"]["spent"]["heroic"] = lambda: sum(
         skill.cost for skill in character["skills"] if skill.isHeroic
     )
     character["points"]["available"]["heroic"] = (
         lambda: character["points"]["total"]["heroic"]
-                - character["points"]["spent"]["heroic"]
+        - character["points"]["spent"]["heroic"]
     )
     character["points"]["spent"]["universal"] = lambda: -sum(
         min(0, character["points"]["available"][pt_type])
@@ -138,7 +138,7 @@ def apply_skills(character):
     )
     character["points"]["available"]["universal"] = (
         lambda: character["points"]["total"]["universal"]
-                - character["points"]["spent"]["universal"]
+        - character["points"]["spent"]["universal"]
     )
 
 

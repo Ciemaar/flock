@@ -476,7 +476,7 @@ class MetaAggregator:
     def shear(self, record_errors=False):
         ret = {}
         for key in set(
-                chain.from_iterable(source.keys() for source in self.source_function())
+            chain.from_iterable(source.keys() for source in self.source_function())
         ):
             try:
                 ret[key] = self[key]()
