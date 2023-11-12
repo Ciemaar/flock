@@ -13,7 +13,8 @@ from pprint import pprint
 
 import yaml
 
-from flock.closures import lookup, reference
+from closure_collector.closures import index_reference
+from flock.closures import lookup
 from flock.core import FlockDict, FlockAggregator
 from flock.util import FlockException
 
@@ -69,7 +70,7 @@ def apply_attribute_table(character):
 
 def apply_attribs(character):
     for attribute in character["base_stats"]:
-        character[attribute] = reference(character, "base_stats", attribute)
+        character[attribute] = index_reference(character, "base_stats", attribute)
 
 
 def apply_racial_bonuses(character):

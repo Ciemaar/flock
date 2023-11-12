@@ -1,19 +1,52 @@
 import unittest
 import uuid as uuid
 
+import pytest
+
+from closure_collector.closures import index_reference, attr_reference, toggle
+from closure_collector.core import ShearedBase, ClosureCollector
 from flock import FlockDict
-from flock.closures import reference, lookup, toggle
+from flock.closures import lookup
 
 
-class ClosureTestCase(unittest.TestCase):
+class ClosureAttrTestCase(unittest.TestCase):
+    def __init__(self, methodName="runTest"):
+        super().__init__(methodName)
+        self.base_obj = ShearedBase()
+
+    def test_attr_reference(self):
+        probe = uuid.uuid4()
+        self.base_obj.x = probe
+        assert probe is attr_reference(self.base_obj, "x")()
+
+    def test_attr_reference_default(self):
+        probe = uuid.uuid4()
+        assert probe is attr_reference(self.base_obj, "x", default=probe)()
+
+    def test_attr_reference_no_default(self):
+        probe = uuid.uuid4()
+        with pytest.raises(AttributeError):
+            assert probe is attr_reference(self.base_obj, "x")()
+
+
+class ClosureIndexTestCase(unittest.TestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.base_dict = {}
 
-    def test_reference(self):
+    def test_index_reference(self):
         probe = uuid.uuid4()
         self.base_dict["x"] = probe
-        assert probe is reference(self.base_dict, "x")()
+        assert probe is index_reference(self.base_dict, "x")()
+
+    def test_index_reference_default(self):
+        probe = uuid.uuid4()
+        assert probe is index_reference(self.base_dict, "x", default=probe)()
+
+    def test_attr_reference_no_default(self):
+        probe = uuid.uuid4()
+        with pytest.raises(KeyError):
+            assert probe is index_reference(self.base_dict, "x")()
 
     def test_lookup(self):
         probe = uuid.uuid4()
@@ -27,10 +60,16 @@ class ClosureTestCase(unittest.TestCase):
         self.assertEqual([tt() for x in range(4)], [True, False, True, False])
 
 
-class FlockClosureTestCase(ClosureTestCase):
+class FlockClosureTestCase(ClosureIndexTestCase):
     def __init__(self, methodName="runTest"):
         super().__init__(methodName)
         self.base_dict = FlockDict()
+
+
+class ClosureCollectorTestCase(ClosureAttrTestCase):
+    def __init__(self, methodName="runTest"):
+        super().__init__(methodName)
+        self.base_obj = ClosureCollector()
 
 
 if __name__ == "__main__":

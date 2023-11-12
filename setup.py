@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name="closure_collector",
     version="0.0.2",
-    packages=["flock"],
+    packages=["flock", "closure_collector"],
     url="http://ciemaar.com/flock",
     license="GPL v3",
     author="Andy Fundinger",

@@ -2,7 +2,7 @@ from types import FunctionType
 
 from pytest import raises
 
-from flock.closures import toggle, reference
+from closure_collector.closures import index_reference, toggle
 from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
 from flock.util import FlockException
 
@@ -212,12 +212,12 @@ class FlockCacheTestCase(unittest.TestCase):
         self.flock["nested_source"] = {"source": "Original Value"}
 
     def test_nested_cache(self):
-        self.flock["dest"] = reference(self.flock, "source")
+        self.flock["dest"] = index_reference(self.flock, "source")
         self.flock["nested_dest"] = {
-            "dest": reference(self.flock, "nested_source", "source")
+            "dest": index_reference(self.flock, "nested_source", "source")
         }
         self.flock["jump_dest"] = {
-            "dest": reference(self.flock["nested_source"], "source")
+            "dest": index_reference(self.flock["nested_source"], "source")
         }
         assert (
             self.flock["dest"] == self.flock["nested_dest"]["dest"] == "Original Value"
@@ -236,12 +236,12 @@ class FlockCacheTestCase(unittest.TestCase):
 
     def test_split_cache(self):
         self.flock2 = FlockDict()
-        self.flock2["dest"] = reference(self.flock, "source")
+        self.flock2["dest"] = index_reference(self.flock, "source")
         self.flock2["nested_dest"] = {
-            "dest": reference(self.flock, "nested_source", "source")
+            "dest": index_reference(self.flock, "nested_source", "source")
         }
         self.flock2["jump_dest"] = {
-            "dest": reference(self.flock["nested_source"], "source")
+            "dest": index_reference(self.flock["nested_source"], "source")
         }
         assert (
             self.flock2["dest"]

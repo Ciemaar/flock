@@ -1,6 +1,6 @@
-from flock.util import FlockException
-
 __author__ = "Andy Fundinger"
+
+from closure_collector.closures import index_reference
 
 """
 The closures module provides helper functions for creating common sorts of closures that you might need in
@@ -33,6 +33,7 @@ and the names are separately at:
 >>> sgPrinter.__code__.co_freevars
 ('param',)
 """
+reference = index_reference  # preserving old name/location
 
 
 def lookup(mapping, index, table):
@@ -44,40 +45,3 @@ def lookup(mapping, index, table):
     :return:the 0 parameter lambada-closure that returns value as found in the table
     """
     return lambda: table.get(mapping[index], None)
-
-
-def reference(flock, *indexes, **kwargs):
-    """
-    return closure that references values stored elsewhere in the Flock
-    :type flock: flock.core.FlockDict
-    :param indexes: lambdas to be resolved in order (tree walking)
-    :return: 0 parameter function with all parameters included as a closure, returns referenced value
-    """
-
-    def de_ref():
-        currObj = flock
-
-        try:
-            # recursively resolve indexes
-            for index in indexes:
-                currObj = currObj[index]
-            return currObj
-        except FlockException:
-            raise
-        except KeyError as e:
-            if "default" in kwargs:
-                return kwargs["default"]
-            else:
-                raise
-
-    return de_ref
-
-
-def toggle():
-    store = [False]
-
-    def inner_toggle():
-        store[0] = not store[0]
-        return store[0]
-
-    return inner_toggle
