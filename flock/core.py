@@ -5,7 +5,7 @@ from collections import defaultdict, OrderedDict
 from collections.abc import MutableMapping, Mapping, MutableSequence, Iterable
 from copy import copy
 from itertools import chain
-from typing import Sequence
+from typing import Sequence, Union
 
 from flock.util import FlockException
 from .util import is_rule
@@ -266,7 +266,7 @@ class FlockDict(PromiseFlock, MutableMapping):
     The actual lambdas must take 0 params and are accessible in the .promises attribute
     """
 
-    def __init__(self, indict: Mapping | list[tuple] = {}, root=None):
+    def __init__(self, indict: Union[list[tuple], Mapping] = {}, root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
