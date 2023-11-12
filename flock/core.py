@@ -7,6 +7,7 @@ from copy import copy
 from itertools import chain
 from typing import Sequence, Union
 
+from closure_collector.core import CCBase
 from flock.util import FlockException
 from .util import is_rule
 
@@ -23,7 +24,7 @@ __author__ = "Andy Fundinger"
 """
 
 
-class FlockBase(Iterable, metaclass=ABCMeta):
+class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
     @abstractmethod
     def check(self, path):
         """
@@ -34,7 +35,7 @@ class FlockBase(Iterable, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def shear(self, record_errors=False):
+    def shear(self, record_errors=False) -> Iterable:
         """
         Convert this Mapping into a simple dict
 
