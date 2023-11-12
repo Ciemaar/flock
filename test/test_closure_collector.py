@@ -1,4 +1,4 @@
-from pytest import raises
+import unittest
 
 from pytest import raises
 
@@ -8,12 +8,10 @@ from closure_collector.core import (
     DynamicClosureCollector,
 )
 from closure_collector.util import ClosureCollectorException
+from flock import FlockDict
 
 __author__ = "Andy Fundinger"
 
-import unittest
-
-from flock import FlockDict
 
 TEST_LIST = [True, False, None]
 
