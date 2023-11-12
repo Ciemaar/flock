@@ -8,9 +8,33 @@ import flock
 import flock.closures
 import flock.core
 import flock.util
-
-# TODO: replace st.nothing() with appropriate strategies
 from flock import FlockDict
+
+MAX_TEST_LENGTH = 100
+
+
+@given(
+    inlist=st.one_of(
+        st.binary().map(memoryview),
+        st.builds(range, st.integers(min_value=0, max_value=MAX_TEST_LENGTH)),
+        st.builds(
+            lambda start, size: range(start, start + size),
+            st.integers(),
+            st.integers(min_value=0, max_value=MAX_TEST_LENGTH),
+        ),
+        st.builds(
+            lambda start, size, step: range(start, start + size * step, step),
+            st.integers(),
+            st.integers(min_value=0, max_value=MAX_TEST_LENGTH),
+            st.integers(min_value=1, max_value=MAX_TEST_LENGTH),
+        ),
+        st.text(),
+        st.builds(tuple),
+    ),
+    root=st.none(),
+)
+def test_fuzz_FlockList(inlist, root):
+    flock.core.FlockList(inlist=inlist, root=root)
 
 
 @given(
@@ -91,6 +115,3 @@ def test_fuzz_patch(map_obj, key_list, val):
             if callable(val) and isinstance(map_iter, FlockDict):
                 val = val()
             assert stored_value == val or (math.isnan(stored_value) and math.isnan(val))
-
-
-# TODO: replace st.nothing() with appropriate strategies
