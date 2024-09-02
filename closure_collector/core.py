@@ -2,7 +2,7 @@ import inspect
 from abc import ABCMeta, abstractmethod
 from typing import Any, Iterable
 
-from closure_collector.util import ClosureCollectorException
+from closure_collector.util import ClosureCollectorException, is_rule, rebind
 
 
 class ShearedBase:
@@ -230,4 +230,19 @@ class ClosureCollector(ClosurePromiseCollector):
                         setattr(ret, key, e)
                     else:
                         raise
+        return ret
+
+    def dataset(self):
+        ret = ShearedBase()
+        for k, v in self.promises.items():
+            if not is_rule(v):
+                setattr(ret, k, v())
+        return ret
+
+    def ruleset(self):
+        ret = ClosureCollector()
+        for k, v in self.promises.items():
+            if is_rule(v):
+                rebind(v, self, ret)
+                setattr(ret, k, v)
         return ret

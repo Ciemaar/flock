@@ -8,8 +8,8 @@ from itertools import chain
 from typing import Sequence, Union
 
 from closure_collector.core import CCBase, DynamicClosureCollector
+from closure_collector.util import is_rule
 from flock.util import FlockException
-from .util import is_rule
 
 __author__ = "Andy Fundinger"
 

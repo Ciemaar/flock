@@ -4,6 +4,7 @@ from collections.abc import MutableMapping
 from _pytest.python_api import raises
 from hypothesis import given, strategies as st, settings
 
+import closure_collector.util
 import flock
 import flock.closures
 import flock.core
@@ -57,12 +58,12 @@ def test_fuzz_FlockDict(indict, root):
 
 @given(func=st.functions())
 def test_fuzz_is_rule(func):
-    assert flock.core.is_rule(func=func)
+    assert closure_collector.util.is_rule(func=func)
 
 
 @given(var=st.one_of(st.integers(), st.floats(), st.characters(), st.text()))
 def test_fuzz_is_not_rule(var):
-    assert not flock.core.is_rule(func=var)
+    assert not closure_collector.util.is_rule(func=var)
 
 
 @given(

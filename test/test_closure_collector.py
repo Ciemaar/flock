@@ -6,12 +6,12 @@ from closure_collector.closures import attr_reference, toggle
 from closure_collector.core import (
     ClosureCollector,
     DynamicClosureCollector,
+    ShearedBase,
 )
 from closure_collector.util import ClosureCollectorException
 from flock import FlockDict
 
 __author__ = "Andy Fundinger"
-
 
 TEST_LIST = [True, False, None]
 
@@ -126,6 +126,14 @@ class BasicClosureCollectorTestCase(unittest.TestCase):
         assert sheared.cat == "Abbey"
         assert sheared.three == 15
 
+        ds = self.closure_collector.dataset()
+        assert ds.cat == "Abbey"
+        assert ds.three == 15
+        assert len(self.closure_collector.ruleset().promises) == len(
+            ClosureCollector().promises
+        )
+        assert not self.closure_collector.ruleset()
+
         self.closure_collector.mimi = ClosureCollector(species="cat", rank=2)
         sheared = self.closure_collector.shear()
         assert self.closure_collector.mimi.species == sheared.mimi.species == "cat"
@@ -137,6 +145,29 @@ class BasicClosureCollectorTestCase(unittest.TestCase):
         self.closure_collector.toggle2 = t
         sheared = self.closure_collector.shear()
         self.assertEqual(sheared.toggle, not sheared.toggle2)
+
+        assert len(self.closure_collector.dataset().__dict__) == len(
+            ShearedBase().__dict__
+        )
+        assert not self.closure_collector.dataset()
+        assert len(self.closure_collector.ruleset().promises) == 2 + len(
+            ClosureCollector().promises
+        )
+
+    def test_ruleset_rebind(self):
+        self.closure_collector.value = 42
+        self.closure_collector.reference = attr_reference(
+            self.closure_collector, "value"
+        )
+        assert self.closure_collector.reference == 42
+        rs = self.closure_collector.ruleset()
+        assert not hasattr(rs, "value")
+        with raises(AttributeError):
+            assert (
+                rs.reference != 42
+            ), "Got value rather than expected error resolving reference"
+        rs.value = 38
+        assert rs.reference == 38
 
 
 class ClosureCollectorCacheTestCase(unittest.TestCase):

@@ -3,8 +3,8 @@ import unittest
 
 import pytest
 
+from closure_collector.util import is_rule
 from flock import FlockDict
-from flock.util import is_rule
 from flock.util import patch
 
 log = logging.getLogger(__name__)
