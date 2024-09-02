@@ -6,7 +6,8 @@ from closure_collector.util import ClosureCollectorException
 
 
 class ShearedBase:
-    pass
+    def __bool__(self):
+        return bool(self.__dict__)
 
 
 class CCBase(metaclass=ABCMeta):
@@ -129,6 +130,9 @@ class ClosurePromiseCollector(DynamicClosureCollector):
     def __delattr__(self, item):
         del self.promises[item]
         self.clear_cache()
+
+    def __bool__(self):
+        return bool(self.promises)
 
     def make_callable(self, value):
         if callable(value) and len(inspect.signature(value).parameters) == 0:
