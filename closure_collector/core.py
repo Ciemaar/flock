@@ -294,9 +294,12 @@ class ClosureReduction:
                 + str(e)
                 + "\n"
                 + ",".join(
-                    "%s:%s" % (source, source[item])
+                    "%s:%s"
+                    % (
+                        source,
+                        getattr(source, item, "NO VALUE"),
+                    )
                     for source in self.get_sources()
-                    if item in source
                 )
             ) from e
 
