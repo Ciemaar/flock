@@ -6,6 +6,8 @@ from closure_collector.util import ClosureCollectorException, is_rule, rebind
 
 
 class ShearedBase:
+    """A basic, dynamic object used as a return type from shear() functions"""
+
     def __bool__(self):
         return bool(self.__dict__)
 
