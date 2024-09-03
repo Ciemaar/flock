@@ -2,6 +2,11 @@ from closure_collector.util import ClosureCollectorException
 from flock import FlockException
 
 
+def collection_reduce(int_collection, func):
+    """Create a closure that consists of lazily executing a function on an iterable"""
+    return lambda: func(int_collection)
+
+
 def index_reference(flock, *indexes, **kwargs):
     """
     return closure that references values stored elsewhere in a mapping

@@ -3,10 +3,23 @@ import uuid as uuid
 
 import pytest
 
-from closure_collector.closures import index_reference, attr_reference, toggle
+from closure_collector.closures import (
+    index_reference,
+    attr_reference,
+    toggle,
+    collection_reduce,
+)
 from closure_collector.core import ShearedBase, ClosureCollector
 from flock import FlockDict
 from flock.closures import lookup
+
+
+def test_list_reduce():
+    test_list = [1, 2, 3]
+    test = collection_reduce(test_list, sum)
+    assert test() == 6
+    test_list[0] = 3
+    assert test() == 8
 
 
 class ClosureAttrTestCase(unittest.TestCase):

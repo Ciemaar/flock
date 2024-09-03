@@ -250,3 +250,88 @@ class ClosureCollector(ClosurePromiseCollector):
                 rebind(v, self, ret)
                 setattr(ret, k, v)
         return ret
+
+
+class ClosureReduction:
+    """
+    Aggregate across parallel maps.
+
+    :type sources: one of:
+        - a Mapping the values in sources are used as the list above, keys are ignored
+        - a callable that returns the list of sources
+        - a list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
+
+        Precedence is Mapping, callable, then list
+
+    :type fn: function must take a generator, there is no constraint on the return value
+    """
+
+    def __init__(self, sources, fn, keys=None):
+        self.sources = sources
+        self.function = fn
+
+    def __getattr__(self, item):
+        """
+        Perform the reduction for the given key across all the sources.
+
+        :type key: str key to aggregate
+        :return: value as returned by the function for that key.
+        """
+        try:
+            cross_items = [
+                getattr(source, item)
+                for source in self.get_sources()
+                if hasattr(source, item)
+            ]
+            if not cross_items:
+                raise AttributeError("Attribute %s not found" % item)
+            return self.function(cross_items)
+        except AttributeError:
+            raise
+        except Exception as e:
+            raise ClosureCollectorException(
+                "Error Calculating %s:  " % item
+                + str(e)
+                + "\n"
+                + ",".join(
+                    "%s:%s" % (source, source[item])
+                    for source in self.get_sources()
+                    if item in source
+                )
+            ) from e
+
+    def get_sources(self):
+        if isinstance(self.sources, Mapping):
+            return self.sources.values()
+        elif callable(self.sources):
+            return self.sources()
+        else:
+            return self.sources
+
+    def check(self, path=[]):
+        """
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        :type path: list the path to this object, will be prepended to any errors generated
+        :return: list of errors that prevent items in this Aggregator from being sheared.
+
+        NOT YET PROPERLY IMPLEMENTED
+        """
+        return {}
+        # ret = defaultdict(dict)
+        # for key in set(chain.from_iterable(source.keys() for source in self.sources)):
+        #     for sourceNo, source in enumerate(self.sources):
+        #         if key in source:
+        #             value = source[key]
+        #             try:
+        #                 self.function([value])
+        #             except Exception as e:
+        #                 msg = "function {function} incompatible with value {value} exception: {e}".format(
+        #                     e=str(e),
+        #                     value=value,
+        #                     path=path + [key],
+        #                     sourceNo=sourceNo,
+        #                     function=self.function.__name__,
+        #                 )
+        #                 ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
+        #                 # raise
+        # return ret
