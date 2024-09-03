@@ -1,8 +1,10 @@
 import inspect
 from abc import ABCMeta, abstractmethod
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 from closure_collector.util import ClosureCollectorException, is_rule, rebind
+
+CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
 
 
 class ShearedBase:
@@ -26,7 +28,7 @@ class CCBase(metaclass=ABCMeta):
     @abstractmethod
     def shear(self, record_errors=False) -> Any:
         """
-        Convert this Mapping into a simple dict
+        Convert this closure collection into a simple object
 
         :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
         than continuing up the call stack
@@ -36,7 +38,7 @@ class CCBase(metaclass=ABCMeta):
 
     def __call__(self):
         """
-        Call must be specified so that FlockMappings can be nested within eachother
+        Call must be specified so that Closure Collections can be nested within eachother
 
         :return: self
         """
@@ -90,14 +92,14 @@ class ClosurePromiseCollector(DynamicClosureCollector):
 
     def __setattr__(self, item, val):
         """
-        Set a value in a MutableFlock
+        Add an attribute to this closure collection
 
         default implementation:
 
         if value is callable it will be added directly to promises, if not it will be converted to a simple lambda.
-        Mappings are converted into MutableFlocks, any other handling should be dealt with via direct access to the promises dict.
+        Any other handling should be dealt with via direct access to the promises dict.
         """
-        if item in {"root", "cache", "peers", "promises"}:
+        if item in CLOSURE_ATTRS:
             return super(ClosurePromiseCollector, self).__setattr__(item, val)
         value = self.make_callable(val)
         self.promises[item] = value
@@ -162,7 +164,7 @@ class ClosureCollector(ClosurePromiseCollector):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
-        :type indict: Mapping to be used to create the new FlockDict
+        :type indict: Keyword arguments to add as attributes
 
         Values from indict are assigned to self one at a time.
 
