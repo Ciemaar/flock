@@ -69,7 +69,7 @@ def test_basic_tagset():
             "test_instance_attr",
         }
 
-    tagset["test"].remove(".class_attr")
+    tagset["test"].remove("class_attr")
     assert tagset
     assert 1 == len(tagset)
     assert tagset["test"]
