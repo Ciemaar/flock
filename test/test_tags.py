@@ -1,7 +1,7 @@
 from closure_collector.tags import AttributeTagset
 
 
-class TestObj:
+class SimpleObj:
     class_attr = "test_class_attr"
 
     def __init__(self):
@@ -35,7 +35,7 @@ def test_empty_tagset():
 
 
 def test_basic_tagset():
-    test_obj = TestObj()
+    test_obj = SimpleObj()
     tagset = AttributeTagset(test_obj)
     assert not tagset
     assert 0 == len(tagset)
