@@ -1,5 +1,7 @@
 import inspect
 from abc import ABCMeta, abstractmethod
+from itertools import chain
+from pprint import pformat
 from typing import Any, Iterable, Mapping
 
 from closure_collector.util import ClosureCollectorException, is_rule, rebind
@@ -12,6 +14,9 @@ class ShearedBase:
 
     def __bool__(self):
         return bool(self.__dict__)
+
+    def __str__(self):
+        return pformat(self.__dict__)
 
 
 class CCBase(metaclass=ABCMeta):
@@ -35,6 +40,11 @@ class CCBase(metaclass=ABCMeta):
 
         :return: a simple object representing these closures
         """
+
+    @abstractmethod
+    def __dir__(self):
+        """Closure collector objects all support the dir() method returning the added attributes"""
+        pass
 
     def __call__(self):
         """
@@ -173,6 +183,9 @@ class ClosureCollector(ClosurePromiseCollector):
         for key, value in indict.items():
             setattr(self, key, value)
 
+    def __dir__(self):
+        return set(self.promises.keys()).union(self.cache.keys())
+
     def get_relatives(self):
         rels = {
             promise
@@ -185,7 +198,7 @@ class ClosureCollector(ClosurePromiseCollector):
         return rels
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.shear()},{self.root})"
+        return f"{self.__class__.__name__}({self.shear()})"
 
     #
     # def __hash__(self):
@@ -220,7 +233,7 @@ class ClosureCollector(ClosurePromiseCollector):
         :return: a dict()
         """
         ret = ShearedBase()
-        for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
+        for key in sorted(dir(self), key=lambda x: (str(x), repr(x))):
             promise = self.promises[key]
             if hasattr(promise, "shear"):
                 setattr(ret, key, promise.shear(record_errors=record_errors))
@@ -266,6 +279,9 @@ class ClosureReduction:
     :type fn: function must take a generator, there is no constraint on the return value
     """
 
+    def __dir__(self):
+        return set(chain.from_iterable(dir(source) for source in self.get_sources()))
+
     def __init__(self, sources, fn, keys=None):
         self.sources = sources
         self.function = fn
@@ -310,6 +326,9 @@ class ClosureReduction:
             return self.sources()
         else:
             return self.sources
+
+    def shear(self):
+        return NotImplemented
 
     def check(self, path=[]):
         """

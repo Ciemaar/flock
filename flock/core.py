@@ -2,7 +2,12 @@ import inspect
 import warnings
 from abc import abstractmethod, ABCMeta
 from collections import defaultdict, OrderedDict
-from collections.abc import MutableMapping, Mapping, MutableSequence, Iterable
+from collections.abc import (
+    MutableMapping,
+    Mapping,
+    MutableSequence,
+    Iterable,
+)
 from copy import copy
 from itertools import chain
 from typing import Sequence, Union
@@ -43,9 +48,21 @@ class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
 
         :return: a dict() representation of this Aggregator
         """
+        pass
+
+    def __call__(self):
+        """
+        Call must be specified so that FlockMappings can be nested within eachother
+
+        :return: self
+        """
+        return self
 
     def __hash__(self, *args, **kwargs):
         return id(self)
+
+    def __dir__(self):
+        return object.__dir__(self)
 
 
 class MutableFlock(FlockBase, DynamicClosureCollector):
@@ -140,6 +157,22 @@ class PromiseFlock(MutableFlock):
 
     def __len__(self):
         return len(self.promises)
+
+    def clear_cache(self):
+        if self.root is not None:
+            self.root.clear_cache()
+            return
+
+        to_collect = set([self])
+        to_clear = set()
+        while to_collect:
+            curr = to_collect.pop()
+            if curr not in to_clear:
+                to_clear.add(curr)
+                to_collect.update(curr.get_relatives())
+
+        for peer in to_clear:
+            peer.cache = {}
 
 
 class FlockList(PromiseFlock, MutableSequence):
@@ -390,8 +423,6 @@ class Aggregator:
                         msg = "function {function} incompatible with value {value} exception: {e}".format(
                             e=str(e),
                             value=value,
-                            path=path + [key],
-                            sourceNo=sourceNo,
                             function=self.function.__name__,
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
@@ -546,8 +577,6 @@ class FlockAggregator(FlockBase, Mapping):
                         msg = "function {function} incompatible with value {value} exception: {e}".format(
                             e=str(e),
                             value=value,
-                            path=path + [key],
-                            sourceNo=sourceNo,
                             function=self.function.__name__,
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg

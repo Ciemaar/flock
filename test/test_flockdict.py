@@ -40,6 +40,11 @@ class BasicFlockTestCase(unittest.TestCase):
         assert "missing" not in self.flock
         del self.flock["Shepherd"]
         assert "Shepherd" not in self.flock
+        assert dir(self.flock), "There should be something in dir(flock)"
+        assert "Management" not in dir(self.flock)
+        assert "Shepherd" not in dir(self.flock)
+        assert "missing" not in dir(self.flock)
+        assert "shear" in dir(self.flock)
 
     def test_simple_dict(self):
         """

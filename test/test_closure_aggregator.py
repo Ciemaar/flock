@@ -11,6 +11,7 @@ class ReductionTestCase(unittest.TestCase):
 
         self.cc.x = ClosureCollector(**{f"attr_{x}": x for x in range(1, 10)})
         self.cc.y = ClosureCollector(**{f"attr_{x}": 2 * x for x in range(1, 10)})
+        self.cc.z = ClosureCollector(**{f"attr_{x}": 3 * x for x in range(2, 20, 2)})
 
     def test_attr_error(self):
         self.cc.sum = ClosureReduction([self.cc.x, self.cc.y], sum)
@@ -27,6 +28,10 @@ class ReductionTestCase(unittest.TestCase):
     def test_shear_list(self):
         self.cc.sum = ClosureReduction([self.cc.x, self.cc.y], lambda x: sum(x))
         assert not self.cc.check()
+        assert len(dir(self.cc.sum)) == 9
+        assert dir(self.cc.sum) == dir(self.cc.y) == dir(self.cc.x)
+        assert "attr_1" in dir(self.cc.sum)
+        assert "attr_18" not in dir(self.cc.sum)
 
         for x in range(1, 10):
             assert getattr(self.cc.sum, f"attr_{x}") == x * 3
@@ -34,6 +39,32 @@ class ReductionTestCase(unittest.TestCase):
         sheared = self.cc.shear()
         assert isinstance(sheared, ShearedBase)
         for x in range(1, 10):
+            assert getattr(sheared.sum, f"attr_{x}") == x * 3
+
+    def test_shear_list2(self):
+        self.cc.sum = ClosureReduction([self.cc.x, self.cc.z], lambda x: sum(x))
+        assert not self.cc.check()
+        assert set(dir(self.cc.sum)) == set(dir(self.cc.z)).union(dir(self.cc.x))
+        assert len(dir(self.cc.sum)) == 14
+        assert "attr_1" in dir(self.cc.sum)
+        assert "attr_18" in dir(self.cc.sum)
+
+        for x in range(1, 10, 2):
+            assert getattr(self.cc.sum, f"attr_{x}") == x
+        for x in range(2, 10, 2):
+            assert getattr(self.cc.sum, f"attr_{x}") == x * 4
+        for x in range(10, 20, 2):
+            assert getattr(self.cc.sum, f"attr_{x}") == x * 3
+
+        sheared = self.cc.shear()
+        assert isinstance(sheared, ShearedBase)
+        # assert len(dir(sheared.sum)) == 14  #TODO define desired behavior for shearedBase objects
+
+        for x in range(1, 10, 2):
+            assert getattr(sheared.sum, f"attr_{x}") == x
+        for x in range(2, 10, 2):
+            assert getattr(sheared.sum, f"attr_{x}") == x * 4
+        for x in range(10, 20, 2):
             assert getattr(sheared.sum, f"attr_{x}") == x * 3
 
     def test_shear_func(self):
