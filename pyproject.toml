@@ -33,3 +33,7 @@ deps = coverage
 skip_install = true
 commands = coverage erase
 """
+
+
+[tool.ruff.lint]
+ignore = ['E731']
