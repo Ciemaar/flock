@@ -2,7 +2,7 @@ import unittest
 import uuid as uuid
 
 from flock import FlockDict
-from flock.closures import reference, lookup, toggle
+from flock.closures import lookup, reference, toggle
 
 
 class ClosureTestCase(unittest.TestCase):

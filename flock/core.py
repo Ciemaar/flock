@@ -1,13 +1,14 @@
 import inspect
 import warnings
-from abc import abstractmethod, ABCMeta
-from collections import defaultdict, OrderedDict
-from collections.abc import MutableMapping, Mapping, MutableSequence, Iterable
+from abc import ABCMeta, abstractmethod
+from collections import OrderedDict, defaultdict
+from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence
 from copy import copy
 from itertools import chain
 from typing import Sequence
 
 from flock.util import FlockException
+
 from .util import is_rule
 
 __author__ = "Andy Fundinger"
@@ -99,7 +100,10 @@ class MutableFlock(FlockBase):
         elif isinstance(value, Mapping):
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
-            ret = lambda: value
+
+            def ret():
+                return value
+
         return ret
 
     def clear_cache(self):
@@ -372,7 +376,8 @@ class Aggregator:
         """
         Aggregate across parallel maps.
 
-        :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
+        :type sources: list of sources to aggregate across, each source should be a map,
+            generally a dict, or FlockDict, not all keys need to be present in all sources.
         :type fn: function must take a generator, there is no constraint on the return value
         """
         warnings.warn(
@@ -418,7 +423,7 @@ class Aggregator:
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                        msg = "function {function} incompatible with value {value} exception: {e} at path {path} source {sourceNo}".format(
                             e=str(e),
                             value=value,
                             path=path + [key],
@@ -574,7 +579,7 @@ class FlockAggregator(FlockBase, Mapping):
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                        msg = "function {function} incompatible with value {value} exception: {e} at path {path} source {sourceNo}".format(
                             e=str(e),
                             value=value,
                             path=path + [key],

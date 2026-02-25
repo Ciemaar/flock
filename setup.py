@@ -9,9 +9,11 @@ setup(
     author="Andy Fundinger",
     author_email="Andy@ciemaar.com",
     description="A library for storing closures inside objects in an organized fashion.",
-    requires=[
-        "PyYAML",
-        "wheel",
+    install_requires=[
+        "PyYAML>=6.0",
     ],
-    tests_require=["pytest", "hypothesis"],
+    extras_require={
+        "test": ["pytest>=7.0", "hypothesis>=6.0"],
+        "dev": ["ruff"],
+    },
 )

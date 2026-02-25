@@ -1,3 +1,56 @@
 [build-system]
-requires = ["setuptools>=42"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "closure_collector"
+version = "0.0.2"
+description = "A library for storing closures inside objects in an organized fashion."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name = "Andy Fundinger", email = "Andy@ciemaar.com"},
+]
+license = {text = "GPL v3"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "hypothesis>=6.0",
+]
+dev = [
+    "ruff",
+]
+
+[project.urls]
+Homepage = "http://ciemaar.com/flock"
+
+[tool.setuptools]
+packages = ["flock"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "test",
+]
+
+[tool.ruff]
+line-length = 160
+target-version = "py310"
+exclude = [
+    "Lightning Talk.ipynb",
+    "examples",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []

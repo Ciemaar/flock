@@ -4,9 +4,9 @@ import logging
 import os.path
 import pickle
 import sys
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from fractions import Fraction
-from functools import reduce, partial
+from functools import partial, reduce
 from itertools import chain
 from operator import add
 from pprint import pprint
@@ -14,7 +14,7 @@ from pprint import pprint
 import yaml
 
 from flock.closures import lookup, reference
-from flock.core import FlockDict, FlockAggregator
+from flock.core import FlockAggregator, FlockDict
 from flock.util import FlockException
 
 GENERAL = "General"
@@ -40,8 +40,8 @@ def get_attribute_table():
     dReader = csv.DictReader(table_file, fieldnames=fieldNames)
     table = [x for x in dReader]
     for row in table:
-        for lookup, value in row.items():
-            if lookup == ("", ""):
+        for lookup_key, value in row.items():
+            if lookup_key == ("", ""):
                 continue
             try:
                 value = float(Fraction(value))
@@ -52,7 +52,7 @@ def get_attribute_table():
                     value = float(value[:-4])
                 elif value[-5:] == "/hour":
                     value = float(value[:-5])
-            _attribute_table[lookup][int(row[("", "")])] = value
+            _attribute_table[lookup_key][int(row[("", "")])] = value
     return _attribute_table
 
 
@@ -89,15 +89,15 @@ def apply_level_allotments(character):
         character["level"] = 1
     character.setdefault("points", FlockDict())
     character["points"].setdefault("total", FlockDict({"universal": 10}))
-    character["points"]["total"]["mental"] = (
-        lambda: character["level"] * character["bonuses"]["Mental Skill Points"]
+    character["points"]["total"]["mental"] = lambda: (
+        character["level"] * character["bonuses"]["Mental Skill Points"]
     )
 
-    character["points"]["total"]["physical"] = (
-        lambda: character["level"] * character["bonuses"]["Phy Skill Points"]
+    character["points"]["total"]["physical"] = lambda: (
+        character["level"] * character["bonuses"]["Phy Skill Points"]
     )
-    character["points"]["total"]["heroic"] = lambda: character["level"] * (
-        character["level"] + 1 + character["bonuses"]["heroics"]
+    character["points"]["total"]["heroic"] = lambda: (
+        character["level"] * (character["level"] + 1 + character["bonuses"]["heroics"])
     )
 
 
@@ -113,31 +113,31 @@ def apply_skills(character):
     character["points"]["spent"]["mental"] = lambda: sum(
         skill.cost for skill in character["skills"] if skill.isMental
     )
-    character["points"]["available"]["mental"] = (
-        lambda: character["points"]["total"]["mental"]
-        - character["points"]["spent"]["mental"]
+    character["points"]["available"]["mental"] = lambda: (
+        character["points"]["total"]["mental"] - character["points"]["spent"]["mental"]
     )
     character["points"]["spent"]["physical"] = lambda: sum(
         skill.cost for skill in character["skills"] if skill.isPhysical
     )
-    character["points"]["available"]["physical"] = (
-        lambda: character["points"]["total"]["physical"]
+    character["points"]["available"]["physical"] = lambda: (
+        character["points"]["total"]["physical"]
         - character["points"]["spent"]["physical"]
     )
     character["points"]["spent"]["heroic"] = lambda: sum(
         skill.cost for skill in character["skills"] if skill.isHeroic
     )
-    character["points"]["available"]["heroic"] = (
-        lambda: character["points"]["total"]["heroic"]
-        - character["points"]["spent"]["heroic"]
+    character["points"]["available"]["heroic"] = lambda: (
+        character["points"]["total"]["heroic"] - character["points"]["spent"]["heroic"]
     )
-    character["points"]["spent"]["universal"] = lambda: -sum(
-        min(0, character["points"]["available"][pt_type])
-        for pt_type in character["points"]["available"]
-        if pt_type != "universal"
+    character["points"]["spent"]["universal"] = lambda: (
+        -sum(
+            min(0, character["points"]["available"][pt_type])
+            for pt_type in character["points"]["available"]
+            if pt_type != "universal"
+        )
     )
-    character["points"]["available"]["universal"] = (
-        lambda: character["points"]["total"]["universal"]
+    character["points"]["available"]["universal"] = lambda: (
+        character["points"]["total"]["universal"]
         - character["points"]["spent"]["universal"]
     )
 
@@ -236,7 +236,6 @@ class HeroicSkill(Skill):
                 name=self.name,
                 skill_type=self.skill_type,
                 cost=self.cost,
-                xp=self.xp,
                 level=self.level,
                 bonuses=self.bonuses,
                 cls_name=self.__class__.__name__,
@@ -259,27 +258,19 @@ class Conduit(HeroicSkill):
 
     def __repr__(self):
         return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(
-            name=self.name,
             skill_type=self.skill_type,
             spell_type=self.spell_type,
             cost=self.cost,
-            xp=self.xp,
             level=self.level,
-            bonuses=self.bonuses,
             cls_name=self.__class__.__name__,
         )
 
     def __str__(self):
         return "{name} x{cost} {bonuses})".format(
             name=self.name,
-            skill_type=self.skill_type,
-            spell_type=self.spell_type,
             cost=self.cost,
-            xp=self.xp,
-            level=self.level,
             bonuses=self.bonuses,
-            cls_name=self.__class__.__name__,
-        )
+            )
 
     @property
     def bonuses(self):

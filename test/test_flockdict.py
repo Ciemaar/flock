@@ -2,8 +2,8 @@ from types import FunctionType
 
 from pytest import raises
 
-from flock.closures import toggle, reference
-from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
+from flock.closures import reference, toggle
+from flock.core import Aggregator, FlockAggregator, FlockDict, FlockList, MetaAggregator
 from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
@@ -77,9 +77,9 @@ class BasicFlockTestCase(unittest.TestCase):
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         with raises(FlockException) as exc_info:
-            assert self.flock["bad"] != (
-                lambda: 1 / 0
-            ), "This should not be called at all as the exception should be raised"
+            assert self.flock["bad"] != (lambda: 1 / 0), (
+                "This should not be called at all as the exception should be raised"
+            )
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         with raises(FlockException) as exc_info:

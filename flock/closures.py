@@ -64,7 +64,7 @@ def reference(flock, *indexes, **kwargs):
             return currObj
         except FlockException:
             raise
-        except KeyError as e:
+        except KeyError:
             if "default" in kwargs:
                 return kwargs["default"]
             else:

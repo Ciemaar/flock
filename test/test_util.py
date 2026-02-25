@@ -4,8 +4,7 @@ import unittest
 import pytest
 
 from flock import FlockDict
-from flock.util import is_rule
-from flock.util import patch
+from flock.util import is_rule, patch
 
 log = logging.getLogger(__name__)
 
