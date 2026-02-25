@@ -28,6 +28,7 @@ test = [
 ]
 dev = [
     "ruff",
+    "ty",
 ]
 
 [project.urls]

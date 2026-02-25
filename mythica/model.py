@@ -40,18 +40,20 @@ def get_attribute_table():
     dReader = csv.DictReader(table_file, fieldnames=fieldNames)
     table = [x for x in dReader]
     for row in table:
-        for lookup_key, value in row.items():
+        for lookup_key, raw_value in row.items():
             if lookup_key == ("", ""):
                 continue
             try:
-                value = float(Fraction(value))
+                value = float(Fraction(raw_value))
             except ValueError:
-                if value[-1] == "%":
-                    value = float(value[:-1]) / 100
-                elif value[-4:] == "/day":
-                    value = float(value[:-4])
-                elif value[-5:] == "/hour":
-                    value = float(value[:-5])
+                if raw_value[-1] == "%":
+                    value = float(raw_value[:-1]) / 100
+                elif raw_value[-4:] == "/day":
+                    value = float(raw_value[:-4])
+                elif raw_value[-5:] == "/hour":
+                    value = float(raw_value[:-5])
+                else:
+                    value = raw_value
             _attribute_table[lookup_key][int(row[("", "")])] = value
     return _attribute_table
 
@@ -382,7 +384,7 @@ if __name__ == "__main__":
         char["Race"] = "Human"
         char["level"] = 8
     else:
-        for key, value in yaml.load(opt.infile).items():
+        for key, value in yaml.load(opt.infile, Loader=yaml.Loader).items():
             char[key] = value
 
     apply_rules(char)

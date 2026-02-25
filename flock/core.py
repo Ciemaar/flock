@@ -2,10 +2,10 @@ import inspect
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence
+from collections.abc import Callable, Iterable, Mapping, MutableMapping, MutableSequence
 from copy import copy
 from itertools import chain
-from typing import Sequence
+from typing import Sequence, cast
 
 from flock.util import FlockException
 
@@ -133,7 +133,8 @@ class PromiseFlock(MutableFlock):
     def __init__(self, root=None):
         """ """
         super(PromiseFlock, self).__init__(root=root)
-        self.promises = {}
+        self.promises: dict = {}
+        self.cache: dict = {}
 
     def __setitem__(self, key, val):
         """
@@ -178,7 +179,7 @@ class PromiseFlock(MutableFlock):
 
 
 class FlockList(PromiseFlock, MutableSequence):
-    def __init__(self, inlist: Sequence = (), root: FlockBase = None):
+    def __init__(self, inlist: Sequence = (), root: FlockBase | None = None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -188,8 +189,8 @@ class FlockList(PromiseFlock, MutableSequence):
 
         """
         super(FlockList, self).__init__()
-        self.promises = []
-        self.cache = {}
+        self.promises: list = []
+        self.cache: dict = {}
         self.root = root
         self.peers = set()
         for key in inlist:
@@ -286,6 +287,7 @@ class FlockDict(PromiseFlock, MutableMapping):
         self.peers = set()
         if not hasattr(indict, "items"):
             indict = dict(indict)
+        assert isinstance(indict, Mapping)
         for key, value in indict.items():
             self[key] = value
 
@@ -504,7 +506,7 @@ class FlockAggregator(FlockBase, Mapping):
         self.function = fn
         if keys is not None and not callable(keys):
             keys = set(keys)
-        self.source_keys = keys
+        self.source_keys: set | Callable[[], Iterable] | None = keys
 
     def __getitem__(self, key):
         """
@@ -531,7 +533,7 @@ class FlockAggregator(FlockBase, Mapping):
     def __iter__(self):
         if self.source_keys is not None:
             if callable(self.source_keys):
-                return iter(set(self.source_keys()))
+                return iter(set(cast(Callable[[], Iterable], self.source_keys)()))
             else:
                 return iter(self.source_keys)
         return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))

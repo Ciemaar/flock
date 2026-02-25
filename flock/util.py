@@ -1,8 +1,8 @@
 import logging
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, MutableSequence
 from numbers import Number
 from types import FunctionType
-from typing import Any, Hashable
+from typing import Any, Hashable, Sequence
 
 log = logging.getLogger(__name__)
 
@@ -13,26 +13,26 @@ class FlockException(KeyError):
     pass
 
 
-def patch(map: MutableMapping, key_list: list[Hashable], val: Any):
+def patch(map: MutableMapping | MutableSequence, key_list: Sequence[Hashable], val: Any):
     if not key_list:
         raise TypeError("Empty key_lists are invalid for patch.")
 
     for key in key_list[0:-1]:
         try:
-            map = map[key]
+            map = map[key]  # type: ignore
         except FlockException:
             raise
         except TypeError as e:
             raise KeyError from e
 
         except KeyError:
-            map[key] = {}
-            map = map[key]
+            map[key] = {}  # type: ignore
+            map = map[key]  # type: ignore
     if key_list[-1] == "append":
-        map.append(val)
+        map.append(val)  # type: ignore
     else:
         try:
-            map[key_list[-1]] = val
+            map[key_list[-1]] = val  # type: ignore
         except TypeError as e:
             raise KeyError from e
 
