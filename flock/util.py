@@ -43,9 +43,7 @@ def is_rule(func):
 
     if getattr(func, "__closure__", False):
         for cell in func.__closure__:
-            if not isinstance(
-                cell.cell_contents, (str, Number, bytes, tuple, frozenset)
-            ):
+            if not isinstance(cell.cell_contents, (str, Number, bytes, tuple, frozenset)):
                 return True
     try:
         if set(func.__globals__).intersection(func.__code__.co_names):

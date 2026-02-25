@@ -16,9 +16,7 @@ from flock import FlockDict
 
 @given(
     indict=st.one_of(
-        st.dictionaries(
-            st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())
-        ),
+        st.dictionaries(st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())),
         st.lists(
             st.tuples(
                 st.text(),
@@ -44,9 +42,7 @@ def test_fuzz_is_not_rule(var):
 
 @given(
     map_obj=st.one_of(
-        st.dictionaries(
-            st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())
-        ),
+        st.dictionaries(st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())),
         st.dictionaries(
             st.text(),
             st.one_of(st.integers(), st.floats(), st.characters(), st.text()),
@@ -54,9 +50,7 @@ def test_fuzz_is_not_rule(var):
         ),
     ),
     key_list=st.lists(st.text()),
-    val=st.one_of(
-        st.functions(pure=True), st.integers(), st.floats(), st.characters(), st.text()
-    ),
+    val=st.one_of(st.functions(pure=True), st.integers(), st.floats(), st.characters(), st.text()),
 )
 @settings(report_multiple_bugs=False)
 def test_fuzz_patch(map_obj, key_list, val):
@@ -80,11 +74,7 @@ def test_fuzz_patch(map_obj, key_list, val):
                 ok_to_test = True
                 break
         else:
-            if (
-                isinstance(map_iter, list)
-                and key_list[-1] != "append"
-                and not isinstance(key_list[-1], int)
-            ):
+            if isinstance(map_iter, list) and key_list[-1] != "append" and not isinstance(key_list[-1], int):
                 expect_key_error = True
 
             if not expect_key_error:

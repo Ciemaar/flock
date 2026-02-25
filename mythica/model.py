@@ -62,9 +62,7 @@ def apply_attribute_table(character):
     for (attribute, bonus), table in get_attribute_table().items():
         character["Attribute_Bonuses"][bonus] = lookup(character, attribute, table)
     character["base_bonuses"] = {"Spell Points Multiple": {"General": 1}}
-    character["bonuses"] = FlockAggregator(
-        [character["Attribute_Bonuses"], character["base_bonuses"]], cross_total
-    )
+    character["bonuses"] = FlockAggregator([character["Attribute_Bonuses"], character["base_bonuses"]], cross_total)
 
 
 def apply_attribs(character):
@@ -89,16 +87,10 @@ def apply_level_allotments(character):
         character["level"] = 1
     character.setdefault("points", FlockDict())
     character["points"].setdefault("total", FlockDict({"universal": 10}))
-    character["points"]["total"]["mental"] = lambda: (
-        character["level"] * character["bonuses"]["Mental Skill Points"]
-    )
+    character["points"]["total"]["mental"] = lambda: character["level"] * character["bonuses"]["Mental Skill Points"]
 
-    character["points"]["total"]["physical"] = lambda: (
-        character["level"] * character["bonuses"]["Phy Skill Points"]
-    )
-    character["points"]["total"]["heroic"] = lambda: (
-        character["level"] * (character["level"] + 1 + character["bonuses"]["heroics"])
-    )
+    character["points"]["total"]["physical"] = lambda: character["level"] * character["bonuses"]["Phy Skill Points"]
+    character["points"]["total"]["heroic"] = lambda: character["level"] * (character["level"] + 1 + character["bonuses"]["heroics"])
 
 
 def apply_skills(character):
@@ -110,36 +102,16 @@ def apply_skills(character):
     character["points"].setdefault("spent", FlockDict())
     character["points"].setdefault("available", FlockDict())
 
-    character["points"]["spent"]["mental"] = lambda: sum(
-        skill.cost for skill in character["skills"] if skill.isMental
-    )
-    character["points"]["available"]["mental"] = lambda: (
-        character["points"]["total"]["mental"] - character["points"]["spent"]["mental"]
-    )
-    character["points"]["spent"]["physical"] = lambda: sum(
-        skill.cost for skill in character["skills"] if skill.isPhysical
-    )
-    character["points"]["available"]["physical"] = lambda: (
-        character["points"]["total"]["physical"]
-        - character["points"]["spent"]["physical"]
-    )
-    character["points"]["spent"]["heroic"] = lambda: sum(
-        skill.cost for skill in character["skills"] if skill.isHeroic
-    )
-    character["points"]["available"]["heroic"] = lambda: (
-        character["points"]["total"]["heroic"] - character["points"]["spent"]["heroic"]
-    )
+    character["points"]["spent"]["mental"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isMental)
+    character["points"]["available"]["mental"] = lambda: character["points"]["total"]["mental"] - character["points"]["spent"]["mental"]
+    character["points"]["spent"]["physical"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isPhysical)
+    character["points"]["available"]["physical"] = lambda: character["points"]["total"]["physical"] - character["points"]["spent"]["physical"]
+    character["points"]["spent"]["heroic"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isHeroic)
+    character["points"]["available"]["heroic"] = lambda: character["points"]["total"]["heroic"] - character["points"]["spent"]["heroic"]
     character["points"]["spent"]["universal"] = lambda: (
-        -sum(
-            min(0, character["points"]["available"][pt_type])
-            for pt_type in character["points"]["available"]
-            if pt_type != "universal"
-        )
+        -sum(min(0, character["points"]["available"][pt_type]) for pt_type in character["points"]["available"] if pt_type != "universal")
     )
-    character["points"]["available"]["universal"] = lambda: (
-        character["points"]["total"]["universal"]
-        - character["points"]["spent"]["universal"]
-    )
+    character["points"]["available"]["universal"] = lambda: character["points"]["total"]["universal"] - character["points"]["spent"]["universal"]
 
 
 def cross_total(inputs):
@@ -231,15 +203,13 @@ class HeroicSkill(Skill):
         self.bonuses = bonuses
 
     def __repr__(self):
-        return (
-            "{cls_name}('{name}', '{skill_type}', {cost}, {level}, {bonuses})".format(
-                name=self.name,
-                skill_type=self.skill_type,
-                cost=self.cost,
-                level=self.level,
-                bonuses=self.bonuses,
-                cls_name=self.__class__.__name__,
-            )
+        return "{cls_name}('{name}', '{skill_type}', {cost}, {level}, {bonuses})".format(
+            name=self.name,
+            skill_type=self.skill_type,
+            cost=self.cost,
+            level=self.level,
+            bonuses=self.bonuses,
+            cls_name=self.__class__.__name__,
         )
 
     @property
@@ -270,7 +240,7 @@ class Conduit(HeroicSkill):
             name=self.name,
             cost=self.cost,
             bonuses=self.bonuses,
-            )
+        )
 
     @property
     def bonuses(self):
@@ -296,9 +266,7 @@ class Conduit(HeroicSkill):
 
     @staticmethod
     def representer(dumper, data):
-        return dumper.represent_scalar(
-            "!conduit", "{cost} {spt}".format(cost=data.cost, spt=data.spell_type)
-        )
+        return dumper.represent_scalar("!conduit", "{cost} {spt}".format(cost=data.cost, spt=data.spell_type))
 
     @classmethod
     def constructor(cls, loader, node):

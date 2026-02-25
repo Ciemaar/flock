@@ -290,11 +290,7 @@ class FlockDict(PromiseFlock, MutableMapping):
             self[key] = value
 
     def get_relatives(self):
-        rels = {
-            promise
-            for promise in self.promises.values()
-            if hasattr(promise, "clear_cache")
-        }
+        rels = {promise for promise in self.promises.values() if hasattr(promise, "clear_cache")}
         rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
         return rels
 
@@ -468,9 +464,7 @@ class MetaAggregator:
         self.function = fn
 
     def __getitem__(self, key):
-        return lambda: self.function(
-            source[key] for source in self.source_function() if key in source
-        )
+        return lambda: self.function(source[key] for source in self.source_function() if key in source)
 
     # def __getattr__(self, key):
     #     return self[key]()
@@ -480,9 +474,7 @@ class MetaAggregator:
 
     def shear(self, record_errors=False):
         ret = {}
-        for key in set(
-            chain.from_iterable(source.keys() for source in self.source_function())
-        ):
+        for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
             try:
                 ret[key] = self[key]()
             except Exception as e:
@@ -522,9 +514,7 @@ class FlockAggregator(FlockBase, Mapping):
         :return: value as returned by the function for that key.
         """
         try:
-            cross_items = [
-                source[key] for source in self.get_sources() if key in source
-            ]
+            cross_items = [source[key] for source in self.get_sources() if key in source]
             if not cross_items:
                 raise KeyError("Key %s not found" % key)
             return self.function(cross_items)
@@ -532,14 +522,7 @@ class FlockAggregator(FlockBase, Mapping):
             raise
         except Exception as e:
             raise FlockException(
-                "Error Calculating %s:  " % key
-                + str(e)
-                + "\n"
-                + ",".join(
-                    "%s:%s" % (source, source[key])
-                    for source in self.get_sources()
-                    if key in source
-                )
+                "Error Calculating %s:  " % key + str(e) + "\n" + ",".join("%s:%s" % (source, source[key]) for source in self.get_sources() if key in source)
             ) from e
 
     def __len__(self):
@@ -551,9 +534,7 @@ class FlockAggregator(FlockBase, Mapping):
                 return iter(set(self.source_keys()))
             else:
                 return iter(self.source_keys)
-        return iter(
-            set(chain.from_iterable(source.keys() for source in self.get_sources()))
-        )
+        return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
 
     def get_sources(self):
         if isinstance(self.sources, Mapping):
