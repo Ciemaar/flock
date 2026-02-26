@@ -232,7 +232,8 @@ class FlockList(PromiseFlock, MutableSequence):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)
+            if not callable(value):
+                raise FlockException(f"Value at {key} is not callable")
         return ret
 
     def shear(self, record_errors=False):
@@ -289,7 +290,8 @@ class FlockDict(PromiseFlock, MutableMapping):
         self.peers = set()
         if not hasattr(indict, "items"):
             indict = dict(indict)
-        assert isinstance(indict, Mapping)
+        if not isinstance(indict, Mapping):
+            raise TypeError("indict must be a Mapping")
         for key, value in indict.items():
             self[key] = value
 
@@ -326,7 +328,8 @@ class FlockDict(PromiseFlock, MutableMapping):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)
+            if not callable(value):
+                raise FlockException(f"Value at {key} is not callable")
         return ret
 
     def shear(self, record_errors=False):

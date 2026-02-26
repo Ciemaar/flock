@@ -159,7 +159,7 @@ def apply_rules(character):
 
 
 def load_character(filename):
-    sheet = pickle.load(open(filename, "rb"))
+    sheet = pickle.load(open(filename, "rb"))  # noqa: S301
     ret = FlockDict(sheet)
     return apply_rules(ret)
 
@@ -200,7 +200,8 @@ class Skill(object):
 
 class HeroicSkill(Skill):
     def __init__(self, name, skill_type=HEROIC, cost=1, level=1, bonuses={}):
-        assert skill_type == HEROIC
+        if skill_type != HEROIC:
+            raise ValueError(f"skill_type must be {HEROIC}")
         super(HeroicSkill, self).__init__(name, skill_type, cost, xp=None, level=level)
         self.bonuses = bonuses
 
@@ -384,7 +385,7 @@ if __name__ == "__main__":
         char["Race"] = "Human"
         char["level"] = 8
     else:
-        for key, value in yaml.load(opt.infile, Loader=yaml.Loader).items():
+        for key, value in yaml.load(opt.infile, Loader=yaml.Loader).items():  # noqa: S506
             char[key] = value
 
     apply_rules(char)
