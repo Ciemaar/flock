@@ -92,7 +92,7 @@ def test_fuzz_patch(map_obj, key_list, val):
             stored_value = map_iter[key_list[-1]]
             if callable(val) and isinstance(map_iter, FlockDict):
                 val = val()
-            assert stored_value == val or (math.isnan(stored_value) and math.isnan(val))
+            assert stored_value == val or (isinstance(stored_value, float) and isinstance(val, float) and math.isnan(stored_value) and math.isnan(val))
 
 
 # TODO: replace st.nothing() with appropriate strategies

@@ -169,7 +169,7 @@ def save_character(character, filename):
 
 
 class Skill(object):
-    def __init__(self, name, skill_type, cost=1, xp=0, level=1):
+    def __init__(self, name, skill_type, cost=1, xp: int | None = 0, level=1):
         self.name = name
         self.skill_type = skill_type
         self.cost = cost

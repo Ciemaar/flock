@@ -28,7 +28,7 @@ test = [
 ]
 dev = [
     "ruff",
-    "ty",
+    "pyright",
 ]
 
 [project.urls]
@@ -55,3 +55,17 @@ exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = []
+
+[tool.pyright]
+include = ["flock", "mythica", "test"]
+exclude = [
+    "Lightning Talk.ipynb",
+    "examples",
+    "setup.py",
+    "**/__pycache__",
+    "**/.tox",
+    "**/.venv",
+    "build",
+    "**/site-packages"
+]
+reportIncompatibleMethodOverride = false

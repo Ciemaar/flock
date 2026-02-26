@@ -41,8 +41,9 @@ def is_rule(func):
     if not callable(func):
         return False
 
-    if getattr(func, "__closure__", False):
-        for cell in func.__closure__:
+    closure = getattr(func, "__closure__", None)
+    if closure:
+        for cell in closure:
             if not isinstance(cell.cell_contents, (str, Number, bytes, tuple, frozenset)):
                 return True
     try:

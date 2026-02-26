@@ -5,7 +5,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, MutableSequence
 from copy import copy
 from itertools import chain
-from typing import Sequence, cast
+from typing import Any, Sequence, cast
 
 from flock.util import FlockException
 
@@ -65,6 +65,7 @@ class MutableFlock(FlockBase):
         """ """
         super(MutableFlock, self).__init__()
         self.root = root
+        self.peers: set = set()
 
     @abstractmethod
     def __setitem__(self, key, val):
@@ -108,7 +109,7 @@ class MutableFlock(FlockBase):
 
     def clear_cache(self):
         if self.root is not None:
-            self.root.clear_cache()
+            self.root.clear_cache()  # type: ignore
             return
 
         to_collect = set([self])
@@ -117,10 +118,11 @@ class MutableFlock(FlockBase):
             curr = to_collect.pop()
             if curr not in to_clear:
                 to_clear.add(curr)
-                to_collect.update(curr.get_relatives())
+                to_collect.update(curr.get_relatives())  # type: ignore
 
         for peer in to_clear:
-            peer.cache = {}
+            if hasattr(peer, "cache"):
+                peer.cache = {}  # type: ignore
 
     @abstractmethod
     def get_relatives(self):
@@ -133,7 +135,7 @@ class PromiseFlock(MutableFlock):
     def __init__(self, root=None):
         """ """
         super(PromiseFlock, self).__init__(root=root)
-        self.promises: dict = {}
+        self.promises: Any = {}
         self.cache: dict = {}
 
     def __setitem__(self, key, val):
@@ -506,7 +508,7 @@ class FlockAggregator(FlockBase, Mapping):
         self.function = fn
         if keys is not None and not callable(keys):
             keys = set(keys)
-        self.source_keys: set | Callable[[], Iterable] | None = keys
+        self.source_keys: set | Callable[[], Iterable] | None = keys  # type: ignore
 
     def __getitem__(self, key):
         """
@@ -516,7 +518,7 @@ class FlockAggregator(FlockBase, Mapping):
         :return: value as returned by the function for that key.
         """
         try:
-            cross_items = [source[key] for source in self.get_sources() if key in source]
+            cross_items = [source[key] for source in self.get_sources() if key in source]  # type: ignore
             if not cross_items:
                 raise KeyError("Key %s not found" % key)
             return self.function(cross_items)
@@ -524,7 +526,7 @@ class FlockAggregator(FlockBase, Mapping):
             raise
         except Exception as e:
             raise FlockException(
-                "Error Calculating %s:  " % key + str(e) + "\n" + ",".join("%s:%s" % (source, source[key]) for source in self.get_sources() if key in source)
+                "Error Calculating %s:  " % key + str(e) + "\n" + ",".join("%s:%s" % (source, source[key]) for source in self.get_sources() if key in source)  # type: ignore
             ) from e
 
     def __len__(self):
@@ -535,16 +537,16 @@ class FlockAggregator(FlockBase, Mapping):
             if callable(self.source_keys):
                 return iter(set(cast(Callable[[], Iterable], self.source_keys)()))
             else:
-                return iter(self.source_keys)
+                return iter(self.source_keys)  # type: ignore
         return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
 
-    def get_sources(self):
+    def get_sources(self) -> Iterable[Mapping]:
         if isinstance(self.sources, Mapping):
             return self.sources.values()
         elif callable(self.sources):
-            return self.sources()
+            return cast(Iterable[Mapping], self.sources())
         else:
-            return self.sources
+            return cast(Iterable[Mapping], self.sources)
 
     def check(self, path=[]):
         """
