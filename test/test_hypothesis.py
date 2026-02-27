@@ -58,7 +58,7 @@ def test_fuzz_patch(map_obj, key_list, val):
     ok_to_test = False
     if not len(key_list):
         with raises(TypeError):
-            flock.util.patch(map=map_obj, key_list=key_list, val=val)
+            flock.util.patch(collection=map_obj, key_list=key_list, val=val)
     else:
         map_iter = map_obj
         for key in key_list[0:-1]:
@@ -81,9 +81,9 @@ def test_fuzz_patch(map_obj, key_list, val):
                 ok_to_test = True
         if expect_key_error:
             with raises(KeyError):
-                flock.util.patch(map=map_obj, key_list=key_list, val=val)
+                flock.util.patch(collection=map_obj, key_list=key_list, val=val)
         if ok_to_test:
-            flock.util.patch(map=map_obj, key_list=key_list, val=val)
+            flock.util.patch(collection=map_obj, key_list=key_list, val=val)
 
             map_iter = map_obj
             for key in key_list[0:-1]:
