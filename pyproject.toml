@@ -29,6 +29,7 @@ test = [
 dev = [
     "ruff",
     "pyright",
+    "mdformat",
 ]
 
 [project.urls]
