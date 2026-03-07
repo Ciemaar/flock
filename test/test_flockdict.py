@@ -168,6 +168,9 @@ class FlockListTestCase(unittest.TestCase):
         self.flock.append({"Mary": {"lambs": 1, "size": "little"}})
         assert self.flock[0]["Mary"]["lambs"] == 1
         assert self.flock[0]["Mary"]["size"] == "little"
+        assert list(self.flock) == [
+            {"Mary": {"lambs": 1, "size": "little"}}
+        ], "Tests __iter__ by creating a list."
 
     def test_simple_closure(self):
         """
@@ -194,6 +197,15 @@ class FlockListTestCase(unittest.TestCase):
         assert len(sheared) == 2
         assert isinstance(sheared, list)
         assert sheared[1] == "Abbey"
+
+        self.flock.append({"Cat": lambda: "Mimi"})
+        assert not self.flock.check()
+        sheared = self.flock.shear()
+        assert len(sheared) == 3
+        assert isinstance(sheared, list)
+        assert sheared[2] == {
+            "Cat": "Mimi"
+        }, "Appending a dict should turn it into a FlockDict internally."
 
     def test_consistent_shear(self):
         t = toggle()

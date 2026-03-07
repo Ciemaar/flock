@@ -6,7 +6,8 @@ import pickle
 import sys
 from collections import defaultdict, Counter
 from fractions import Fraction
-from functools import reduce, partial
+from functools import partial
+from functools import reduce
 from itertools import chain
 from operator import add
 from pprint import pprint
@@ -15,7 +16,8 @@ import yaml
 
 from closure_collector.closures import index_reference
 from flock.closures import lookup
-from flock.core import FlockDict, FlockAggregator
+from flock.core import FlockAggregator
+from flock.core import FlockDict
 from flock.util import FlockException
 
 GENERAL = "General"
@@ -41,8 +43,8 @@ def get_attribute_table():
     dReader = csv.DictReader(table_file, fieldnames=fieldNames)
     table = [x for x in dReader]
     for row in table:
-        for lookup, value in row.items():
-            if lookup == ("", ""):
+        for key, value in row.items():
+            if key == ("", ""):
                 continue
             try:
                 value = float(Fraction(value))
@@ -53,7 +55,7 @@ def get_attribute_table():
                     value = float(value[:-4])
                 elif value[-5:] == "/hour":
                     value = float(value[:-5])
-            _attribute_table[lookup][int(row[("", "")])] = value
+            _attribute_table[key][int(row[("", "")])] = value
     return _attribute_table
 
 
@@ -237,7 +239,6 @@ class HeroicSkill(Skill):
                 name=self.name,
                 skill_type=self.skill_type,
                 cost=self.cost,
-                xp=self.xp,
                 level=self.level,
                 bonuses=self.bonuses,
                 cls_name=self.__class__.__name__,
@@ -260,26 +261,18 @@ class Conduit(HeroicSkill):
 
     def __repr__(self):
         return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(
-            name=self.name,
             skill_type=self.skill_type,
             spell_type=self.spell_type,
             cost=self.cost,
-            xp=self.xp,
             level=self.level,
-            bonuses=self.bonuses,
             cls_name=self.__class__.__name__,
         )
 
     def __str__(self):
         return "{name} x{cost} {bonuses})".format(
             name=self.name,
-            skill_type=self.skill_type,
-            spell_type=self.spell_type,
             cost=self.cost,
-            xp=self.xp,
-            level=self.level,
             bonuses=self.bonuses,
-            cls_name=self.__class__.__name__,
         )
 
     @property
@@ -435,6 +428,6 @@ if __name__ == "__main__":
         print("%s: %s" % (attribute, sheared.pop(attribute)))
     pprint(sheared)
     if opt.outfile:
-        # sheared['skills'] = []
-        # for skill in sheared.skill:
+        sheared["skills"] = [v.__dict__ for v in sheared["skills"]]
+
         yaml.dump(sheared, opt.outfile, width=80)
