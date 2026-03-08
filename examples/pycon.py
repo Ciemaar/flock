@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from flock import FlockDict
 
 pycon_stats = FlockDict()

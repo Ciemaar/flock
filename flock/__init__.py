@@ -1,5 +1,6 @@
-__author__ = "Andy Fundinger"
+"""Module docstring."""
 
+__author__ = "Andy Fundinger"
 from .core import Aggregator, FlockAggregator, FlockDict, MetaAggregator
 from .util import FlockException
 

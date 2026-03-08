@@ -1,7 +1,8 @@
+"""Module docstring."""
+
 from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
-
 """
 The closures module provides helper functions for creating common sorts of closures that you might need in
 working with flock.
@@ -48,17 +49,16 @@ def lookup(mapping, index, table):
 
 def reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in the Flock
+    Return closure that references values stored elsewhere in the Flock
     :type flock: flock.core.FlockDict
     :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
+        """Docstring for de_ref."""
         currObj = flock
-
         try:
-            # recursively resolve indexes
             for index in indexes:
                 currObj = currObj[index]
             return currObj
@@ -74,9 +74,11 @@ def reference(flock, *indexes, **kwargs):
 
 
 def toggle():
+    """Docstring for toggle."""
     store = [False]
 
     def inner_toggle():
+        """Docstring for inner_toggle."""
         store[0] = not store[0]
         return store[0]
 

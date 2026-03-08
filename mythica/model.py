@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import argparse
 import csv
 import logging
@@ -23,13 +25,12 @@ MENTAL = "Mental"
 SPELL = "Spell"
 PHYSICAL = "Physical"
 WEAPON = "Weapon"
-# set the recursion limit low for safety
 sys.setrecursionlimit(100)
-
 _attribute_table = None
 
 
 def get_attribute_table():
+    """Docstring for get_attribute_table."""
     global _attribute_table
     if _attribute_table:
         return _attribute_table
@@ -54,11 +55,12 @@ def get_attribute_table():
                     value = float(raw_value[:-5])
                 else:
                     value = raw_value
-            _attribute_table[lookup_key][int(row[("", "")])] = value
+            _attribute_table[lookup_key][int(row["", ""])] = value
     return _attribute_table
 
 
 def apply_attribute_table(character):
+    """Docstring for apply_attribute_table."""
     if "Attribute_Bonuses" not in character:
         character["Attribute_Bonuses"] = FlockDict()
     for (attribute, bonus), table in get_attribute_table().items():
@@ -68,42 +70,39 @@ def apply_attribute_table(character):
 
 
 def apply_attribs(character):
+    """Docstring for apply_attribs."""
     for attribute in character["base_stats"]:
         character[attribute] = reference(character, "base_stats", attribute)
 
 
 def apply_racial_bonuses(character):
+    """Docstring for apply_racial_bonuses."""
     if character["Race"] == "Human":
         preVal = character["Spirit"]
         character["Spirit"] = lambda: preVal + 2
         character.setdefault("Racial Bonuses", FlockDict())
         character["Racial Bonuses"]["heroics"] = 1
-    # print("character bonuses {ct_type} sources {sources} bonuses {rb_type}".format(
-    #     ct_type=type(character.promises['bonuses']), rb_type=type(character.promises['Racial Bonuses']),
-    #     sources=character.promises['bonuses'].sources))
     character.promises["bonuses"].sources.append(character["Racial Bonuses"])
 
 
 def apply_level_allotments(character):
+    """Docstring for apply_level_allotments."""
     if "level" not in character:
         character["level"] = 1
     character.setdefault("points", FlockDict())
     character["points"].setdefault("total", FlockDict({"universal": 10}))
     character["points"]["total"]["mental"] = lambda: character["level"] * character["bonuses"]["Mental Skill Points"]
-
     character["points"]["total"]["physical"] = lambda: character["level"] * character["bonuses"]["Phy Skill Points"]
     character["points"]["total"]["heroic"] = lambda: character["level"] * (character["level"] + 1 + character["bonuses"]["heroics"])
 
 
 def apply_skills(character):
+    """Docstring for apply_skills."""
     character.setdefault("skills", [])
     for skill in list(character["skills"]):
         pass
-        # character['skills'] = ......
-
     character["points"].setdefault("spent", FlockDict())
     character["points"].setdefault("available", FlockDict())
-
     character["points"]["spent"]["mental"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isMental)
     character["points"]["available"]["mental"] = lambda: character["points"]["total"]["mental"] - character["points"]["spent"]["mental"]
     character["points"]["spent"]["physical"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isPhysical)
@@ -117,6 +116,7 @@ def apply_skills(character):
 
 
 def cross_total(inputs):
+    """Docstring for cross_total."""
     inputs = list(inputs)
     if len(inputs) == 1:
         return inputs[0]
@@ -129,47 +129,40 @@ def cross_total(inputs):
 
 
 def apply_heroics(character):
-    character["Heroic Bonuses"] = FlockAggregator(
-        lambda: (skill.bonuses for skill in character["skills"] if skill.isHeroic),
-        cross_total,
-    )
+    """Docstring for apply_heroics."""
+    character["Heroic Bonuses"] = FlockAggregator(lambda: (skill.bonuses for skill in character["skills"] if skill.isHeroic), cross_total)
     character.promises["bonuses"].sources.append(character["Heroic Bonuses"])
 
 
 def apply_rules(character):
-    # pprint(ret.resolve())
+    """Docstring for apply_rules."""
     apply_attribs(character)
-    # pprint(ret.resolve())
     apply_attribute_table(character)
-    # pprint(ret.check())
-    # pprint(ret.resolve())
     apply_racial_bonuses(character)
-    # pprint(ret.resolve())
     apply_level_allotments(character)
-    # pprint(ret.resolve())
     apply_skills(character)
-    # pprint(ret.resolve())
     apply_heroics(character)
-    # pprint(ret.resolve())
-    character["Spell Points"] = FlockAggregator(
-        [character["bonuses"]["Spell Points Multiple"]],
-        lambda x: sum(x) * character["bonuses"]["Spell Points"],
-    )
+    character["Spell Points"] = FlockAggregator([character["bonuses"]["Spell Points Multiple"]], lambda x: sum(x) * character["bonuses"]["Spell Points"])
     return character
 
 
 def load_character(filename):
+    """Docstring for load_character."""
     sheet = pickle.load(open(filename, "rb"))  # noqa: S301
     ret = FlockDict(sheet)
     return apply_rules(ret)
 
 
 def save_character(character, filename):
+    """Docstring for save_character."""
     pickle.dump(character.shear(), open(filename, "wb"))
 
 
 class Skill(object):
-    def __init__(self, name, skill_type, cost=1, xp: int | None = 0, level=1):
+    """Docstring for Skill."""
+
+    def __init__(self, name, skill_type, cost=1, xp: (int | None) = 0, level=1):
+        """Docstring for __init__."""
         self.name = name
         self.skill_type = skill_type
         self.cost = cost
@@ -177,76 +170,74 @@ class Skill(object):
         self.level = max(level, cost)
 
     def __repr__(self):
+        """Docstring for __repr__."""
         return "Skill('{name}', {skill_type}, {cost}, {xp}, {level})".format(
-            name=self.name,
-            skill_type=self.skill_type,
-            cost=self.cost,
-            xp=self.xp,
-            level=self.level,
+            name=self.name, skill_type=self.skill_type, cost=self.cost, xp=self.xp, level=self.level
         )
 
     @property
     def isPhysical(self):
+        """Docstring for isPhysical."""
         return self.skill_type == PHYSICAL or self.skill_type == WEAPON
 
     @property
     def isMental(self):
+        """Docstring for isMental."""
         return self.skill_type == MENTAL or self.skill_type == SPELL
 
     @property
     def isHeroic(self):
+        """Docstring for isHeroic."""
         return self.skill_type == HEROIC
 
 
 class HeroicSkill(Skill):
+    """Docstring for HeroicSkill."""
+
     def __init__(self, name, skill_type=HEROIC, cost=1, level=1, bonuses={}):
+        """Docstring for __init__."""
         if skill_type != HEROIC:
             raise ValueError(f"skill_type must be {HEROIC}")
         super(HeroicSkill, self).__init__(name, skill_type, cost, xp=None, level=level)
         self.bonuses = bonuses
 
     def __repr__(self):
+        """Docstring for __repr__."""
         return "{cls_name}('{name}', '{skill_type}', {cost}, {level}, {bonuses})".format(
-            name=self.name,
-            skill_type=self.skill_type,
-            cost=self.cost,
-            level=self.level,
-            bonuses=self.bonuses,
-            cls_name=self.__class__.__name__,
+            name=self.name, skill_type=self.skill_type, cost=self.cost, level=self.level, bonuses=self.bonuses, cls_name=self.__class__.__name__
         )
 
     @property
     def xp(self):
+        """Docstring for xp."""
         return None
 
     xp = xp.setter(lambda x, y: None)
 
 
 class Conduit(HeroicSkill):
+    """Docstring for Conduit."""
+
     def __init__(self, skill_type=HEROIC, cost=1, level=1, spell_type=""):
+        """Docstring for __init__."""
         if not spell_type:
             spell_type = GENERAL
         self.spell_type = spell_type
         super().__init__(self.name, skill_type, cost, level, None)
 
     def __repr__(self):
+        """Docstring for __repr__."""
         return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(
-            skill_type=self.skill_type,
-            spell_type=self.spell_type,
-            cost=self.cost,
-            level=self.level,
-            cls_name=self.__class__.__name__,
+            skill_type=self.skill_type, spell_type=self.spell_type, cost=self.cost, level=self.level, cls_name=self.__class__.__name__
         )
 
     def __str__(self):
-        return "{name} x{cost} {bonuses})".format(
-            name=self.name,
-            cost=self.cost,
-            bonuses=self.bonuses,
-        )
+        """Docstring for __str__."""
+        return "{name} x{cost} {bonuses})".format(name=self.name, cost=self.cost, bonuses=self.bonuses)
 
     @property
     def bonuses(self):
+        """Docstring for bonuses."""
         ret = {"Spell Points Multiple": {self.spell_type: self.cost}}
         if self.spell_type != GENERAL:
             ret["Spell Points Bonus"] = {self.spell_type: self.cost}
@@ -254,10 +245,12 @@ class Conduit(HeroicSkill):
 
     @bonuses.setter
     def bonuses(self, value):
+        """Docstring for bonuses."""
         return
 
     @property
     def name(self):
+        """Docstring for name."""
         if self.spell_type == GENERAL:
             return "Conduit"
         else:
@@ -265,14 +258,17 @@ class Conduit(HeroicSkill):
 
     @name.setter
     def name(self, value):
+        """Docstring for name."""
         return
 
     @staticmethod
     def representer(dumper, data):
+        """Docstring for representer."""
         return dumper.represent_scalar("!conduit", "{cost} {spt}".format(cost=data.cost, spt=data.spell_type))
 
     @classmethod
     def constructor(cls, loader, node):
+        """Docstring for constructor."""
         value = loader.construct_scalar(node)
         parsed = value.split(" ")
         cost = int(parsed[0])
@@ -282,29 +278,16 @@ class Conduit(HeroicSkill):
 
 yaml.add_representer(Conduit, Conduit.representer)
 yaml.add_constructor("!conduit", Conduit.constructor)
-
 PhysicalSkill = partial(Skill, skill_type=PHYSICAL)
 MentalSkill = partial(Skill, skill_type=MENTAL)
 WeaponSkill = partial(Skill, skill_type=WEAPON)
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(
-        description="Mythica Character manager",
-    )
-
-    parser.add_argument(
-        "--infile",
-        type=argparse.FileType("r"),
-        default=None,
-        help="File to read character from.",
-    )
-    parser.add_argument(
-        "--outfile",
-        type=argparse.FileType("w"),
-        default=None,
-        help="File to read character from.",
-    )
+    """Docstring for get_parser."""
+    parser = argparse.ArgumentParser(description="Mythica Character manager")
+    parser.add_argument("--infile", type=argparse.FileType("r"), default=None, help="File to read character from.")
+    parser.add_argument("--outfile", type=argparse.FileType("w"), default=None, help="File to read character from.")
     return parser
 
 
@@ -312,10 +295,7 @@ if __name__ == "__main__":
     logging.basicConfig()
     parser = get_parser()
     opt = parser.parse_args()
-
-    # char = load_character("Mondavite2.pkl")
     char = FlockDict()
-
     if not opt.infile:
         char["base_stats"] = {
             "Combat Skill": 13,
@@ -387,15 +367,11 @@ if __name__ == "__main__":
     else:
         for key, value in yaml.load(opt.infile, Loader=yaml.Loader).items():  # noqa: S506
             char[key] = value
-
     apply_rules(char)
     char.check()
-    # pprint(char.shear())
     sheared = char.shear()
     for attribute in chain([], sheared["base_stats"].keys()):
         print("%s: %s" % (attribute, sheared.pop(attribute)))
     pprint(sheared)
     if opt.outfile:
-        # sheared['skills'] = []
-        # for skill in sheared.skill:
         yaml.dump(sheared, opt.outfile, width=80)
