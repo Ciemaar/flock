@@ -129,7 +129,9 @@ class MutableFlock(FlockBase):
             curr = to_collect.pop()
             if curr not in to_clear:
                 to_clear.add(curr)
-                to_collect.update(curr.get_relatives())
+                rels = curr.get_relatives()
+                if rels is not None:
+                    to_collect.update(rels)
         for peer in to_clear:
             if hasattr(peer, "cache"):
                 peer.cache = {}
@@ -519,7 +521,7 @@ class FlockAggregator(FlockBase, Mapping):
         self.function = fn
         if keys is not None and not callable(keys):
             keys = set(keys)
-        self.source_keys: set | Callable[[], Iterable] | None = keys
+        self.source_keys: set | Callable[[], Iterable] | None = keys  # type: ignore
 
     def __getitem__(self, key):
         """

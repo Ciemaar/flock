@@ -22,19 +22,19 @@ def patch(collection: (MutableMapping | MutableSequence), key_list: Sequence[Has
         raise TypeError("Empty key_lists are invalid for patch.")
     for key in key_list[0:-1]:
         try:
-            collection = collection[key]
+            collection = collection[key]  # type: ignore
         except FlockException:
             raise
         except TypeError as e:
             raise KeyError from e
         except KeyError:
-            collection[key] = {}
-            collection = collection[key]
+            collection[key] = {}  # type: ignore
+            collection = collection[key]  # type: ignore
     if key_list[-1] == "append":
-        collection.append(val)
+        collection.append(val)  # type: ignore
     else:
         try:
-            collection[key_list[-1]] = val
+            collection[key_list[-1]] = val  # type: ignore
         except TypeError as e:
             raise KeyError from e
 
