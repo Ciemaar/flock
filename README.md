@@ -123,7 +123,7 @@ This project uses modern Python tooling. It is designed to be easily testable an
 
 We use `tox` to manage testing environments.
 
-To run tests across all supported Python versions (3.12), linting, and type checking:
+To run tests across all supported Python versions (3.12, 3.13), linting, and type checking:
 
 ```bash
 tox
@@ -179,7 +179,7 @@ pyright .
 This project uses GitHub Actions for CI. Workflows are defined in `.github/workflows/tests.yml`.
 The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on every push and pull request to ensure that:
 
-1. Tests pass on Python 3.12.
+1. Tests pass on Python 3.12 and 3.13.
 1. Code is formatted correctly using `mdformat` and `ruff`.
 1. Code is statically type-checked with `pyright`.
 1. No structural linting errors exist.
@@ -195,3 +195,4 @@ The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on
 ## Supported Python Versions
 
 - Python 3.12
+- Python 3.13

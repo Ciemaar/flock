@@ -8,7 +8,7 @@ Flock is a Python library for managing groups of closures, primarily useful for 
 
 ## Tech Stack & Standards
 
-- **Language**: Python 3.10+
+- **Language**: Python 3.12, 3.13
 - **Build System**: `pyproject.toml` (setuptools backend)
 - **Testing**: `pytest`, orchestrated by `tox`.
 - **Linting**: `ruff` (line length 160).
@@ -25,7 +25,7 @@ Flock is a Python library for managing groups of closures, primarily useful for 
 ## Coding Guidelines
 
 1. **No Asserts**: Do not use `assert` in production code (`flock/`, `mythica/`). Use `raise Exception(...)` instead. Asserts are allowed in tests.
-1. **Type Safety**: Use type hints. Code must pass `pyright`. Use `cast` or `# type: ignore` sparingly and only when necessary.
+1. **Type Safety**: Use type hints. Code must pass `pyright`. It is preferable to omit type hints entirely rather than using `Any`. Use `cast` or `# type: ignore` sparingly and only when necessary.
 1. **Formatting**: Ensure code is formatted with `ruff format`.
 1. **Security**: Use safe loading for YAML (`Loader=yaml.Loader` is acceptable for this specific project context per decisions, but prefer `safe_load` where possible). Avoid `pickle` on untrusted data.
 

@@ -4,7 +4,7 @@ These instructions define the coding standards and development workflow for the 
 
 ## Tech Stack
 
-- **Python**: 3.10, 3.11, 3.12
+- **Python**: 3.12, 3.13
 - **Build**: `pyproject.toml` using `setuptools`
 - **Testing**: `pytest`, `hypothesis`, `tox`
 - **Linting/Formatting**: `ruff`
@@ -13,7 +13,7 @@ These instructions define the coding standards and development workflow for the 
 ## Coding Standards
 
 - **No Asserts in Production**: Do not use `assert` statements in the source code (`flock/`, `mythica/`). Raise explicit exceptions (e.g., `ValueError`, `TypeError`) instead. `assert` is restricted to the `test/` directory.
-- **Type Hints**: All new code should include type hints. The project uses `pyright` for verification.
+- **Type Hints**: All new code should include type hints, but it is preferable to omit type hints entirely rather than using `Any`. The project uses `pyright` for verification.
 - **Formatting**: Follow `ruff` formatting rules. Line length is set to 160.
 - **Imports**: Imports should be sorted (handled by `ruff`).
 
