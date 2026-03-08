@@ -24,7 +24,7 @@ or re-execution as you experiment with them non-linearly.
 
 ### Installation
 
-Flock requires Python 3.10 or later.
+Flock requires Python 3.12 or later.
 
 To install for usage:
 
@@ -123,13 +123,13 @@ This project uses modern Python tooling. It is designed to be easily testable an
 
 We use `tox` to manage testing environments.
 
-To run tests across all supported Python versions (3.10, 3.11, 3.12), linting, and type checking:
+To run tests across all supported Python versions (3.12), linting, and type checking:
 
 ```bash
 tox
 ```
 
-To run just unit tests for a specific version (e.g., Python 3.12):
+To run just unit tests for Python 3.12:
 
 ```bash
 tox -e py312
@@ -179,7 +179,7 @@ pyright .
 This project uses GitHub Actions for CI. Workflows are defined in `.github/workflows/tests.yml`.
 The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on every push and pull request to ensure that:
 
-1. Tests pass on Python 3.10, 3.11, and 3.12.
+1. Tests pass on Python 3.12.
 1. Code is formatted correctly using `mdformat` and `ruff`.
 1. Code is statically type-checked with `pyright`.
 1. No structural linting errors exist.
@@ -194,6 +194,4 @@ The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on
 
 ## Supported Python Versions
 
-- Python 3.10
-- Python 3.11
 - Python 3.12

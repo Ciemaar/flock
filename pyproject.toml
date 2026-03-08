@@ -7,7 +7,7 @@ name = "closure_collector"
 version = "0.0.2"
 description = "A library for storing closures inside objects in an organized fashion."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 authors = [
     {name = "Andy Fundinger", email = "Andy@ciemaar.com"},
 ]
@@ -47,10 +47,9 @@ testpaths = [
 
 [tool.ruff]
 line-length = 160
-target-version = "py310"
+target-version = "py312"
 exclude = [
     "Lightning Talk.ipynb",
-    "examples",
 ]
 
 [tool.ruff.lint]
@@ -61,10 +60,9 @@ ignore = []
 "test/*" = ["S101"]
 
 [tool.pyright]
-include = ["flock", "mythica", "test"]
+include = ["flock", "mythica", "test", "examples"]
 exclude = [
     "Lightning Talk.ipynb",
-    "examples",
     "setup.py",
     "**/__pycache__",
     "**/.tox",
