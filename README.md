@@ -20,7 +20,9 @@ For Flock this is encapsulated within an implementation of dict called a `FlockD
 Flock is mostly useful as a way to memorialize--however temporarily--mathematical models and then allow for execution
 or re-execution as you experiment with them non-linearly.
 
-## Installation
+## User Documentation
+
+### Installation
 
 Flock requires Python 3.10 or later.
 
@@ -36,6 +38,65 @@ To install for development (editable mode with dev dependencies):
 pip install -e ".[dev,test]"
 ```
 
+### Usage Examples
+
+The core object in Flock is the `FlockDict`. It acts like a regular Python dictionary but can seamlessly evaluate callable objects (rules/closures) when their keys are accessed.
+
+#### Basic Usage
+
+You can initialize a `FlockDict` with static data and rules (closures):
+
+```python
+from flock import FlockDict
+
+# Define rules
+def calc_c(flock):
+    return flock['a'] + flock['b']
+
+def calc_d(flock):
+    return flock['c'] * 2
+
+# Initialize FlockDict with data and rules
+my_flock = FlockDict({
+    'a': 10,
+    'b': 20,
+    'c': calc_c,
+    'd': calc_d
+})
+
+# Accessing a static value
+print(my_flock['a']) # Output: 10
+
+# Accessing a rule evaluates it on the fly
+print(my_flock['c']) # Output: 30
+print(my_flock['d']) # Output: 60
+```
+
+#### Dynamic Updates
+
+When you change underlying data, the rules dynamically re-evaluate using the new data the next time they are accessed:
+
+```python
+# Update a dependency
+my_flock['a'] = 50
+
+# The dependent rules yield new results
+print(my_flock['c']) # Output: 70
+print(my_flock['d']) # Output: 140
+```
+
+#### Using `patch`
+
+The `flock.util.patch` function allows you to deep-update nested structures within a `FlockDict` or any standard mapping/sequence:
+
+```python
+from flock.util import patch
+
+data = {'nested': {'key': 'old_value'}}
+patch(data, ['nested', 'key'], 'new_value')
+print(data) # Output: {'nested': {'key': 'new_value'}}
+```
+
 ## Concepts
 
 - **Flock**: a set of related closures, aggregators, and flocks. A flock represents a model or formula of some sort and
@@ -48,9 +109,15 @@ pip install -e ".[dev,test]"
 - **ruleset**: the rules in a flock - everything in a flock that is not data. Combining data and rules will restore the
   flock, but rules are harder to persist.
 
-## Development
+## Developer Documentation
 
-This project uses modern Python tooling.
+This project uses modern Python tooling. It is designed to be easily testable and maintainable.
+
+### Architecture Overview
+
+- **`flock/`**: Contains the core library logic (`FlockDict`, closures, aggregators, utility functions).
+- **`mythica/`**: A sample domain implementation demonstrating how Flock can be applied to game mechanics.
+- **`test/`**: Unit tests utilizing `pytest` and property-based tests via `hypothesis`.
 
 ### Testing
 
@@ -106,6 +173,24 @@ Or directly:
 ```bash
 pyright .
 ```
+
+### Continuous Integration (CI)
+
+This project uses GitHub Actions for CI. Workflows are defined in `.github/workflows/tests.yml`.
+The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on every push and pull request to ensure that:
+
+1. Tests pass on Python 3.10, 3.11, and 3.12.
+1. Code is formatted correctly using `mdformat` and `ruff`.
+1. Code is statically type-checked with `pyright`.
+1. No structural linting errors exist.
+
+### Contributing Guidelines
+
+- **No Asserts in Production**: Ensure that `assert` statements are not used in `flock/` or `mythica/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
+- **Type Safety**: New functions should include type hints that pass the strict Pyright checks configured in `pyproject.toml`.
+- **Formatting**: All commits must pass the formatting checks. Run `tox -e lint` before submitting a pull request to ensure `ruff` and `mdformat` checks pass.
+- **Test Coverage**: Strive to write unit tests for any new features or bug fixes. `flock` uses `pytest` and property-based testing heavily.
+- **AI Agent Context**: The `AGENTS.md` and `.github/copilot-instructions.md` files provide context and instructions tailored to automated and IDE-based AI assistants working on this repository.
 
 ## Supported Python Versions
 
