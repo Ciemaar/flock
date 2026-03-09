@@ -25,10 +25,12 @@ dependencies = [
 test = [
     "pytest>=7.0",
     "hypothesis>=6.0",
+    "pytest-cov",
+    "coverage",
 ]
 dev = [
     "ruff",
-    "pyright",
+    "mypy",
     "mdformat",
 ]
 
@@ -36,7 +38,7 @@ dev = [
 Homepage = "http://ciemaar.com/flock"
 
 [tool.setuptools]
-packages = ["flock"]
+packages = ["flock", "closure_collector"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -55,11 +57,12 @@ exclude = [
 [tool.ruff.lint]
 select = ["E", "F", "I", "S", "D"]
 ignore = [
+    "E731",
     "D105", # Missing docstring in magic method
     "D107", # Missing docstring in `__init__`
-    "D203", # 1 blank line required before class docstring (conflicts with D211)
+    "D203", # 1 blank line required before class docstring
     "D212", # Multi-line docstring summary should start at the first line
-    "D213", # Multi-line docstring summary should start at the second line (conflicts with D212)
+    "D213", # Multi-line docstring summary should start at the second line
     "D400", # First line should end with a period
     "D415", # First line should end with a period, question mark, or exclamation point
     "D401", # First line should be in imperative mood
@@ -73,15 +76,20 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 "test/*" = ["S101", "D"]
 
-[tool.pyright]
-include = ["flock", "mythica", "test", "examples"]
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+explicit_package_bases = true
 exclude = [
     "Lightning Talk.ipynb",
     "setup.py",
-    "**/__pycache__",
-    "**/.tox",
-    "**/.venv",
     "build",
-    "**/site-packages"
 ]
-reportIncompatibleMethodOverride = false
+
+[[tool.mypy.overrides]]
+module = [
+    "yaml.*",
+    "mythica.*",
+]
+ignore_missing_imports = true

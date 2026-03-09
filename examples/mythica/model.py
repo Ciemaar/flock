@@ -15,7 +15,8 @@ from pprint import pprint
 
 import yaml
 
-from flock.closures import lookup, reference
+from closure_collector.closures import index_reference
+from flock.closures import lookup
 from flock.core import FlockAggregator, FlockDict
 from flock.util import FlockException
 
@@ -72,7 +73,7 @@ def apply_attribute_table(character):
 def apply_attribs(character):
     """Docstring for apply_attribs."""
     for attribute in character["base_stats"]:
-        character[attribute] = reference(character, "base_stats", attribute)
+        character[attribute] = index_reference(character, "base_stats", attribute)
 
 
 def apply_racial_bonuses(character):
@@ -161,7 +162,7 @@ def save_character(character, filename):
 class Skill(object):
     """Docstring for Skill."""
 
-    def __init__(self, name, skill_type, cost=1, xp: (int | None) = 0, level=1):
+    def __init__(self, name, skill_type, cost=1, xp=0, level=1):
         """Docstring for __init__."""
         self.name = name
         self.skill_type = skill_type
@@ -212,7 +213,9 @@ class HeroicSkill(Skill):
         """Docstring for xp."""
         return None
 
-    xp = xp.setter(lambda x, y: None)
+    @xp.setter
+    def xp(self, value):
+        pass
 
 
 class Conduit(HeroicSkill):

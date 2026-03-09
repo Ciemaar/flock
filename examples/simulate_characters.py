@@ -3,7 +3,8 @@
 import random
 from functools import partial
 
-import mythica.model
+import mythica.model  # type: ignore[import-not-found]
+
 from flock.core import FlockDict
 
 sheet = {"seed": 42}

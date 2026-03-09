@@ -4,14 +4,14 @@ import inspect
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict, defaultdict
-from collections.abc import Callable, Iterable, Mapping, MutableMapping, MutableSequence
+from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence
 from copy import copy
 from itertools import chain
-from typing import Any, Sequence, cast
+from typing import Sequence, Union
 
+from closure_collector.core import CCBase, DynamicClosureCollector
+from closure_collector.util import is_rule
 from flock.util import FlockException
-
-from .util import is_rule
 
 __author__ = "Andy Fundinger"
 """
@@ -25,7 +25,7 @@ __author__ = "Andy Fundinger"
 """
 
 
-class FlockBase(Iterable, metaclass=ABCMeta):
+class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
     """Docstring for FlockBase."""
 
     @abstractmethod
@@ -35,10 +35,9 @@ class FlockBase(Iterable, metaclass=ABCMeta):
         :type path: list the path to this object, will be prepended to any errors generated
         :return: list of errors that prevent items in this Aggregator from being sheared.
         """
-        pass
 
     @abstractmethod
-    def shear(self, record_errors=False):
+    def shear(self, record_errors=False) -> Iterable:
         """
         Convert this Mapping into a simple dict
 
@@ -61,16 +60,18 @@ class FlockBase(Iterable, metaclass=ABCMeta):
         """Docstring for __hash__."""
         return id(self)
 
+    def __dir__(self):
+        """Docstring for __dir__."""
+        return object.__dir__(self)
 
-class MutableFlock(FlockBase):
+
+class MutableFlock(FlockBase, DynamicClosureCollector):
     """The abstract base class for flocks with items that can be set"""
 
     def __init__(self, root=None):
         """Docstring for __init__."""
         """ """
         super(MutableFlock, self).__init__()
-        self.root = root
-        self.peers: set = set()
 
     @abstractmethod
     def __setitem__(self, key, val):
@@ -78,27 +79,22 @@ class MutableFlock(FlockBase):
 
         some amount of processing may need to be done.
         """
-        pass
 
     @abstractmethod
     def __getitem__(self, key):
-        """Docstring for __getitem__."""
-        pass
+        """Reminder to implement Mapping"""
 
     @abstractmethod
     def __contains__(self, key):
-        """Docstring for __contains__."""
-        pass
+        """Reminder to implement Mapping"""
 
     @abstractmethod
     def __delitem__(self, key):
-        """Docstring for __delitem__."""
-        pass
+        """Reminder to implement Mapping"""
 
     @abstractmethod
     def __len__(self):
-        """Docstring for __len__."""
-        pass
+        """Reminder to implement Mapping"""
 
     def make_callable(self, value):
         """Docstring for make_callable."""
@@ -106,40 +102,13 @@ class MutableFlock(FlockBase):
             ret = value
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, MutableFlock):
+                    if isinstance(closure.cell_contents, DynamicClosureCollector):
                         closure.cell_contents.peers.add(self)
         elif isinstance(value, Mapping):
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
-
-            def ret():
-                """Docstring for ret."""
-                return value
-
+            ret = lambda: value
         return ret
-
-    def clear_cache(self):
-        """Docstring for clear_cache."""
-        if self.root is not None:
-            self.root.clear_cache()
-            return
-        to_collect = set([self])
-        to_clear = set()
-        while to_collect:
-            curr = to_collect.pop()
-            if curr not in to_clear:
-                to_clear.add(curr)
-                rels = curr.get_relatives()
-                if rels is not None:
-                    to_collect.update(rels)
-        for peer in to_clear:
-            if hasattr(peer, "cache"):
-                peer.cache = {}
-
-    @abstractmethod
-    def get_relatives(self):
-        """Docstring for get_relatives."""
-        pass
 
 
 class PromiseFlock(MutableFlock):
@@ -149,8 +118,7 @@ class PromiseFlock(MutableFlock):
         """Docstring for __init__."""
         """ """
         super(PromiseFlock, self).__init__(root=root)
-        self.promises: Any = {}
-        self.cache: dict = {}
+        self.promises = {}
 
     def __setitem__(self, key, val):
         """
@@ -196,11 +164,26 @@ class PromiseFlock(MutableFlock):
         """Docstring for __len__."""
         return len(self.promises)
 
+    def clear_cache(self):
+        """Docstring for clear_cache."""
+        if self.root is not None:
+            self.root.clear_cache()
+            return
+        to_collect = set([self])
+        to_clear = set()
+        while to_collect:
+            curr = to_collect.pop()
+            if curr not in to_clear:
+                to_clear.add(curr)
+                to_collect.update(curr.get_relatives())
+        for peer in to_clear:
+            peer.cache = {}
+
 
 class FlockList(PromiseFlock, MutableSequence):
     """Docstring for FlockList."""
 
-    def __init__(self, inlist: Sequence = (), root: (FlockBase | None) = None):
+    def __init__(self, inlist: Sequence = (), root: FlockBase | None = None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -210,8 +193,8 @@ class FlockList(PromiseFlock, MutableSequence):
 
         """
         super(FlockList, self).__init__()
-        self.promises: list = []
-        self.cache: dict = {}
+        self.promises = []
+        self.cache = {}
         self.root = root
         self.peers = set()
         for key in inlist:
@@ -254,7 +237,7 @@ class FlockList(PromiseFlock, MutableSequence):
                 if value_check:
                     ret[key] = value_check
             if not callable(value):
-                raise FlockException(f"Value at {key} is not callable")
+                raise TypeError("Value must be callable")
         return ret
 
     def shear(self, record_errors=False):
@@ -295,7 +278,7 @@ class FlockDict(PromiseFlock, MutableMapping):
     The actual lambdas must take 0 params and are accessible in the .promises attribute
     """
 
-    def __init__(self, indict: (Mapping | list[tuple]) = {}, root=None):
+    def __init__(self, indict: Union[list[tuple], Mapping] = {}, root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -311,8 +294,6 @@ class FlockDict(PromiseFlock, MutableMapping):
         self.peers = set()
         if not hasattr(indict, "items"):
             indict = dict(indict)
-        if not isinstance(indict, Mapping):
-            raise TypeError("indict must be a Mapping")
         for key, value in indict.items():
             self[key] = value
 
@@ -350,7 +331,7 @@ class FlockDict(PromiseFlock, MutableMapping):
                 if value_check:
                     ret[key] = value_check
             if not callable(value):
-                raise FlockException(f"Value at {key} is not callable")
+                raise TypeError("Value must be callable")
         return ret
 
     def shear(self, record_errors=False):
@@ -442,8 +423,8 @@ class Aggregator:
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e} at path {path} source {sourceNo}".format(
-                            e=str(e), value=value, path=path + [key], sourceNo=sourceNo, function=self.function.__name__
+                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                            e=str(e), value=value, function=self.function.__name__
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
         return ret
@@ -521,7 +502,7 @@ class FlockAggregator(FlockBase, Mapping):
         self.function = fn
         if keys is not None and not callable(keys):
             keys = set(keys)
-        self.source_keys: set | Callable[[], Iterable] | None = keys  # type: ignore
+        self.source_keys = keys
 
     def __getitem__(self, key):
         """
@@ -550,19 +531,19 @@ class FlockAggregator(FlockBase, Mapping):
         """Docstring for __iter__."""
         if self.source_keys is not None:
             if callable(self.source_keys):
-                return iter(set(cast(Callable[[], Iterable], self.source_keys)()))
+                return iter(set(self.source_keys()))
             else:
                 return iter(self.source_keys)
         return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
 
-    def get_sources(self) -> Iterable[Mapping]:
+    def get_sources(self):
         """Docstring for get_sources."""
         if isinstance(self.sources, Mapping):
             return self.sources.values()
         elif callable(self.sources):
-            return cast(Iterable[Mapping], self.sources())
+            return self.sources()
         else:
-            return cast(Iterable[Mapping], self.sources)
+            return self.sources
 
     def check(self, path=[]):
         """
@@ -580,8 +561,8 @@ class FlockAggregator(FlockBase, Mapping):
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e} at path {path} source {sourceNo}".format(
-                            e=str(e), value=value, path=path + [key], sourceNo=sourceNo, function=self.function.__name__
+                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                            e=str(e), value=value, function=self.function.__name__
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
         return ret

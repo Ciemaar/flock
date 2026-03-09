@@ -1,6 +1,6 @@
-# Flock
+# Flock / Closure Collector
 
-Flock is a library for managing groups of closures in Python, most commonly zero argument lambda closures.
+Flock (now `closure_collector`) is a library for managing groups of closures in Python, most commonly zero argument lambda closures.
 The basic trick is to take a group of lambdas with no parameters and then call them if/when you need their value.
 For example:
 
@@ -115,8 +115,9 @@ This project uses modern Python tooling. It is designed to be easily testable an
 
 ### Architecture Overview
 
-- **`flock/`**: Contains the core library logic (`FlockDict`, closures, aggregators, utility functions).
-- **`mythica/`**: A sample domain implementation demonstrating how Flock can be applied to game mechanics.
+- **`closure_collector/`**: Contains the core library logic (`FlockDict`, closures, aggregators, utility functions).
+- **`flock/`**: Contains the backwards-compatibility alias layer.
+- **`examples/`**: Sample domain implementations demonstrating how Flock can be applied (e.g. `mythica` game mechanics).
 - **`test/`**: Unit tests utilizing `pytest` and property-based tests via `hypothesis`.
 
 ### Testing
@@ -160,7 +161,7 @@ ruff format --check .
 
 ### Type Checking
 
-We use `pyright` for static type checking.
+We use `mypy` for static type checking.
 
 To run type checks:
 
@@ -171,7 +172,7 @@ tox -e type
 Or directly:
 
 ```bash
-pyright .
+mypy closure_collector/ flock/ examples/ test/
 ```
 
 ### Continuous Integration (CI)
@@ -181,15 +182,15 @@ The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on
 
 1. Tests pass on Python 3.12 and 3.13.
 1. Code is formatted correctly using `mdformat` and `ruff`.
-1. Code is statically type-checked with `pyright`.
+1. Code is statically type-checked with `mypy`.
 1. No structural linting errors exist.
 
 ### Contributing Guidelines
 
-- **No Asserts in Production**: Ensure that `assert` statements are not used in `flock/` or `mythica/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
-- **Type Safety**: New functions should include type hints that pass the strict Pyright checks configured in `pyproject.toml`.
+- **No Asserts in Production**: Ensure that `assert` statements are not used in `closure_collector/`, `flock/` or `examples/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
+- **Type Safety**: New functions should include type hints that pass the `mypy` checks configured in `pyproject.toml`.
 - **Formatting**: All commits must pass the formatting checks. Run `tox -e lint` before submitting a pull request to ensure `ruff` and `mdformat` checks pass.
-- **Test Coverage**: Strive to write unit tests for any new features or bug fixes. `flock` uses `pytest` and property-based testing heavily.
+- **Test Coverage**: Strive to write unit tests for any new features or bug fixes. `closure_collector` uses `pytest` and property-based testing heavily.
 - **AI Agent Context**: The `AGENTS.md` and `.github/copilot-instructions.md` files provide context and instructions tailored to automated and IDE-based AI assistants working on this repository.
 
 ## Supported Python Versions

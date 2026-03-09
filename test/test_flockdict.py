@@ -1,13 +1,14 @@
+"""Module docstring."""
+
 from types import FunctionType
 
 from pytest import raises
 
-from flock.closures import reference, toggle
-from flock.core import Aggregator, FlockAggregator, FlockDict, FlockList, MetaAggregator
+from closure_collector.closures import index_reference, toggle
+from flock.core import FlockAggregator, FlockDict, FlockList
 from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
-
 import unittest
 
 
@@ -17,6 +18,7 @@ class BasicFlockTestCase(unittest.TestCase):
     """
 
     def setUp(self):
+        """Docstring for setUp."""
         super().setUp()
         self.flock = FlockDict()
 
@@ -40,6 +42,11 @@ class BasicFlockTestCase(unittest.TestCase):
         assert "missing" not in self.flock
         del self.flock["Shepherd"]
         assert "Shepherd" not in self.flock
+        assert dir(self.flock), "There should be something in dir(flock)"
+        assert "Management" not in dir(self.flock)
+        assert "Shepherd" not in dir(self.flock)
+        assert "missing" not in dir(self.flock)
+        assert "shear" in dir(self.flock)
 
     def test_simple_dict(self):
         """
@@ -64,26 +71,25 @@ class BasicFlockTestCase(unittest.TestCase):
         self.assertEqual(self.flock["func"](1, 2), 3)
 
         def test2(x, y):
+            """Docstring for test2."""
             assert False
 
         self.flock["test2"] = test2
-        assert test2 == self.flock["test2"]  # Testing that this is not called
+        assert test2 == self.flock["test2"]
 
     def test_error(self):
+        """Docstring for test_error."""
         self.flock["bad"] = lambda: 1 / 0
         assert "bad" in self.flock
         with raises(FlockException) as exc_info:
             self.flock.pop("bad")
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
-
         with raises(FlockException) as exc_info:
             assert self.flock["bad"] != (lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
-
         with raises(FlockException) as exc_info:
             self.flock.shear()
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
-
         error = self.flock.shear(record_errors=True)["bad"]
         assert isinstance(error, FlockException)
         assert isinstance(error.__cause__, ZeroDivisionError)
@@ -98,7 +104,6 @@ class BasicFlockTestCase(unittest.TestCase):
         assert len(sheared) == 1
         assert isinstance(sheared, dict)
         assert sheared[3] == 15
-
         self.flock["cat"] = lambda: "Abbey"
         assert not self.flock.check()
         sheared = self.flock.shear()
@@ -106,24 +111,23 @@ class BasicFlockTestCase(unittest.TestCase):
         assert isinstance(sheared, dict)
         assert sheared["cat"] == "Abbey"
         assert sheared[3] == 15
-
-        assert self.flock.dataset() == {"cat": "Abbey", 3: 15}
-        assert len(self.flock.ruleset()) == 0
-        assert not self.flock.ruleset()
+        assert self.flock.dataset() == {"cat": "Abbey", (3): 15}
+        assert len(self.flock.ruleset()) == 0  # type: ignore
+        assert not self.flock.ruleset()  # type: ignore
 
     def test_consistent_shear(self):
+        """Docstring for test_consistent_shear."""
         t = toggle()
         self.flock["toggle"] = t
         self.flock["toggle2"] = t
-        self.flock.update({x: lambda: self.flock["toggle"] for x in range(5)})
+        self.flock.update({x: (lambda: self.flock["toggle"]) for x in range(5)})
         sheared = self.flock.shear()
         self.assertEqual(sheared["toggle"], not sheared["toggle2"])
         self.assertEqual([sheared["toggle"]] * 5, [sheared[x] for x in range(5)])
-
         assert len(self.flock.dataset()) == 0
         assert not self.flock.dataset()
-        assert len(self.flock.ruleset()) == 7
-        assert all(isinstance(x, FunctionType) for x in self.flock.ruleset().values())
+        assert len(self.flock.ruleset()) == 7  # type: ignore
+        assert all(isinstance(x, FunctionType) for x in self.flock.ruleset().values())  # type: ignore
 
 
 class FlockListTestCase(unittest.TestCase):
@@ -132,6 +136,7 @@ class FlockListTestCase(unittest.TestCase):
     """
 
     def setUp(self):
+        """Docstring for setUp."""
         super().setUp()
         self.flock = FlockList()
 
@@ -180,7 +185,6 @@ class FlockListTestCase(unittest.TestCase):
         assert len(sheared) == 1
         assert isinstance(sheared, list)
         assert sheared[0] == 15
-
         self.flock.append(lambda: "Abbey")
         assert not self.flock.check()
         sheared = self.flock.shear()
@@ -189,10 +193,11 @@ class FlockListTestCase(unittest.TestCase):
         assert sheared[1] == "Abbey"
 
     def test_consistent_shear(self):
+        """Docstring for test_consistent_shear."""
         t = toggle()
         self.flock.append(t)
         self.flock.append(t)
-        self.flock.extend([lambda: self.flock[0] for x in range(5)])
+        self.flock.extend([(lambda: self.flock[0]) for x in range(5)])
         sheared = self.flock.shear()
         self.assertEqual(sheared[0], not sheared[1])
         self.assertEqual([sheared[0]] * 5, [sheared[x] for x in range(2, 7)])
@@ -204,15 +209,17 @@ class FlockCacheTestCase(unittest.TestCase):
     """
 
     def setUp(self):
+        """Docstring for setUp."""
         super().setUp()
         self.flock = FlockDict()
         self.flock["source"] = "Original Value"
         self.flock["nested_source"] = {"source": "Original Value"}
 
     def test_nested_cache(self):
-        self.flock["dest"] = reference(self.flock, "source")
-        self.flock["nested_dest"] = {"dest": reference(self.flock, "nested_source", "source")}
-        self.flock["jump_dest"] = {"dest": reference(self.flock["nested_source"], "source")}
+        """Docstring for test_nested_cache."""
+        self.flock["dest"] = index_reference(self.flock, "source")
+        self.flock["nested_dest"] = {"dest": index_reference(self.flock, "nested_source", "source")}
+        self.flock["jump_dest"] = {"dest": index_reference(self.flock["nested_source"], "source")}
         assert self.flock["dest"] == self.flock["nested_dest"]["dest"] == "Original Value"
         self.flock["source"] = "1st New Value"
         assert self.flock["dest"] == "1st New Value"
@@ -223,10 +230,11 @@ class FlockCacheTestCase(unittest.TestCase):
         assert self.flock["jump_dest"]["dest"] == "2nd New Value"
 
     def test_split_cache(self):
+        """Docstring for test_split_cache."""
         self.flock2 = FlockDict()
-        self.flock2["dest"] = reference(self.flock, "source")
-        self.flock2["nested_dest"] = {"dest": reference(self.flock, "nested_source", "source")}
-        self.flock2["jump_dest"] = {"dest": reference(self.flock["nested_source"], "source")}
+        self.flock2["dest"] = index_reference(self.flock, "source")
+        self.flock2["nested_dest"] = {"dest": index_reference(self.flock, "nested_source", "source")}
+        self.flock2["jump_dest"] = {"dest": index_reference(self.flock["nested_source"], "source")}
         assert self.flock2["dest"] == self.flock2["nested_dest"]["dest"] == "Original Value"
         self.flock["source"] = "1st New Value"
         assert self.flock2["dest"] == "1st New Value"
@@ -238,23 +246,28 @@ class FlockCacheTestCase(unittest.TestCase):
 
 
 class AggregatorTestCase(unittest.TestCase):
+    """Docstring for AggregatorTestCase."""
+
     def setUp(self):
+        """Docstring for setUp."""
         super().setUp()
         self.flock = FlockDict()
         self.flock["x"] = {x: x for x in range(1, 10)}
-        self.flock["y"] = {x: 2 * x for x in range(1, 10)}
+        self.flock["y"] = {x: (2 * x) for x in range(1, 10)}
 
     def test_shear(self):
-        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: sum(x))
+        """Docstring for test_shear."""
+        self.flock["sum"] = FlockAggregator([self.flock["x"], self.flock["y"]], lambda x: sum(x))
         assert not self.flock.check()
         sheared = self.flock.shear()
         assert len(sheared) == 3
         assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
+        assert sheared["sum"] == {x: (x * 3) for x in range(1, 10)}
         assert dict(self.flock()) == sheared
 
     def test_check(self):
-        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: int(x))
+        """Docstring for test_check."""
+        self.flock["sum"] = FlockAggregator([self.flock["x"], self.flock["y"]], lambda x: int(x))
         check = self.flock.check()
         assert check
         assert len(check["sum"]) == 9
@@ -263,70 +276,74 @@ class AggregatorTestCase(unittest.TestCase):
 
 
 class MetaAggregatorTestCase(unittest.TestCase):
+    """Docstring for MetaAggregatorTestCase."""
+
     def setUp(self):
+        """Docstring for setUp."""
         super().setUp()
         self.flock = FlockDict()
         self.flock["x"] = {x: x for x in range(1, 10)}
-        self.flock["y"] = {x: 2 * x for x in range(1, 10)}
+        self.flock["y"] = {x: (2 * x) for x in range(1, 10)}
 
     def test_shear(self):
-        self.flock["sum"] = MetaAggregator(lambda: [self.flock[ls] for ls in ["x", "y"]], sum)
+        """Docstring for test_shear."""
+        self.flock["sum"] = FlockAggregator(lambda: [self.flock[ls] for ls in ["x", "y"]], sum)
         assert not self.flock.check()
         sheared = self.flock.shear()
         assert len(sheared) == 3
         assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
+        assert sheared["sum"] == {x: (x * 3) for x in range(1, 10)}
         assert dict(self.flock()) == sheared
 
 
 class FlockAggregatorTestCase(unittest.TestCase):
+    """Docstring for FlockAggregatorTestCase."""
+
     def setUp(self):
+        """Docstring for setUp."""
         super().setUp()
         self.flock = FlockDict()
         self.flock["x"] = {x: x for x in range(1, 10)}
-        self.flock["y"] = {x: 2 * x for x in range(1, 10)}
+        self.flock["y"] = {x: (2 * x) for x in range(1, 10)}
 
     def test_shear_list(self):
+        """Docstring for test_shear_list."""
         self.flock["sum"] = FlockAggregator([self.flock["x"], self.flock["y"]], lambda x: sum(x))
         assert not self.flock.check()
-
         assert len(self.flock["sum"]) == 9
         self.assertContentsEqual(self.flock["sum"].keys(), set(range(1, 10)))
         self.assertContentsEqual(self.flock["sum"].values(), (x * 3 for x in range(1, 10)))
         self.assertContentsEqual(self.flock["sum"].items(), ((x, x * 3) for x in range(1, 10)))
-
-        assert self.flock["sum"].shear() == {x: x * 3 for x in range(1, 10)}
-        assert self.flock["sum"] == {x: x * 3 for x in range(1, 10)}
-        assert self.flock["sum"]() == {x: x * 3 for x in range(1, 10)}
-        assert self.flock.promises["sum"].shear() == {x: x * 3 for x in range(1, 10)}
-        assert self.flock.promises["sum"]() == {x: x * 3 for x in range(1, 10)}
-
+        assert self.flock["sum"].shear() == {x: (x * 3) for x in range(1, 10)}
+        assert self.flock["sum"] == {x: (x * 3) for x in range(1, 10)}
+        assert self.flock["sum"]() == {x: (x * 3) for x in range(1, 10)}
+        assert self.flock.promises["sum"].shear() == {x: (x * 3) for x in range(1, 10)}
+        assert self.flock.promises["sum"]() == {x: (x * 3) for x in range(1, 10)}
         sheared = self.flock.shear()
         assert len(sheared) == 3
         assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
+        assert sheared["sum"] == {x: (x * 3) for x in range(1, 10)}
         assert dict(self.flock()) == sheared
 
     def test_shear_func(self):
+        """Docstring for test_shear_func."""
         self.flock["sum"] = FlockAggregator(lambda: [self.flock[ls] for ls in ["x", "y"]], sum)
         assert not self.flock.check()
-
         assert len(self.flock["sum"]) == 9
         self.assertContentsEqual(self.flock["sum"].keys(), range(1, 10))
         self.assertContentsEqual(self.flock["sum"].values(), (x * 3 for x in range(1, 10)))
         self.assertContentsEqual(self.flock["sum"].items(), ((x, x * 3) for x in range(1, 10)))
-
-        assert self.flock.promises["sum"].shear() == {x: x * 3 for x in range(1, 10)}
-        assert self.flock.promises["sum"]() == {x: x * 3 for x in range(1, 10)}
-        assert self.flock["sum"] == {x: x * 3 for x in range(1, 10)}
-
+        assert self.flock.promises["sum"].shear() == {x: (x * 3) for x in range(1, 10)}
+        assert self.flock.promises["sum"]() == {x: (x * 3) for x in range(1, 10)}
+        assert self.flock["sum"] == {x: (x * 3) for x in range(1, 10)}
         sheared = self.flock.shear()
         assert len(sheared) == 3
         assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
+        assert sheared["sum"] == {x: (x * 3) for x in range(1, 10)}
         assert dict(self.flock()) == sheared
 
     def test_check(self):
+        """Docstring for test_check."""
         self.flock["sum"] = FlockAggregator([self.flock["x"], self.flock["y"]], lambda x: int(x))
         check = self.flock.check()
         assert check
@@ -335,11 +352,15 @@ class FlockAggregatorTestCase(unittest.TestCase):
             assert len(value) == 2
 
     def assertContentsEqual(self, param, param1, *args, **kwargs):
+        """Docstring for assertContentsEqual."""
         return self.assertSetEqual(set(param), set(param1), *args, **kwargs)
 
 
 class ShearTestCase(unittest.TestCase):
+    """Docstring for ShearTestCase."""
+
     def setUp(self):
+        """Docstring for setUp."""
         super().setUp()
         self.flock = FlockDict()
         self.flock["a"] = "Original Value"
@@ -348,6 +369,7 @@ class ShearTestCase(unittest.TestCase):
         self.flock["d"] = set("ABC")
 
     def test_consistent_types(self):
+        """Docstring for test_consistent_types."""
         for collection in "bcd":
             pre_shear_type = type(self.flock[collection])
             self.flock.shear()
@@ -355,6 +377,7 @@ class ShearTestCase(unittest.TestCase):
             assert pre_shear_type is post_shear_type
 
     def test_edit_post_shear(self):
+        """Docstring for test_edit_post_shear."""
         self.flock.shear()
         self.flock["b"]["i"] = "New Value"
         self.flock["c"].append(4)

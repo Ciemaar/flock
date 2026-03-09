@@ -1,10 +1,10 @@
-# Flock Codebase Instructions
+# Flock / Closure Collector Codebase Instructions
 
-This document provides context and guidelines for AI agents working on the Flock codebase.
+This document provides context and guidelines for AI agents working on the Flock / Closure Collector codebase.
 
 ## Project Overview
 
-Flock is a Python library for managing groups of closures, primarily useful for memorializing mathematical models to allow non-linear execution. It uses a `FlockDict` to encapsulate these closures.
+Flock/Closure Collector is a Python library for managing groups of closures, primarily useful for memorializing mathematical models to allow non-linear execution. It uses a `FlockDict` to encapsulate these closures.
 
 ## Tech Stack & Standards
 
@@ -12,7 +12,7 @@ Flock is a Python library for managing groups of closures, primarily useful for 
 - **Build System**: `pyproject.toml` (setuptools backend)
 - **Testing**: `pytest`, orchestrated by `tox`.
 - **Linting**: `ruff` (line length 160).
-- **Type Checking**: `pyright`.
+- **Type Checking**: `mypy`.
 - **CI**: GitHub Actions (Linux & macOS).
 
 ## Development Workflow
@@ -24,15 +24,16 @@ Flock is a Python library for managing groups of closures, primarily useful for 
 
 ## Coding Guidelines
 
-1. **No Asserts**: Do not use `assert` in production code (`flock/`, `mythica/`). Use `raise Exception(...)` instead. Asserts are allowed in tests.
-1. **Type Safety**: Use type hints. Code must pass `pyright`. It is preferable to omit type hints entirely rather than using `Any`. Use `cast` or `# type: ignore` sparingly and only when necessary.
+1. **No Asserts**: Do not use `assert` in production code (`flock/`, `closure_collector/`, `mythica/`). Use `raise Exception(...)` instead. Asserts are allowed in tests.
+1. **Type Safety**: Use type hints. Code must pass `mypy`. It is preferable to omit type hints entirely rather than using `Any`. Use `cast` or `# type: ignore` sparingly and only when necessary.
 1. **Formatting**: Ensure code is formatted with `ruff format`.
 1. **Security**: Use safe loading for YAML (`Loader=yaml.Loader` is acceptable for this specific project context per decisions, but prefer `safe_load` where possible). Avoid `pickle` on untrusted data.
 
 ## Project Structure
 
-- `flock/`: Core library code.
-- `mythica/`: Example/domain implementation utilizing Flock.
+- `closure_collector/`: Core library code.
+- `flock/`: Compatibility wrapper.
+- `examples/mythica/`: Example/domain implementation utilizing closures.
 - `test/`: Unit and property-based tests (Hypothesis).
 - `tox.ini`: Configuration for test environments.
 - `.github/workflows/`: CI configuration.

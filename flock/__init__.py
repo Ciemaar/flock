@@ -1,7 +1,7 @@
 """Module docstring."""
 
 __author__ = "Andy Fundinger"
-from .core import Aggregator, FlockAggregator, FlockDict, MetaAggregator
-from .util import FlockException
-
-__all__ = ["Aggregator", "FlockAggregator", "FlockDict", "MetaAggregator", "FlockException"]
+from .core import Aggregator as Aggregator
+from .core import FlockDict as FlockDict
+from .core import MetaAggregator as MetaAggregator
+from .util import FlockException as FlockException
