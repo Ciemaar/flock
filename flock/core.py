@@ -2,13 +2,19 @@ import inspect
 import warnings
 from abc import abstractmethod, ABCMeta
 from collections import defaultdict, OrderedDict
-from collections.abc import MutableMapping, Mapping, MutableSequence, Iterable
+from collections.abc import (
+    MutableMapping,
+    Mapping,
+    MutableSequence,
+    Iterable,
+)
 from copy import copy
 from itertools import chain
-from typing import Sequence
+from typing import Sequence, Union
 
+from closure_collector.core import CCBase, DynamicClosureCollector
+from closure_collector.util import is_rule
 from flock.util import FlockException
-from .util import is_rule
 
 __author__ = "Andy Fundinger"
 
@@ -23,7 +29,7 @@ __author__ = "Andy Fundinger"
 """
 
 
-class FlockBase(Iterable, metaclass=ABCMeta):
+class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
     @abstractmethod
     def check(self, path):
         """
@@ -31,10 +37,9 @@ class FlockBase(Iterable, metaclass=ABCMeta):
         :type path: list the path to this object, will be prepended to any errors generated
         :return: list of errors that prevent items in this Aggregator from being sheared.
         """
-        pass
 
     @abstractmethod
-    def shear(self, record_errors=False):
+    def shear(self, record_errors=False) -> Iterable:
         """
         Convert this Mapping into a simple dict
 
@@ -56,37 +61,38 @@ class FlockBase(Iterable, metaclass=ABCMeta):
     def __hash__(self, *args, **kwargs):
         return id(self)
 
+    def __dir__(self):
+        return object.__dir__(self)
 
-class MutableFlock(FlockBase):
+
+class MutableFlock(FlockBase, DynamicClosureCollector):
     """The abstract base class for flocks with items that can be set"""
 
     def __init__(self, root=None):
         """ """
         super(MutableFlock, self).__init__()
-        self.root = root
 
     @abstractmethod
     def __setitem__(self, key, val):
         """Set a value in a MutableFlock
 
         some amount of processing may need to be done."""
-        pass
 
     @abstractmethod
     def __getitem__(self, key):
-        pass
+        "Reminder to implement Mapping"
 
     @abstractmethod
     def __contains__(self, key):
-        pass
+        "Reminder to implement Mapping"
 
     @abstractmethod
     def __delitem__(self, key):
-        pass
+        "Reminder to implement Mapping"
 
     @abstractmethod
     def __len__(self):
-        pass
+        "Reminder to implement Mapping"
 
     def make_callable(self, value):
         if callable(value) and len(inspect.signature(value).parameters) == 0:
@@ -94,33 +100,13 @@ class MutableFlock(FlockBase):
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, MutableFlock):
+                    if isinstance(closure.cell_contents, DynamicClosureCollector):
                         closure.cell_contents.peers.add(self)
         elif isinstance(value, Mapping):
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
             ret = lambda: value
         return ret
-
-    def clear_cache(self):
-        if self.root is not None:
-            self.root.clear_cache()
-            return
-
-        to_collect = set([self])
-        to_clear = set()
-        while to_collect:
-            curr = to_collect.pop()
-            if curr not in to_clear:
-                to_clear.add(curr)
-                to_collect.update(curr.get_relatives())
-
-        for peer in to_clear:
-            peer.cache = {}
-
-    @abstractmethod
-    def get_relatives(self):
-        pass
 
 
 class PromiseFlock(MutableFlock):
@@ -171,6 +157,22 @@ class PromiseFlock(MutableFlock):
 
     def __len__(self):
         return len(self.promises)
+
+    def clear_cache(self):
+        if self.root is not None:
+            self.root.clear_cache()
+            return
+
+        to_collect = set([self])
+        to_clear = set()
+        while to_collect:
+            curr = to_collect.pop()
+            if curr not in to_clear:
+                to_clear.add(curr)
+                to_collect.update(curr.get_relatives())
+
+        for peer in to_clear:
+            peer.cache = {}
 
 
 class FlockList(PromiseFlock, MutableSequence):
@@ -266,7 +268,7 @@ class FlockDict(PromiseFlock, MutableMapping):
     The actual lambdas must take 0 params and are accessible in the .promises attribute
     """
 
-    def __init__(self, indict: Mapping | list[tuple] = {}, root=None):
+    def __init__(self, indict: Union[list[tuple], Mapping] = {}, root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -421,8 +423,6 @@ class Aggregator:
                         msg = "function {function} incompatible with value {value} exception: {e}".format(
                             e=str(e),
                             value=value,
-                            path=path + [key],
-                            sourceNo=sourceNo,
                             function=self.function.__name__,
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
@@ -577,8 +577,6 @@ class FlockAggregator(FlockBase, Mapping):
                         msg = "function {function} incompatible with value {value} exception: {e}".format(
                             e=str(e),
                             value=value,
-                            path=path + [key],
-                            sourceNo=sourceNo,
                             function=self.function.__name__,
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg

@@ -4,13 +4,38 @@ from collections.abc import MutableMapping
 from _pytest.python_api import raises
 from hypothesis import given, strategies as st, settings
 
+import closure_collector.util
 import flock
 import flock.closures
 import flock.core
 import flock.util
-
-# TODO: replace st.nothing() with appropriate strategies
 from flock import FlockDict
+
+MAX_TEST_LENGTH = 100
+
+
+@given(
+    inlist=st.one_of(
+        st.binary().map(memoryview),
+        st.builds(range, st.integers(min_value=0, max_value=MAX_TEST_LENGTH)),
+        st.builds(
+            lambda start, size: range(start, start + size),
+            st.integers(),
+            st.integers(min_value=0, max_value=MAX_TEST_LENGTH),
+        ),
+        st.builds(
+            lambda start, size, step: range(start, start + size * step, step),
+            st.integers(),
+            st.integers(min_value=0, max_value=MAX_TEST_LENGTH),
+            st.integers(min_value=1, max_value=MAX_TEST_LENGTH),
+        ),
+        st.text(),
+        st.builds(tuple),
+    ),
+    root=st.none(),
+)
+def test_fuzz_FlockList(inlist, root):
+    flock.core.FlockList(inlist=inlist, root=root)
 
 
 @given(
@@ -33,12 +58,12 @@ def test_fuzz_FlockDict(indict, root):
 
 @given(func=st.functions())
 def test_fuzz_is_rule(func):
-    assert flock.core.is_rule(func=func)
+    assert closure_collector.util.is_rule(func=func)
 
 
 @given(var=st.one_of(st.integers(), st.floats(), st.characters(), st.text()))
 def test_fuzz_is_not_rule(var):
-    assert not flock.core.is_rule(func=var)
+    assert not closure_collector.util.is_rule(func=var)
 
 
 @given(
@@ -91,6 +116,3 @@ def test_fuzz_patch(map_obj, key_list, val):
             if callable(val) and isinstance(map_iter, FlockDict):
                 val = val()
             assert stored_value == val or (math.isnan(stored_value) and math.isnan(val))
-
-
-# TODO: replace st.nothing() with appropriate strategies

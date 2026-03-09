@@ -1,3 +1,39 @@
 [build-system]
 requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = clean,py39,py310,py311,py312,report
+
+[testenv]
+# install pytest in the virtualenv where commands will be executed
+deps = pytest
+    -rrequirements.txt
+    hypothesis
+    coverage
+    pytest-cov
+depends =
+    {py39,py310,py311,py312}: clean
+    report: py39,py310,py311,py312
+commands =
+    # NOTE: you can run any command line tool here - not just tests
+    pytest --cov --cov-append --cov-report=term-missing  --cov-branch
+
+[testenv:report]
+deps = coverage
+skip_install = true
+commands =
+    coverage report
+    coverage html
+
+[testenv:clean]
+deps = coverage
+skip_install = true
+commands = coverage erase
+"""
+
+
+[tool.ruff.lint]
+ignore = ['E731']
