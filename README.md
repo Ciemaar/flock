@@ -101,12 +101,12 @@ print(data) # Output: {'nested': {'key': 'new_value'}}
 
 - **Flock**: a set of related closures, aggregators, and flocks. A flock represents a model or formula of some sort and
   pragmatically will not be changed by exterior components.
-- **0 argument closures**: a closure with 0 arguments can be executed at anytime however Python does not guarantee
-  that this will not cause an error nor does Flock attempt to do so.
-- **Aggregator**: an object that works across a set of closures in one or more flocks applying a common function to them.
+- **0-argument closures**: A closure with 0 arguments can be executed at any time. However, Python does not guarantee
+  that this will not cause an error, nor does Flock attempt to do so.
+- **Aggregator**: An object that works across a set of closures in one or more flocks, applying a common function to them.
   This is like a column in Excel filled entirely with a consistent formula.
-- **dataset**: the datavalues in a flock.
-- **ruleset**: the rules in a flock - everything in a flock that is not data. Combining data and rules will restore the
+- **Dataset**: The data values in a flock.
+- **Ruleset**: The rules in a flock—everything in a flock that is not data. Combining data and rules will restore the
   flock, but rules are harder to persist.
 
 ## Developer Documentation
@@ -116,8 +116,8 @@ This project uses modern Python tooling. It is designed to be easily testable an
 ### Architecture Overview
 
 - **`closure_collector/`**: Contains the core library logic (`FlockDict`, closures, aggregators, utility functions).
-- **`flock/`**: Contains the backwards-compatibility alias layer.
-- **`examples/`**: Sample domain implementations demonstrating how Flock can be applied (e.g. `mythica` game mechanics).
+- **`flock/`**: Contains the backward-compatibility alias layer.
+- **`examples/`**: Sample domain implementations demonstrating how Flock can be applied (e.g., `mythica` game mechanics).
 - **`test/`**: Unit tests utilizing `pytest` and property-based tests via `hypothesis`.
 
 ### Testing
@@ -187,7 +187,7 @@ The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on
 
 ### Contributing Guidelines
 
-- **No Asserts in Production**: Ensure that `assert` statements are not used in `closure_collector/`, `flock/` or `examples/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
+- **No Asserts in Production**: Ensure that `assert` statements are not used in `closure_collector/`, `flock/`, or `examples/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
 - **Formatting**: All commits must pass the formatting checks. Run `tox -e lint` before submitting a pull request to ensure `ruff` and `mdformat` checks pass.
 
 #### Type Hinting Complexity
