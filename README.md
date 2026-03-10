@@ -188,8 +188,17 @@ The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on
 ### Contributing Guidelines
 
 - **No Asserts in Production**: Ensure that `assert` statements are not used in `closure_collector/`, `flock/` or `examples/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
-- **Type Safety**: New functions should include type hints that pass the `mypy` checks configured in `pyproject.toml`.
 - **Formatting**: All commits must pass the formatting checks. Run `tox -e lint` before submitting a pull request to ensure `ruff` and `mdformat` checks pass.
+
+#### Type Hinting Complexity
+
+Due to the fundamental architecture of this project, **type hinting is exceptionally complex**. `closure_collector` heavily utilizes dynamic metaprogramming, runtime duck-typing, and inspection of underlying Python mechanics (such as dynamically evaluating `__closure__` properties or yielding elements that morph between raw values and callables based on context).
+
+Because of this:
+
+- Highly strict structural type checkers (like Pyright) often fail with false positives when analyzing `closure_collector` internals. We use **MyPy** because it handles these abstractions more gracefully.
+- **Do not aggressively type-hint dynamic variables.** It is generally preferable to omit type hints entirely rather than resorting to `Any` or creating massively convoluted `Union` chains.
+- When working with core utility functions (like `patch()`), rely on standard duck-typing mechanics (`try`/`except TypeError`) rather than trying to statically assert interfaces. If `mypy` flags a dynamic evaluation pattern that is verifiably correct at runtime, use a targeted `# type: ignore` comment.
 - **Test Coverage**: Strive to write unit tests for any new features or bug fixes. `closure_collector` uses `pytest` and property-based testing heavily.
 - **AI Agent Context**: The `AGENTS.md` and `.github/copilot-instructions.md` files provide context and instructions tailored to automated and IDE-based AI assistants working on this repository.
 

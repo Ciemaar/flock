@@ -13,8 +13,8 @@ These instructions define the coding standards and development workflow for the 
 ## Coding Standards
 
 - **No Asserts in Production**: Do not use `assert` statements in the source code (`flock/`, `closure_collector/`, `mythica/`). Raise explicit exceptions (e.g., `ValueError`, `TypeError`) instead. `assert` is restricted to the `test/` directory.
-- **Type Hints**: All new code should include type hints, but it is preferable to omit type hints entirely rather than using `Any`. The project uses `mypy` for verification.
 - **Formatting**: Follow `ruff` formatting rules. Line length is set to 160.
+- **Type Hints**: Because this project relies heavily on dynamic metaprogramming and runtime duck-typing, type hinting is highly complex. Prefer to omit type hints entirely rather than using `Any`. Do not aggressively type-hint dynamic variables or try to force strict structural interfaces. If `mypy` flags a dynamic evaluation pattern that is verifiably correct at runtime, use a targeted `# type: ignore` comment.
 - **Imports**: Imports should be sorted (handled by `ruff`).
 
 ## Development Commands
