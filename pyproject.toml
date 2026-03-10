@@ -94,3 +94,33 @@ module = [
     "mythica.*",
 ]
 ignore_missing_imports = true
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py312, py313, lint, type
+isolated_build = True
+
+[testenv]
+deps =
+    .[test]
+commands =
+    pytest
+
+[testenv:lint]
+deps =
+    .[dev]
+allowlist_externals = mdformat
+commands =
+    ruff check .
+    ruff format --check .
+    mdformat --check README.md AGENTS.md TOOLING_EVALUATION.md .github flock closure_collector examples
+
+[testenv:type]
+deps =
+    .[dev]
+    .[test]
+allowlist_externals = mypy
+commands =
+    mypy closure_collector/ flock/ examples/ test/
+"""
