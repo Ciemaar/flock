@@ -1,3 +1,7 @@
+"""Module docstring."""
+
+from glom import T, glom  # type: ignore
+
 from closure_collector.util import ClosureCollectorException
 from flock import FlockException
 
@@ -9,62 +13,60 @@ def collection_reduce(int_collection, func):
 
 def index_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    Return closure that references values stored elsewhere in a mapping
     :type flock: flock.core.FlockDict
     :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        currObj = flock
+        """Docstring for de_ref."""
+        spec = T
+        for index in indexes:
+            spec = spec[index]
 
         try:
-            # recursively resolve indexes
-            for index in indexes:
-                currObj = currObj[index]
-            return currObj
+            if "default" in kwargs:
+                return glom(flock, spec, default=kwargs["default"])
+            else:
+                return glom(flock, spec)
         except (ClosureCollectorException, FlockException):
             raise
-        except KeyError as e:
-            if "default" in kwargs:
-                return kwargs["default"]
-            else:
-                raise
 
     return de_ref
 
 
 def attr_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    Return closure that references values stored elsewhere in a mapping
     :type flock: flock.core.FlockDict
     :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        currObj = flock
+        """Docstring for de_ref."""
+        spec = T
+        for index in indexes:
+            spec = getattr(spec, index)
 
         try:
-            # recursively resolve indexes
-            for index in indexes:
-                currObj = getattr(currObj, index)
-            return currObj
+            if "default" in kwargs:
+                return glom(flock, spec, default=kwargs["default"])
+            else:
+                return glom(flock, spec)
         except (ClosureCollectorException, FlockException):
             raise
-        except AttributeError as e:
-            if "default" in kwargs:
-                return kwargs["default"]
-            else:
-                raise
 
     return de_ref
 
 
 def toggle():
+    """Docstring for toggle."""
     store = [False]
 
     def inner_toggle():
+        """Docstring for inner_toggle."""
         store[0] = not store[0]
         return store[0]
 
