@@ -1,6 +1,5 @@
-"""Module docstring."""
-
 __author__ = "Andy Fundinger"
+
 from closure_collector.closures import index_reference
 
 """
@@ -34,7 +33,7 @@ and the names are separately at:
 >>> sgPrinter.__code__.co_freevars
 ('param',)
 """
-reference = index_reference
+reference = index_reference  # preserving old name/location
 
 
 def lookup(mapping, index, table):

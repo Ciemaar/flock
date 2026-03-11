@@ -1,0 +1,4 @@
+# file: /app/flock/core.py
+# hypothesis_version: 6.151.9
+
+['%s:%s', ',', 'Andy Fundinger', 'FlockBase | None', 'Key %s not found', 'Source: {sourceNo}', '__closure__', 'check', 'clear_cache', 'items', 'shear']

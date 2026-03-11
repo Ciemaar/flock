@@ -1,0 +1,4 @@
+# file: /app/.tox/py312/bin/pytest
+# hypothesis_version: 6.151.9
+
+['.exe', '__main__']

@@ -1,126 +1,39 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
-
-[project]
-name = "closure_collector"
-version = "0.0.2"
-description = "A library for storing closures inside objects in an organized fashion."
-readme = "README.md"
-requires-python = ">=3.12"
-authors = [
-    {name = "Andy Fundinger", email = "Andy@ciemaar.com"},
-]
-license = {text = "GPL v3"}
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Operating System :: OS Independent",
-]
-dependencies = [
-    "PyYAML>=6.0",
-]
-
-[project.optional-dependencies]
-test = [
-    "pytest>=7.0",
-    "hypothesis>=6.0",
-    "pytest-cov",
-    "coverage",
-]
-dev = [
-    "ruff",
-    "mypy",
-    "mdformat",
-    "tox",
-]
-
-[project.urls]
-Homepage = "http://ciemaar.com/flock"
-
-[tool.setuptools]
-packages = ["flock", "closure_collector"]
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q"
-testpaths = [
-    "test",
-]
-
-[tool.ruff]
-line-length = 160
-target-version = "py312"
-exclude = [
-    "Lightning Talk.ipynb",
-]
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "S", "D"]
-ignore = [
-    "E731",
-    "D105", # Missing docstring in magic method
-    "D107", # Missing docstring in `__init__`
-    "D203", # 1 blank line required before class docstring
-    "D212", # Multi-line docstring summary should start at the first line
-    "D213", # Multi-line docstring summary should start at the second line
-    "D400", # First line should end with a period
-    "D415", # First line should end with a period, question mark, or exclamation point
-    "D401", # First line should be in imperative mood
-    "D404", # First word of the docstring should not be "This"
-    "D205", # 1 blank line required between summary line and description
-]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
-
-[tool.ruff.lint.per-file-ignores]
-"test/*" = ["S101", "D"]
-
-[tool.mypy]
-python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-explicit_package_bases = true
-exclude = [
-    "Lightning Talk.ipynb",
-    "setup.py",
-    "build",
-]
-
-[[tool.mypy.overrides]]
-module = [
-    "yaml.*",
-    "mythica.*",
-]
-ignore_missing_imports = true
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py312, py313, lint, type
-isolated_build = True
+envlist = clean,py39,py310,py311,py312,report
 
 [testenv]
-deps =
-    .[test]
+# install pytest in the virtualenv where commands will be executed
+deps = pytest
+    -rrequirements.txt
+    hypothesis
+    coverage
+    pytest-cov
+depends =
+    {py39,py310,py311,py312}: clean
+    report: py39,py310,py311,py312
 commands =
-    pytest
+    # NOTE: you can run any command line tool here - not just tests
+    pytest --cov --cov-append --cov-report=term-missing  --cov-branch
 
-[testenv:lint]
-deps =
-    .[dev]
-allowlist_externals = mdformat
+[testenv:report]
+deps = coverage
+skip_install = true
 commands =
-    ruff check .
-    ruff format --check .
-    mdformat --check README.md AGENTS.md TOOLING_EVALUATION.md .github flock closure_collector examples
+    coverage report
+    coverage html
 
-[testenv:type]
-deps =
-    .[dev]
-    .[test]
-allowlist_externals = mypy
-commands =
-    mypy closure_collector/ flock/ examples/ test/
+[testenv:clean]
+deps = coverage
+skip_install = true
+commands = coverage erase
 """
+
+
+[tool.ruff.lint]
+ignore = ['E731']
