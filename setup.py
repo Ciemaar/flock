@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from setuptools import setup
 
 setup(
@@ -9,9 +11,6 @@ setup(
     author="Andy Fundinger",
     author_email="Andy@ciemaar.com",
     description="A library for storing closures inside objects in an organized fashion.",
-    requires=[
-        "PyYAML",
-        "wheel",
-    ],
+    requires=["PyYAML", "wheel"],
     tests_require=["pytest", "hypothesis"],
 )
