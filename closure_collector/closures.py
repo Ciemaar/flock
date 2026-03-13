@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from closure_collector.util import ClosureCollectorException
 from flock import FlockException
 
@@ -9,17 +11,16 @@ def collection_reduce(int_collection, func):
 
 def index_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    Return closure that references values stored elsewhere in a mapping
     :type flock: flock.core.FlockDict
     :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
+        """Docstring for de_ref."""
         currObj = flock
-
         try:
-            # recursively resolve indexes
             for index in indexes:
                 currObj = currObj[index]
             return currObj
@@ -36,17 +37,16 @@ def index_reference(flock, *indexes, **kwargs):
 
 def attr_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    Return closure that references values stored elsewhere in a mapping
     :type flock: flock.core.FlockDict
     :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
+        """Docstring for de_ref."""
         currObj = flock
-
         try:
-            # recursively resolve indexes
             for index in indexes:
                 currObj = getattr(currObj, index)
             return currObj
@@ -62,9 +62,11 @@ def attr_reference(flock, *indexes, **kwargs):
 
 
 def toggle():
+    """Docstring for toggle."""
     store = [False]
 
     def inner_toggle():
+        """Docstring for inner_toggle."""
         store[0] = not store[0]
         return store[0]
 

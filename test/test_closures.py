@@ -1,20 +1,18 @@
+"""Module docstring."""
+
 import unittest
 import uuid as uuid
 
 import pytest
 
-from closure_collector.closures import (
-    index_reference,
-    attr_reference,
-    toggle,
-    collection_reduce,
-)
-from closure_collector.core import ShearedBase, ClosureCollector
+from closure_collector.closures import attr_reference, collection_reduce, index_reference, toggle
+from closure_collector.core import ClosureCollector, ShearedBase
 from flock import FlockDict
 from flock.closures import lookup
 
 
 def test_list_reduce():
+    """Docstring for test_list_reduce."""
     test_list = [1, 2, 3]
     test = collection_reduce(test_list, sum)
     assert test() == 6
@@ -23,45 +21,58 @@ def test_list_reduce():
 
 
 class ClosureAttrTestCase(unittest.TestCase):
+    """Docstring for ClosureAttrTestCase."""
+
     def __init__(self, methodName="runTest"):
+        """Docstring for __init__."""
         super().__init__(methodName)
         self.base_obj = ShearedBase()
 
     def test_attr_reference(self):
+        """Docstring for test_attr_reference."""
         probe = uuid.uuid4()
         self.base_obj.x = probe
         assert probe is attr_reference(self.base_obj, "x")()
 
     def test_attr_reference_default(self):
+        """Docstring for test_attr_reference_default."""
         probe = uuid.uuid4()
         assert probe is attr_reference(self.base_obj, "x", default=probe)()
 
     def test_attr_reference_no_default(self):
+        """Docstring for test_attr_reference_no_default."""
         probe = uuid.uuid4()
         with pytest.raises(AttributeError):
             assert probe is attr_reference(self.base_obj, "x")()
 
 
 class ClosureIndexTestCase(unittest.TestCase):
+    """Docstring for ClosureIndexTestCase."""
+
     def __init__(self, methodName="runTest"):
+        """Docstring for __init__."""
         super().__init__(methodName)
         self.base_dict = {}
 
     def test_index_reference(self):
+        """Docstring for test_index_reference."""
         probe = uuid.uuid4()
         self.base_dict["x"] = probe
         assert probe is index_reference(self.base_dict, "x")()
 
     def test_index_reference_default(self):
+        """Docstring for test_index_reference_default."""
         probe = uuid.uuid4()
         assert probe is index_reference(self.base_dict, "x", default=probe)()
 
     def test_attr_reference_no_default(self):
+        """Docstring for test_attr_reference_no_default."""
         probe = uuid.uuid4()
         with pytest.raises(KeyError):
             assert probe is index_reference(self.base_dict, "x")()
 
     def test_lookup(self):
+        """Docstring for test_lookup."""
         probe = uuid.uuid4()
         table_row = 5
         base_dict = {"x": table_row}
@@ -69,18 +80,25 @@ class ClosureIndexTestCase(unittest.TestCase):
         assert probe is lookup(base_dict, "x", table)()
 
     def test_toggle(self):
+        """Docstring for test_toggle."""
         tt = toggle()
         self.assertEqual([tt() for x in range(4)], [True, False, True, False])
 
 
 class FlockClosureTestCase(ClosureIndexTestCase):
+    """Docstring for FlockClosureTestCase."""
+
     def __init__(self, methodName="runTest"):
+        """Docstring for __init__."""
         super().__init__(methodName)
         self.base_dict = FlockDict()
 
 
 class ClosureCollectorTestCase(ClosureAttrTestCase):
+    """Docstring for ClosureCollectorTestCase."""
+
     def __init__(self, methodName="runTest"):
+        """Docstring for __init__."""
         super().__init__(methodName)
         self.base_obj = ClosureCollector()
 
