@@ -6,27 +6,27 @@ description = "A generalized closure collection dictionary and toolset."
 authors = [{ name = "Andy P Fundinger", email = "Andy@ciemaar.com" }]
 requires-python = ">=3.12"
 dependencies = [
-    "PyYAML>=6.0",
-    "pydantic-settings>=2.0.0",
-    "click>=8.0.0"
+    "PyYAML",
+    "pydantic-settings",
+    "click"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0.0",
-    "hypothesis>=6.0.0",
-    "pytest-cov>=4.0.0",
-    "coverage>=7.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0.0",
-    "mdformat>=0.7.0",
-    "tox>=4.0.0"
+    "pytest",
+    "hypothesis",
+    "pytest-cov",
+    "coverage",
+    "ruff",
+    "mypy",
+    "mdformat",
+    "tox"
 ]
 test = [
-    "pytest>=8.0.0",
-    "hypothesis>=6.0.0",
-    "pytest-cov>=4.0.0",
-    "coverage>=7.0.0"
+    "pytest",
+    "hypothesis",
+    "pytest-cov",
+    "coverage"
 ]
 
 [build-system]
