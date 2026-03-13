@@ -1,6 +1,6 @@
 import unittest
 
-from closure_collector.core import ClosureCollector, ShearedBase, ClosureReduction
+from closure_collector.core import ClosureCollector, ClosureReduction, ShearedBase
 from closure_collector.util import ClosureCollectorException
 
 

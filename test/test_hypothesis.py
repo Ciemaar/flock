@@ -1,8 +1,9 @@
 import math
 from collections.abc import MutableMapping
 
+from hypothesis import given, settings
+from hypothesis import strategies as st
 from pytest import raises
-from hypothesis import given, strategies as st, settings
 
 import closure_collector.util
 import flock

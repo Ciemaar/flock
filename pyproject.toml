@@ -85,7 +85,7 @@ line-length = 160
 src = ["src", "test"]
 
 [tool.ruff.lint]
-select = ["E", "F"]
+select = ["E", "F", "W", "I"]
 ignore = ["E731"]
 
 [tool.ruff.lint.per-file-ignores]

@@ -1,12 +1,12 @@
 import inspect
 import warnings
-from abc import abstractmethod, ABCMeta
-from collections import defaultdict, OrderedDict
+from abc import ABCMeta, abstractmethod
+from collections import OrderedDict, defaultdict
 from collections.abc import (
-    MutableMapping,
-    Mapping,
-    MutableSequence,
     Iterable,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
 )
 from copy import copy
 from itertools import chain

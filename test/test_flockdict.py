@@ -3,7 +3,7 @@ from types import FunctionType
 from pytest import raises
 
 from closure_collector.closures import index_reference, toggle
-from flock.core import FlockDict, Aggregator, MetaAggregator, FlockAggregator, FlockList
+from flock.core import Aggregator, FlockAggregator, FlockDict, FlockList, MetaAggregator
 from flock.util import FlockException
 
 __author__ = "Andy Fundinger"

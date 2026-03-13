@@ -4,12 +4,12 @@ import uuid as uuid
 import pytest
 
 from closure_collector.closures import (
-    index_reference,
     attr_reference,
-    toggle,
     collection_reduce,
+    index_reference,
+    toggle,
 )
-from closure_collector.core import ShearedBase, ClosureCollector
+from closure_collector.core import ClosureCollector, ShearedBase
 from flock import FlockDict
 from flock.closures import lookup
 
