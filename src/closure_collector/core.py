@@ -2,7 +2,7 @@ import inspect
 from abc import ABCMeta, abstractmethod
 from itertools import chain
 from pprint import pformat
-from typing import Any, Iterable, Mapping
+from typing import Iterable, Mapping
 
 from closure_collector.util import ClosureCollectorException, is_rule, rebind
 
@@ -31,7 +31,7 @@ class CCBase(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def shear(self, record_errors=False) -> Any:
+    def shear(self, record_errors=False):
         """
         Convert this closure collection into a simple object
 
@@ -135,9 +135,7 @@ class ClosurePromiseCollector(DynamicClosureCollector):
             try:
                 ret = promise()
             except Exception as e:
-                raise ClosureCollectorException(
-                    "Error calculating attribute:%s" % item
-                ) from e
+                raise ClosureCollectorException("Error calculating attribute:%s" % item) from e
             self.cache[item] = ret
             return ret
 
@@ -187,14 +185,8 @@ class ClosureCollector(ClosurePromiseCollector):
         return set(self.promises.keys()).union(self.cache.keys())
 
     def get_relatives(self):
-        rels = {
-            promise
-            for promise in self.promises.values()
-            if hasattr(promise, "clear_cache")
-        }
-        rels.update(
-            peer for peer in getattr(self, "peers", ()) if hasattr(peer, "clear_cache")
-        )
+        rels = {promise for promise in self.promises.values() if hasattr(promise, "clear_cache")}
+        rels.update(peer for peer in getattr(self, "peers", ()) if hasattr(peer, "clear_cache"))
         return rels
 
     def __repr__(self):
@@ -294,11 +286,7 @@ class ClosureReduction:
         :return: value as returned by the function for that key.
         """
         try:
-            cross_items = [
-                getattr(source, item)
-                for source in self.get_sources()
-                if hasattr(source, item)
-            ]
+            cross_items = [getattr(source, item) for source in self.get_sources() if hasattr(source, item)]
             if not cross_items:
                 raise AttributeError("Attribute %s not found" % item)
             return self.function(cross_items)

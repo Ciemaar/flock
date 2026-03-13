@@ -30,11 +30,11 @@ mathematical models to allow non-linear execution. It uses a `FlockDict` to enca
 1. **Formatting**: Ensure code is formatted with `ruff format`.
 1. **Type Safety**: Use type hints. Code must pass `mypy`. However, **due to the heavy metaprogramming and dynamic
    duck-typing nature of `closure_collector`, type hinting is highly complex**.
-    - It is preferable to omit type hints entirely rather than using `Any`.
-    - Do not aggressively type-hint dynamic variables or try to force strict structural interfaces on components
-      designed to morph at runtime.
-    - If `mypy` flags a dynamic evaluation pattern that is verifiably correct at runtime, use a targeted
-      `# type: ignore` comment rather than altering the dynamic logic.
+   - It is preferable to omit type hints entirely rather than using `Any`.
+   - Do not aggressively type-hint dynamic variables or try to force strict structural interfaces on components
+     designed to morph at runtime.
+   - If `mypy` flags a dynamic evaluation pattern that is verifiably correct at runtime, use a targeted
+     `# type: ignore` comment rather than altering the dynamic logic.
 1. **Security**: Use safe loading for YAML (`Loader=yaml.Loader` is acceptable for this specific project context per
    decisions, but prefer `safe_load` where possible). Avoid `pickle` on untrusted data.
 

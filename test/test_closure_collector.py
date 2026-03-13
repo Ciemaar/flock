@@ -48,9 +48,7 @@ class BasicClosureCollectorTestCase(unittest.TestCase):
         self.assertEqual(getattr(self.closure_collector, "Shepherd"), "Mary")
         setattr(self.closure_collector, "Management", ["Mary", "Joshua", "Isaac"])
 
-        self.assertEqual(
-            getattr(self.closure_collector, "Management"), ["Mary", "Joshua", "Isaac"]
-        )
+        self.assertEqual(getattr(self.closure_collector, "Management"), ["Mary", "Joshua", "Isaac"])
         setattr(self.closure_collector, "Shepherd", "John")
         self.assertEqual(getattr(self.closure_collector, "Shepherd"), "John")
         assert hasattr(self.closure_collector, "Shepherd")
@@ -85,9 +83,7 @@ class BasicClosureCollectorTestCase(unittest.TestCase):
             assert False
 
         setattr(self.closure_collector, "test2", test2)
-        assert test2 == getattr(
-            self.closure_collector, "test2"
-        )  # Testing that this is not called
+        assert test2 == getattr(self.closure_collector, "test2")  # Testing that this is not called
 
     def test_error(self):
         setattr(self.closure_collector, "bad", lambda: 1 / 0)
@@ -97,9 +93,7 @@ class BasicClosureCollectorTestCase(unittest.TestCase):
         assert not hasattr(self.closure_collector, "bad")
 
         with raises(ClosureCollectorException) as exc_info:
-            assert getattr(self.closure_collector, "bad") != (
-                lambda: 1 / 0
-            ), "This should not be called at all as the exception should be raised"
+            assert getattr(self.closure_collector, "bad") != (lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         with raises(ClosureCollectorException) as exc_info:
@@ -129,9 +123,7 @@ class BasicClosureCollectorTestCase(unittest.TestCase):
         ds = self.closure_collector.dataset()
         assert ds.cat == "Abbey"
         assert ds.three == 15
-        assert len(self.closure_collector.ruleset().promises) == len(
-            ClosureCollector().promises
-        )
+        assert len(self.closure_collector.ruleset().promises) == len(ClosureCollector().promises)
         assert not self.closure_collector.ruleset()
 
         self.closure_collector.mimi = ClosureCollector(species="cat", rank=2)
@@ -146,26 +138,18 @@ class BasicClosureCollectorTestCase(unittest.TestCase):
         sheared = self.closure_collector.shear()
         self.assertEqual(sheared.toggle, not sheared.toggle2)
 
-        assert len(self.closure_collector.dataset().__dict__) == len(
-            ShearedBase().__dict__
-        )
+        assert len(self.closure_collector.dataset().__dict__) == len(ShearedBase().__dict__)
         assert not self.closure_collector.dataset()
-        assert len(self.closure_collector.ruleset().promises) == 2 + len(
-            ClosureCollector().promises
-        )
+        assert len(self.closure_collector.ruleset().promises) == 2 + len(ClosureCollector().promises)
 
     def test_ruleset_rebind(self):
         self.closure_collector.value = 42
-        self.closure_collector.reference = attr_reference(
-            self.closure_collector, "value"
-        )
+        self.closure_collector.reference = attr_reference(self.closure_collector, "value")
         assert self.closure_collector.reference == 42
         rs = self.closure_collector.ruleset()
         assert not hasattr(rs, "value")
         with raises(AttributeError):
-            assert (
-                rs.reference != 42
-            ), "Got value rather than expected error resolving reference"
+            assert rs.reference != 42, "Got value rather than expected error resolving reference"
         rs.value = 38
         assert rs.reference == 38
 
@@ -194,19 +178,13 @@ class ClosureCollectorCacheTestCase(unittest.TestCase):
         setattr(
             self.closure_collector,
             "nested_dest",
-            ClosureCollector(
-                dest=attr_reference(self.closure_collector, "nested_source", "source")
-            ),
+            ClosureCollector(dest=attr_reference(self.closure_collector, "nested_source", "source")),
         )
         setattr(
             self.closure_collector,
             "jump_dest",
             FlockDict(
-                {
-                    "dest": attr_reference(
-                        getattr(self.closure_collector, "nested_source"), "source"
-                    )
-                },
+                {"dest": attr_reference(getattr(self.closure_collector, "nested_source"), "source")},
             ),
         )
         assert self.closure_collector.dest == "Original Value"
@@ -223,17 +201,9 @@ class ClosureCollectorCacheTestCase(unittest.TestCase):
     def test_split_cache(self):
         self.closure_collector2 = ClosureCollector()
         self.closure_collector2.dest = attr_reference(self.closure_collector, "source")
-        self.closure_collector2.nested_dest = ClosureCollector(
-            dest=attr_reference(self.closure_collector, "nested_source", "source")
-        )
+        self.closure_collector2.nested_dest = ClosureCollector(dest=attr_reference(self.closure_collector, "nested_source", "source"))
 
-        self.closure_collector2.jump_dest = FlockDict(
-            {
-                "dest": attr_reference(
-                    getattr(self.closure_collector, "nested_source"), "source"
-                )
-            }
-        )
+        self.closure_collector2.jump_dest = FlockDict({"dest": attr_reference(getattr(self.closure_collector, "nested_source"), "source")})
         assert self.closure_collector2.dest == "Original Value"
         assert self.closure_collector2.nested_dest.dest == "Original Value"
 
