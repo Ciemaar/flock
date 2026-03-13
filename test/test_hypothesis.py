@@ -77,7 +77,7 @@ def test_fuzz_is_not_rule(var):
             dict_class=flock.FlockDict,
         ),
     ),
-    key_list=st.lists(st.text().filter(lambda x: x != 'append')),
+    key_list=st.lists(st.text()),
     val=st.one_of(
         st.functions(pure=True), st.integers(), st.floats(), st.characters(), st.text()
     ),
