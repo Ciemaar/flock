@@ -1,12 +1,4 @@
-__pycache__/
-*.pyc
-.pytest_cache/
 .hypothesis/
 *.egg-info/
-dist/
+__pycache__/
 build/
-.ipynb_checkpoints/
-.venv/
-env/
-venv/
-.tox/

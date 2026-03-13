@@ -1,20 +1,15 @@
 import inspect
 import warnings
-from abc import abstractmethod, ABCMeta
-from collections import defaultdict, OrderedDict
-from collections.abc import (
-    MutableMapping,
-    Mapping,
-    MutableSequence,
-    Iterable,
-)
+from abc import ABCMeta, abstractmethod
+from collections import OrderedDict, defaultdict
+from collections.abc import Callable, Iterable, Mapping, MutableMapping, MutableSequence
 from copy import copy
 from itertools import chain
-from typing import Sequence, Union
+from typing import Sequence, cast
 
-from closure_collector.core import CCBase, DynamicClosureCollector
-from closure_collector.util import is_rule
 from flock.util import FlockException
+
+from .util import is_rule
 
 __author__ = "Andy Fundinger"
 
@@ -29,7 +24,7 @@ __author__ = "Andy Fundinger"
 """
 
 
-class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
+class FlockBase(Iterable, metaclass=ABCMeta):
     @abstractmethod
     def check(self, path):
         """
@@ -37,9 +32,10 @@ class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
         :type path: list the path to this object, will be prepended to any errors generated
         :return: list of errors that prevent items in this Aggregator from being sheared.
         """
+        pass
 
     @abstractmethod
-    def shear(self, record_errors=False) -> Iterable:
+    def shear(self, record_errors=False):
         """
         Convert this Mapping into a simple dict
 
@@ -61,38 +57,37 @@ class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
     def __hash__(self, *args, **kwargs):
         return id(self)
 
-    def __dir__(self):
-        return object.__dir__(self)
 
-
-class MutableFlock(FlockBase, DynamicClosureCollector):
+class MutableFlock(FlockBase):
     """The abstract base class for flocks with items that can be set"""
 
     def __init__(self, root=None):
-        """Initialize the object."""
+        """ """
         super(MutableFlock, self).__init__()
+        self.root = root
 
     @abstractmethod
     def __setitem__(self, key, val):
         """Set a value in a MutableFlock
 
         some amount of processing may need to be done."""
+        pass
 
     @abstractmethod
     def __getitem__(self, key):
-        "Reminder to implement Mapping"
+        pass
 
     @abstractmethod
     def __contains__(self, key):
-        "Reminder to implement Mapping"
+        pass
 
     @abstractmethod
     def __delitem__(self, key):
-        "Reminder to implement Mapping"
+        pass
 
     @abstractmethod
     def __len__(self):
-        "Reminder to implement Mapping"
+        pass
 
     def make_callable(self, value):
         if callable(value) and len(inspect.signature(value).parameters) == 0:
@@ -100,22 +95,46 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
+                    if isinstance(closure.cell_contents, MutableFlock):
                         closure.cell_contents.peers.add(self)
         elif isinstance(value, Mapping):
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
-            ret = lambda: value
+
+            def ret():
+                return value
+
         return ret
+
+    def clear_cache(self):
+        if self.root is not None:
+            self.root.clear_cache()
+            return
+
+        to_collect = set([self])
+        to_clear = set()
+        while to_collect:
+            curr = to_collect.pop()
+            if curr not in to_clear:
+                to_clear.add(curr)
+                to_collect.update(curr.get_relatives())
+
+        for peer in to_clear:
+            peer.cache = {}
+
+    @abstractmethod
+    def get_relatives(self):
+        pass
 
 
 class PromiseFlock(MutableFlock):
     """A convenience class for default implementations of methods from MutableFlock"""
 
     def __init__(self, root=None):
-        """Initialize the object."""
+        """ """
         super(PromiseFlock, self).__init__(root=root)
-        self.promises = {}
+        self.promises: dict = {}
+        self.cache: dict = {}
 
     def __setitem__(self, key, val):
         """
@@ -158,25 +177,9 @@ class PromiseFlock(MutableFlock):
     def __len__(self):
         return len(self.promises)
 
-    def clear_cache(self):
-        if self.root is not None:
-            self.root.clear_cache()
-            return
-
-        to_collect = set([self])
-        to_clear = set()
-        while to_collect:
-            curr = to_collect.pop()
-            if curr not in to_clear:
-                to_clear.add(curr)
-                to_collect.update(curr.get_relatives())
-
-        for peer in to_clear:
-            peer.cache = {}
-
 
 class FlockList(PromiseFlock, MutableSequence):
-    def __init__(self, inlist: Sequence = (), root: FlockBase = None):
+    def __init__(self, inlist: Sequence = (), root: FlockBase | None = None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -186,8 +189,8 @@ class FlockList(PromiseFlock, MutableSequence):
 
         """
         super(FlockList, self).__init__()
-        self.promises = []
-        self.cache = {}
+        self.promises: list = []
+        self.cache: dict = {}
         self.root = root
         self.peers = set()
         for key in inlist:
@@ -227,7 +230,7 @@ class FlockList(PromiseFlock, MutableSequence):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)  # noqa: S101
+            assert callable(value)
         return ret
 
     def shear(self, record_errors=False):
@@ -268,7 +271,7 @@ class FlockDict(PromiseFlock, MutableMapping):
     The actual lambdas must take 0 params and are accessible in the .promises attribute
     """
 
-    def __init__(self, indict: Union[list[tuple], Mapping] = {}, root=None):
+    def __init__(self, indict: Mapping | list[tuple] = {}, root=None):
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -284,15 +287,12 @@ class FlockDict(PromiseFlock, MutableMapping):
         self.peers = set()
         if not hasattr(indict, "items"):
             indict = dict(indict)
+        assert isinstance(indict, Mapping)
         for key, value in indict.items():
             self[key] = value
 
     def get_relatives(self):
-        rels = {
-            promise
-            for promise in self.promises.values()
-            if hasattr(promise, "clear_cache")
-        }
+        rels = {promise for promise in self.promises.values() if hasattr(promise, "clear_cache")}
         rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
         return rels
 
@@ -324,7 +324,7 @@ class FlockDict(PromiseFlock, MutableMapping):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)  # noqa: S101
+            assert callable(value)
         return ret
 
     def shear(self, record_errors=False):
@@ -374,7 +374,8 @@ class Aggregator:
         """
         Aggregate across parallel maps.
 
-        :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
+        :type sources: list of sources to aggregate across, each source should be a map,
+            generally a dict, or FlockDict, not all keys need to be present in all sources.
         :type fn: function must take a generator, there is no constraint on the return value
         """
         warnings.warn(
@@ -420,9 +421,11 @@ class Aggregator:
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                        msg = "function {function} incompatible with value {value} exception: {e} at path {path} source {sourceNo}".format(
                             e=str(e),
                             value=value,
+                            path=path + [key],
+                            sourceNo=sourceNo,
                             function=self.function.__name__,
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
@@ -463,9 +466,7 @@ class MetaAggregator:
         self.function = fn
 
     def __getitem__(self, key):
-        return lambda: self.function(
-            source[key] for source in self.source_function() if key in source
-        )
+        return lambda: self.function(source[key] for source in self.source_function() if key in source)
 
     # def __getattr__(self, key):
     #     return self[key]()
@@ -475,9 +476,7 @@ class MetaAggregator:
 
     def shear(self, record_errors=False):
         ret = {}
-        for key in set(
-            chain.from_iterable(source.keys() for source in self.source_function())
-        ):
+        for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
             try:
                 ret[key] = self[key]()
             except Exception as e:
@@ -507,7 +506,7 @@ class FlockAggregator(FlockBase, Mapping):
         self.function = fn
         if keys is not None and not callable(keys):
             keys = set(keys)
-        self.source_keys = keys
+        self.source_keys: set | Callable[[], Iterable] | None = keys
 
     def __getitem__(self, key):
         """
@@ -517,9 +516,7 @@ class FlockAggregator(FlockBase, Mapping):
         :return: value as returned by the function for that key.
         """
         try:
-            cross_items = [
-                source[key] for source in self.get_sources() if key in source
-            ]
+            cross_items = [source[key] for source in self.get_sources() if key in source]
             if not cross_items:
                 raise KeyError("Key %s not found" % key)
             return self.function(cross_items)
@@ -527,14 +524,7 @@ class FlockAggregator(FlockBase, Mapping):
             raise
         except Exception as e:
             raise FlockException(
-                "Error Calculating %s:  " % key
-                + str(e)
-                + "\n"
-                + ",".join(
-                    "%s:%s" % (source, source[key])
-                    for source in self.get_sources()
-                    if key in source
-                )
+                "Error Calculating %s:  " % key + str(e) + "\n" + ",".join("%s:%s" % (source, source[key]) for source in self.get_sources() if key in source)
             ) from e
 
     def __len__(self):
@@ -543,12 +533,10 @@ class FlockAggregator(FlockBase, Mapping):
     def __iter__(self):
         if self.source_keys is not None:
             if callable(self.source_keys):
-                return iter(set(self.source_keys()))
+                return iter(set(cast(Callable[[], Iterable], self.source_keys)()))
             else:
                 return iter(self.source_keys)
-        return iter(
-            set(chain.from_iterable(source.keys() for source in self.get_sources()))
-        )
+        return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
 
     def get_sources(self):
         if isinstance(self.sources, Mapping):
@@ -574,9 +562,11 @@ class FlockAggregator(FlockBase, Mapping):
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(
+                        msg = "function {function} incompatible with value {value} exception: {e} at path {path} source {sourceNo}".format(
                             e=str(e),
                             value=value,
+                            path=path + [key],
+                            sourceNo=sourceNo,
                             function=self.function.__name__,
                         )
                         ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg

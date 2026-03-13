@@ -1,5 +1,3 @@
-"""Module docstring."""
-
 from collections import UserDict
 
 
@@ -7,16 +5,13 @@ class TagView:
     """A view to return the attribute values."""
 
     def __init__(self, tag):
-        """Docstring for __init__."""
         self.tag = tag
         self.items = set(tag)
 
     def __iter__(self):
-        """Docstring for __iter__."""
         return self
 
     def __next__(self):
-        """Docstring for __next__."""
         if not self.items:
             raise StopIteration
         ret_attr = self.items.pop()
@@ -27,28 +22,23 @@ class Tag(set):
     """A Specialized Set that returns the value of the attributes when iterated."""
 
     def __init__(self, tagged_obj):
-        """Docstring for __init__."""
         super().__init__()
         self.tagged_obj = tagged_obj
 
     def __iter__(self):
-        """Docstring for __iter__."""
         return TagView(self)
 
 
 class AttributeTagset(UserDict):
     """A class for adding sets of tagged attributes for an object
 
-    Each item in this map is a set of tagged attributes.  Attribute names may be added via .add() or .remove()
-    and checked for membership as normal, but if the Tag is iterated the attribute values are returned.
+    Each item in this map is a set of tagged attributes.  Attribute names may be added via .add() or .remove() and checked for membership as normal, but if the Tag is iterated the attribute values are returned.
     """
 
     def __init__(self, tagged_obj):
-        """Docstring for __init__."""
         super().__init__()
         self.tagged_obj = tagged_obj
 
     def __missing__(self, key):
-        """Docstring for __missing__."""
         self[key] = s = Tag(self.tagged_obj)
         return s
