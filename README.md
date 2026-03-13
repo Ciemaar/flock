@@ -1,6 +1,7 @@
 # Flock / Closure Collector
 
-Flock (now `closure_collector`) is a library for managing groups of closures in Python, most commonly zero argument lambda closures.
+Flock (now `closure_collector`) is a library for managing groups of closures in Python, most commonly zero argument
+lambda closures.
 The basic trick is to take a group of lambdas with no parameters and then call them if/when you need their value.
 For example:
 
@@ -40,7 +41,8 @@ pip install -e ".[dev,test]"
 
 ### Usage Examples
 
-The core object in Flock is the `FlockDict`. It acts like a regular Python dictionary but can seamlessly evaluate callable objects (rules/closures) when their keys are accessed.
+The core object in Flock is the `FlockDict`. It acts like a regular Python dictionary but can seamlessly evaluate
+callable objects (rules/closures) when their keys are accessed.
 
 #### Basic Usage
 
@@ -49,12 +51,15 @@ You can initialize a `FlockDict` with static data and rules (closures):
 ```python
 from flock import FlockDict
 
+
 # Define rules
 def calc_c(flock):
     return flock['a'] + flock['b']
 
+
 def calc_d(flock):
     return flock['c'] * 2
+
 
 # Initialize FlockDict with data and rules
 my_flock = FlockDict({
@@ -65,11 +70,11 @@ my_flock = FlockDict({
 })
 
 # Accessing a static value
-print(my_flock['a']) # Output: 10
+print(my_flock['a'])  # Output: 10
 
 # Accessing a rule evaluates it on the fly
-print(my_flock['c']) # Output: 30
-print(my_flock['d']) # Output: 60
+print(my_flock['c'])  # Output: 30
+print(my_flock['d'])  # Output: 60
 ```
 
 #### Dynamic Updates
@@ -81,20 +86,21 @@ When you change underlying data, the rules dynamically re-evaluate using the new
 my_flock['a'] = 50
 
 # The dependent rules yield new results
-print(my_flock['c']) # Output: 70
-print(my_flock['d']) # Output: 140
+print(my_flock['c'])  # Output: 70
+print(my_flock['d'])  # Output: 140
 ```
 
 #### Using `patch`
 
-The `flock.util.patch` function allows you to deep-update nested structures within a `FlockDict` or any standard mapping/sequence:
+The `flock.util.patch` function allows you to deep-update nested structures within a `FlockDict` or any standard
+mapping/sequence:
 
 ```python
 from flock.util import patch
 
 data = {'nested': {'key': 'old_value'}}
 patch(data, ['nested', 'key'], 'new_value')
-print(data) # Output: {'nested': {'key': 'new_value'}}
+print(data)  # Output: {'nested': {'key': 'new_value'}}
 ```
 
 ## Concepts
@@ -103,7 +109,8 @@ print(data) # Output: {'nested': {'key': 'new_value'}}
   pragmatically will not be changed by exterior components.
 - **0-argument closures**: A closure with 0 arguments can be executed at any time. However, Python does not guarantee
   that this will not cause an error, nor does Flock attempt to do so.
-- **Aggregator**: An object that works across a set of closures in one or more flocks, applying a common function to them.
+- **Aggregator**: An object that works across a set of closures in one or more flocks, applying a common function to
+  them.
   This is like a column in Excel filled entirely with a consistent formula.
 - **Dataset**: The data values in a flock.
 - **Ruleset**: The rules in a flock—everything in a flock that is not data. Combining data and rules will restore the
@@ -117,7 +124,8 @@ This project uses modern Python tooling. It is designed to be easily testable an
 
 - **`closure_collector/`**: Contains the core library logic (`FlockDict`, closures, aggregators, utility functions).
 - **`flock/`**: Contains the backward-compatibility alias layer.
-- **`examples/`**: Sample domain implementations demonstrating how Flock can be applied (e.g., `mythica` game mechanics).
+- **`examples/`**: Sample domain implementations demonstrating how Flock can be applied (e.g., `mythica` game
+  mechanics).
 - **`test/`**: Unit tests utilizing `pytest` and property-based tests via `hypothesis`.
 
 ### Testing
@@ -178,7 +186,8 @@ mypy closure_collector/ flock/ examples/ test/
 ### Continuous Integration (CI)
 
 This project uses GitHub Actions for CI. Workflows are defined in `.github/workflows/tests.yml`.
-The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on every push and pull request to ensure that:
+The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on every push and pull request to ensure
+that:
 
 1. Tests pass on Python 3.12 and 3.13.
 1. Code is formatted correctly using `mdformat` and `ruff`.
@@ -187,20 +196,31 @@ The CI pipeline automatically runs `tox` across Ubuntu and macOS environments on
 
 ### Contributing Guidelines
 
-- **No Asserts in Production**: Ensure that `assert` statements are not used in `closure_collector/`, `flock/`, or `examples/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
-- **Formatting**: All commits must pass the formatting checks. Run `tox -e lint` before submitting a pull request to ensure `ruff` and `mdformat` checks pass.
+- **No Asserts in Production**: Ensure that `assert` statements are not used in `closure_collector/`, `flock/`, or
+  `examples/`. Use explicit exceptions (e.g., `ValueError`, `TypeError`) instead. Asserts are fine for test code.
+- **Formatting**: All commits must pass the formatting checks. Run `tox -e lint` before submitting a pull request to
+  ensure `ruff` and `mdformat` checks pass.
 
 #### Type Hinting Complexity
 
-Due to the fundamental architecture of this project, **type hinting is exceptionally complex**. `closure_collector` heavily utilizes dynamic metaprogramming, runtime duck-typing, and inspection of underlying Python mechanics (such as dynamically evaluating `__closure__` properties or yielding elements that morph between raw values and callables based on context).
+Due to the fundamental architecture of this project, **type hinting is exceptionally complex**. `closure_collector`
+heavily utilizes dynamic metaprogramming, runtime duck-typing, and inspection of underlying Python mechanics (such as
+dynamically evaluating `__closure__` properties or yielding elements that morph between raw values and callables based
+on context).
 
 Because of this:
 
-- Highly strict structural type checkers (like Pyright) often fail with false positives when analyzing `closure_collector` internals. We use **MyPy** because it handles these abstractions more gracefully.
-- **Do not aggressively type-hint dynamic variables.** It is generally preferable to omit type hints entirely rather than resorting to `Any` or creating massively convoluted `Union` chains.
-- When working with core utility functions (like `patch()`), rely on standard duck-typing mechanics (`try`/`except TypeError`) rather than trying to statically assert interfaces. If `mypy` flags a dynamic evaluation pattern that is verifiably correct at runtime, use a targeted `# type: ignore` comment.
-- **Test Coverage**: Strive to write unit tests for any new features or bug fixes. `closure_collector` uses `pytest` and property-based testing heavily.
-- **AI Agent Context**: The `AGENTS.md` and `.github/copilot-instructions.md` files provide context and instructions tailored to automated and IDE-based AI assistants working on this repository.
+- Highly strict structural type checkers (like Pyright) often fail with false positives when analyzing
+  `closure_collector` internals. We use **MyPy** because it handles these abstractions more gracefully.
+- **Do not aggressively type-hint dynamic variables.** It is generally preferable to omit type hints entirely rather
+  than resorting to `Any` or creating massively convoluted `Union` chains.
+- When working with core utility functions (like `patch()`), rely on standard duck-typing mechanics (`try`/
+  `except TypeError`) rather than trying to statically assert interfaces. If `mypy` flags a dynamic evaluation pattern
+  that is verifiably correct at runtime, use a targeted `# type: ignore` comment.
+- **Test Coverage**: Strive to write unit tests for any new features or bug fixes. `closure_collector` uses `pytest` and
+  property-based testing heavily.
+- **AI Agent Context**: The `AGENTS.md` and `.github/copilot-instructions.md` files provide context and instructions
+  tailored to automated and IDE-based AI assistants working on this repository.
 
 ## Supported Python Versions
 

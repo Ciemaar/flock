@@ -1,5 +1,3 @@
-"""Module docstring."""
-
 from glom import T, glom  # type: ignore
 
 from closure_collector.util import ClosureCollectorException
@@ -13,14 +11,13 @@ def collection_reduce(int_collection, func):
 
 def index_reference(flock, *indexes, **kwargs):
     """
-    Return closure that references values stored elsewhere in a mapping
+    return closure that references values stored elsewhere in a mapping
     :type flock: flock.core.FlockDict
     :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        """Docstring for de_ref."""
         spec = T
         for index in indexes:
             spec = spec[index]
@@ -38,14 +35,13 @@ def index_reference(flock, *indexes, **kwargs):
 
 def attr_reference(flock, *indexes, **kwargs):
     """
-    Return closure that references values stored elsewhere in a mapping
+    return closure that references values stored elsewhere in a mapping
     :type flock: flock.core.FlockDict
     :param indexes: lambdas to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        """Docstring for de_ref."""
         spec = T
         for index in indexes:
             spec = getattr(spec, index)
@@ -62,11 +58,9 @@ def attr_reference(flock, *indexes, **kwargs):
 
 
 def toggle():
-    """Docstring for toggle."""
     store = [False]
 
     def inner_toggle():
-        """Docstring for inner_toggle."""
         store[0] = not store[0]
         return store[0]
 

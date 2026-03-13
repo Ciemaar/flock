@@ -1,37 +1,38 @@
-"""Module docstring."""
-
 import logging
-from collections.abc import MutableMapping, MutableSequence
-from typing import Any, Hashable, Sequence
+from collections.abc import MutableMapping
+from typing import Hashable, Any
 
 log = logging.getLogger(__name__)
+
 __author__ = "Andy Fundinger"
 
 
 class FlockException(KeyError):
-    """Docstring for FlockException."""
-
     pass
 
 
-def patch(collection: (MutableMapping | MutableSequence), key_list: Sequence[Hashable], val: Any):
-    """Docstring for patch."""
+def patch(map: MutableMapping, key_list: list[Hashable], val: Any):
     if not key_list:
         raise TypeError("Empty key_lists are invalid for patch.")
+
     for key in key_list[0:-1]:
         try:
-            collection = collection[key]  # type: ignore
+            map = map[key]
         except FlockException:
             raise
         except TypeError as e:
             raise KeyError from e
+
         except KeyError:
-            collection[key] = {}  # type: ignore
-            collection = collection[key]  # type: ignore
+            map[key] = {}
+            map = map[key]
     if key_list[-1] == "append":
-        collection.append(val)  # type: ignore
+        if hasattr(map, "append"):
+            map.append(val)
+        else:
+            raise AttributeError(f"'{type(map).__name__}' object has no attribute 'append'")
     else:
         try:
-            collection[key_list[-1]] = val  # type: ignore
+            map[key_list[-1]] = val
         except TypeError as e:
-            raise KeyError from e
+            raise KeyError(str(e)) from e

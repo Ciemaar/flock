@@ -1,28 +1,29 @@
-"""Module docstring."""
+"""EXPERIMENTAL simulate characters"""
 
 import random
 from functools import partial
 
-import mythica.model  # type: ignore[import-not-found]
-
+import mythica.model
 from flock.core import FlockDict
 
 sheet = {"seed": 42}
 
 
 def die(num, sides, rnd=None):
-    """Docstring for die."""
+    """Local die function"""
     if not rnd:
         rnd = random
     return sum(rnd.randint(1, sides) for x in range(num))
 
 
 def model():
-    """Docstring for model."""
+    """create and return a character"""
     char = FlockDict(sheet)
     mythica.model.apply_rules(char)
-    char["rand"] = lambda: random.Random(char["seed"])  # noqa: S311
+    char["rand"] = lambda: random.Random(char["seed"])
     char["roll"] = lambda: partial(die, rnd=char["rand"])
-    char["rolls"] = lambda: [(char["roll"](1, 10) + char["roll"](1, 10)) for _ in range(12)]
+    char["rolls"] = lambda: [
+        char["roll"](1, 10) + char["roll"](1, 10) for _ in range(12)
+    ]
     char["sorted_rolls"] = lambda: sorted(char["rolls"])
     return char

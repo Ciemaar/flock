@@ -1,5 +1,3 @@
-"""Module docstring."""
-
 import inspect
 from abc import ABCMeta, abstractmethod
 from itertools import chain
@@ -15,11 +13,9 @@ class ShearedBase:
     """A basic, dynamic object used as a return type from shear() functions"""
 
     def __bool__(self):
-        """Docstring for __bool__."""
         return bool(self.__dict__)
 
     def __str__(self):
-        """Docstring for __str__."""
         return pformat(self.__dict__)
 
 
@@ -29,7 +25,7 @@ class CCBase(metaclass=ABCMeta):
     @abstractmethod
     def check(self, path):
         """
-        Check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
         :type path: list the path to this object, will be prepended to any errors generated
         :return: list of errors that prevent items in this Aggregator from being sheared.
         """
@@ -62,15 +58,13 @@ class CCBase(metaclass=ABCMeta):
         """Empty any cache kept on this object"""
 
     def get_relatives(self) -> Iterable:
-        """Docstring for get_relatives."""
-        return iter(())
+        return ()
 
 
 class DynamicClosureCollector(CCBase):
     """Base class for closure collector objects that change over time."""
 
     def __init__(self, root=None):
-        """Docstring for __init__."""
         """ """
         super(DynamicClosureCollector, self).__init__()
         self.cache = {}
@@ -78,10 +72,10 @@ class DynamicClosureCollector(CCBase):
         self.peers = set()
 
     def clear_cache(self):
-        """Docstring for clear_cache."""
         if self.root is not None:
             self.root.clear_cache()
             return
+
         to_collect = {self}
         to_clear = set()
         while to_collect:
@@ -89,20 +83,19 @@ class DynamicClosureCollector(CCBase):
             if curr not in to_clear:
                 to_clear.add(curr)
                 to_collect.update(curr.get_relatives())
+
         for peer in to_clear:
             if hasattr(peer, "cache"):
                 peer.cache = {}
 
     def get_relatives(self) -> Iterable:
-        """Docstring for get_relatives."""
-        return iter(self.peers)  # type: ignore[no-any-return]
+        return self.peers
 
 
 class ClosurePromiseCollector(DynamicClosureCollector):
     """A convenience class for default implementations of methods from Dynamic Closure Collector"""
 
     def __init__(self, root=None):
-        """Docstring for __init__."""
         """ """
         self.promises = {}
         super(ClosurePromiseCollector, self).__init__(root=root)
@@ -136,47 +129,46 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         else:
             if item in self.promises:
                 promise = self.promises[item]
-            else:
+            else:  # If the promise is not there, fallback ultimately to an error.
                 return super(ClosurePromiseCollector, self).__getattribute__(item)
+
             try:
                 ret = promise()
             except Exception as e:
-                raise ClosureCollectorException("Error calculating attribute:%s" % item) from e
+                raise ClosureCollectorException(
+                    "Error calculating attribute:%s" % item
+                ) from e
             self.cache[item] = ret
             return ret
 
     def __delattr__(self, item):
-        """Docstring for __delattr__."""
         del self.promises[item]
         self.clear_cache()
 
     def __bool__(self):
-        """Docstring for __bool__."""
         return bool(self.promises)
 
     def make_callable(self, value):
-        """Docstring for make_callable."""
         if callable(value) and len(inspect.signature(value).parameters) == 0:
             ret = value
             if isinstance(value, DynamicClosureCollector):
                 value.peers.add(self)
                 if value.root is None:
                     value.root = self
+            # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
                     if isinstance(closure.cell_contents, DynamicClosureCollector):
                         closure.cell_contents.peers.add(self)
         else:
-
-            def ret():
-                """Docstring for ret."""
-                return value
-
+            ret = lambda: value
         return ret
 
 
 class ClosureCollector(ClosurePromiseCollector):
-    """A Closure Collector intended for use."""
+    """
+    A Closure Collector  intended for use.
+    """
 
     def __init__(self, *, root=None, **indict):
         """
@@ -192,22 +184,29 @@ class ClosureCollector(ClosurePromiseCollector):
             setattr(self, key, value)
 
     def __dir__(self):
-        """Docstring for __dir__."""
         return set(self.promises.keys()).union(self.cache.keys())
 
     def get_relatives(self):
-        """Docstring for get_relatives."""
-        rels = {promise for promise in self.promises.values() if hasattr(promise, "clear_cache")}
-        rels.update(peer for peer in getattr(self, "peers", ()) if hasattr(peer, "clear_cache"))
+        rels = {
+            promise
+            for promise in self.promises.values()
+            if hasattr(promise, "clear_cache")
+        }
+        rels.update(
+            peer for peer in getattr(self, "peers", ()) if hasattr(peer, "clear_cache")
+        )
         return rels
 
     def __repr__(self):
-        """Docstring for __repr__."""
         return f"{self.__class__.__name__}({self.shear()})"
+
+    #
+    # def __hash__(self):
+    #     return id(self)
 
     def check(self, path=[]):
         """
-        Check for any contents that would prevent this ClosureCollector from being used normally, esp sheared.
+        check for any contents that would prevent this ClosureCollector from being used normally, esp sheared.
 
         :type path: list the path to this object, will be prepended to any errors generated
         :return: list of errors that prevent items in this ClosureCollector from being sheared.
@@ -218,10 +217,9 @@ class ClosureCollector(ClosurePromiseCollector):
         for key, value in self.promises.items():
             if hasattr(value, "check"):
                 value_check = value.check(path + [key])
-                if value_check:
+                if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            if not callable(value):
-                raise TypeError("Value must be callable")
+            assert callable(value)
         return ret
 
     def shear(self, record_errors=False):
@@ -252,7 +250,6 @@ class ClosureCollector(ClosurePromiseCollector):
         return ret
 
     def dataset(self):
-        """Docstring for dataset."""
         ret = ShearedBase()
         for k, v in self.promises.items():
             if not is_rule(v):
@@ -260,7 +257,6 @@ class ClosureCollector(ClosurePromiseCollector):
         return ret
 
     def ruleset(self):
-        """Docstring for ruleset."""
         ret = ClosureCollector()
         for k, v in self.promises.items():
             if is_rule(v):
@@ -284,11 +280,9 @@ class ClosureReduction:
     """
 
     def __dir__(self):
-        """Docstring for __dir__."""
         return set(chain.from_iterable(dir(source) for source in self.get_sources()))
 
     def __init__(self, sources, fn, keys=None):
-        """Docstring for __init__."""
         self.sources = sources
         self.function = fn
 
@@ -300,7 +294,11 @@ class ClosureReduction:
         :return: value as returned by the function for that key.
         """
         try:
-            cross_items = [getattr(source, item) for source in self.get_sources() if hasattr(source, item)]
+            cross_items = [
+                getattr(source, item)
+                for source in self.get_sources()
+                if hasattr(source, item)
+            ]
             if not cross_items:
                 raise AttributeError("Attribute %s not found" % item)
             return self.function(cross_items)
@@ -311,11 +309,17 @@ class ClosureReduction:
                 "Error Calculating %s:  " % item
                 + str(e)
                 + "\n"
-                + ",".join("%s:%s" % (source, getattr(source, item, "NO VALUE")) for source in self.get_sources())
+                + ",".join(
+                    "%s:%s"
+                    % (
+                        source,
+                        getattr(source, item, "NO VALUE"),
+                    )
+                    for source in self.get_sources()
+                )
             ) from e
 
     def get_sources(self):
-        """Docstring for get_sources."""
         if isinstance(self.sources, Mapping):
             return self.sources.values()
         elif callable(self.sources):
@@ -324,15 +328,32 @@ class ClosureReduction:
             return self.sources
 
     def shear(self):
-        """Docstring for shear."""
         return NotImplemented
 
     def check(self, path=[]):
         """
-        Check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
         :type path: list the path to this object, will be prepended to any errors generated
         :return: list of errors that prevent items in this Aggregator from being sheared.
 
         NOT YET PROPERLY IMPLEMENTED
         """
         return {}
+        # ret = defaultdict(dict)
+        # for key in set(chain.from_iterable(source.keys() for source in self.sources)):
+        #     for sourceNo, source in enumerate(self.sources):
+        #         if key in source:
+        #             value = source[key]
+        #             try:
+        #                 self.function([value])
+        #             except Exception as e:
+        #                 msg = "function {function} incompatible with value {value} exception: {e}".format(
+        #                     e=str(e),
+        #                     value=value,
+        #                     path=path + [key],
+        #                     sourceNo=sourceNo,
+        #                     function=self.function.__name__,
+        #                 )
+        #                 ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
+        #                 # raise
+        # return ret
