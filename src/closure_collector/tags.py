@@ -32,7 +32,8 @@ class Tag(set):
 class AttributeTagset(UserDict):
     """A class for adding sets of tagged attributes for an object
 
-    Each item in this map is a set of tagged attributes.  Attribute names may be added via .add() or .remove() and checked for membership as normal, but if the Tag is iterated the attribute values are returned.
+    Each item in this map is a set of tagged attributes.  Attribute names may be added via .add() or .remove() and
+    checked for membership as normal, but if the Tag is iterated the attribute values are returned.
     """
 
     def __init__(self, tagged_obj):

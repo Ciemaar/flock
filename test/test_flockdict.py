@@ -82,9 +82,7 @@ class BasicFlockTestCase(unittest.TestCase):
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         with raises(FlockException) as exc_info:
-            assert self.flock["bad"] != (
-                lambda: 1 / 0
-            ), "This should not be called at all as the exception should be raised"
+            assert self.flock["bad"] != (lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         with raises(FlockException) as exc_info:
@@ -218,22 +216,12 @@ class FlockCacheTestCase(unittest.TestCase):
 
     def test_nested_cache(self):
         self.flock["dest"] = index_reference(self.flock, "source")
-        self.flock["nested_dest"] = {
-            "dest": index_reference(self.flock, "nested_source", "source")
-        }
-        self.flock["jump_dest"] = {
-            "dest": index_reference(self.flock["nested_source"], "source")
-        }
-        assert (
-            self.flock["dest"] == self.flock["nested_dest"]["dest"] == "Original Value"
-        )
+        self.flock["nested_dest"] = {"dest": index_reference(self.flock, "nested_source", "source")}
+        self.flock["jump_dest"] = {"dest": index_reference(self.flock["nested_source"], "source")}
+        assert self.flock["dest"] == self.flock["nested_dest"]["dest"] == "Original Value"
         self.flock["source"] = "1st New Value"
         assert self.flock["dest"] == "1st New Value"
-        assert (
-            self.flock["nested_dest"]["dest"]
-            == self.flock["jump_dest"]["dest"]
-            == "Original Value"
-        )
+        assert self.flock["nested_dest"]["dest"] == self.flock["jump_dest"]["dest"] == "Original Value"
         self.flock["nested_source"]["source"] = "2nd New Value"
         assert self.flock["dest"] == "1st New Value"
         assert self.flock["nested_dest"]["dest"] == "2nd New Value"
@@ -242,24 +230,12 @@ class FlockCacheTestCase(unittest.TestCase):
     def test_split_cache(self):
         self.flock2 = FlockDict()
         self.flock2["dest"] = index_reference(self.flock, "source")
-        self.flock2["nested_dest"] = {
-            "dest": index_reference(self.flock, "nested_source", "source")
-        }
-        self.flock2["jump_dest"] = {
-            "dest": index_reference(self.flock["nested_source"], "source")
-        }
-        assert (
-            self.flock2["dest"]
-            == self.flock2["nested_dest"]["dest"]
-            == "Original Value"
-        )
+        self.flock2["nested_dest"] = {"dest": index_reference(self.flock, "nested_source", "source")}
+        self.flock2["jump_dest"] = {"dest": index_reference(self.flock["nested_source"], "source")}
+        assert self.flock2["dest"] == self.flock2["nested_dest"]["dest"] == "Original Value"
         self.flock["source"] = "1st New Value"
         assert self.flock2["dest"] == "1st New Value"
-        assert (
-            self.flock2["nested_dest"]["dest"]
-            == self.flock2["jump_dest"]["dest"]
-            == "Original Value"
-        )
+        assert self.flock2["nested_dest"]["dest"] == self.flock2["jump_dest"]["dest"] == "Original Value"
         self.flock["nested_source"]["source"] = "2nd New Value"
         assert self.flock2["dest"] == "1st New Value"
         assert self.flock2["nested_dest"]["dest"] == "2nd New Value"
@@ -274,9 +250,7 @@ class AggregatorTestCase(unittest.TestCase):
         self.flock["y"] = {x: 2 * x for x in range(1, 10)}
 
     def test_shear(self):
-        self.flock["sum"] = Aggregator(
-            [self.flock["x"], self.flock["y"]], lambda x: sum(x)
-        )
+        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: sum(x))
         assert not self.flock.check()
         sheared = self.flock.shear()
         assert len(sheared) == 3
@@ -285,9 +259,7 @@ class AggregatorTestCase(unittest.TestCase):
         assert dict(self.flock()) == sheared
 
     def test_check(self):
-        self.flock["sum"] = Aggregator(
-            [self.flock["x"], self.flock["y"]], lambda x: int(x)
-        )
+        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: int(x))
         check = self.flock.check()
         assert check
         assert len(check["sum"]) == 9
@@ -303,9 +275,7 @@ class MetaAggregatorTestCase(unittest.TestCase):
         self.flock["y"] = {x: 2 * x for x in range(1, 10)}
 
     def test_shear(self):
-        self.flock["sum"] = MetaAggregator(
-            lambda: [self.flock[ls] for ls in ["x", "y"]], sum
-        )
+        self.flock["sum"] = MetaAggregator(lambda: [self.flock[ls] for ls in ["x", "y"]], sum)
         assert not self.flock.check()
         sheared = self.flock.shear()
         assert len(sheared) == 3
@@ -322,19 +292,13 @@ class FlockAggregatorTestCase(unittest.TestCase):
         self.flock["y"] = {x: 2 * x for x in range(1, 10)}
 
     def test_shear_list(self):
-        self.flock["sum"] = FlockAggregator(
-            [self.flock["x"], self.flock["y"]], lambda x: sum(x)
-        )
+        self.flock["sum"] = FlockAggregator([self.flock["x"], self.flock["y"]], lambda x: sum(x))
         assert not self.flock.check()
 
         assert len(self.flock["sum"]) == 9
         self.assertContentsEqual(self.flock["sum"].keys(), set(range(1, 10)))
-        self.assertContentsEqual(
-            self.flock["sum"].values(), (x * 3 for x in range(1, 10))
-        )
-        self.assertContentsEqual(
-            self.flock["sum"].items(), ((x, x * 3) for x in range(1, 10))
-        )
+        self.assertContentsEqual(self.flock["sum"].values(), (x * 3 for x in range(1, 10)))
+        self.assertContentsEqual(self.flock["sum"].items(), ((x, x * 3) for x in range(1, 10)))
 
         assert self.flock["sum"].shear() == {x: x * 3 for x in range(1, 10)}
         assert self.flock["sum"] == {x: x * 3 for x in range(1, 10)}
@@ -349,19 +313,13 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert dict(self.flock()) == sheared
 
     def test_shear_func(self):
-        self.flock["sum"] = FlockAggregator(
-            lambda: [self.flock[ls] for ls in ["x", "y"]], sum
-        )
+        self.flock["sum"] = FlockAggregator(lambda: [self.flock[ls] for ls in ["x", "y"]], sum)
         assert not self.flock.check()
 
         assert len(self.flock["sum"]) == 9
         self.assertContentsEqual(self.flock["sum"].keys(), range(1, 10))
-        self.assertContentsEqual(
-            self.flock["sum"].values(), (x * 3 for x in range(1, 10))
-        )
-        self.assertContentsEqual(
-            self.flock["sum"].items(), ((x, x * 3) for x in range(1, 10))
-        )
+        self.assertContentsEqual(self.flock["sum"].values(), (x * 3 for x in range(1, 10)))
+        self.assertContentsEqual(self.flock["sum"].items(), ((x, x * 3) for x in range(1, 10)))
 
         assert self.flock.promises["sum"].shear() == {x: x * 3 for x in range(1, 10)}
         assert self.flock.promises["sum"]() == {x: x * 3 for x in range(1, 10)}
@@ -374,9 +332,7 @@ class FlockAggregatorTestCase(unittest.TestCase):
         assert dict(self.flock()) == sheared
 
     def test_check(self):
-        self.flock["sum"] = FlockAggregator(
-            [self.flock["x"], self.flock["y"]], lambda x: int(x)
-        )
+        self.flock["sum"] = FlockAggregator([self.flock["x"], self.flock["y"]], lambda x: int(x))
         check = self.flock.check()
         assert check
         assert len(check["sum"]) == 9

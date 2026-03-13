@@ -16,7 +16,7 @@ MAX_TEST_LENGTH = 100
 
 @given(
     inlist=st.one_of(
-        st.binary().map(memoryview),
+        st.binary(),
         st.builds(range, st.integers(min_value=0, max_value=MAX_TEST_LENGTH)),
         st.builds(
             lambda start, size: range(start, start + size),
@@ -40,9 +40,7 @@ def test_fuzz_FlockList(inlist, root):
 
 @given(
     indict=st.one_of(
-        st.dictionaries(
-            st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())
-        ),
+        st.dictionaries(st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())),
         st.lists(
             st.tuples(
                 st.text(),
@@ -68,9 +66,7 @@ def test_fuzz_is_not_rule(var):
 
 @given(
     map_obj=st.one_of(
-        st.dictionaries(
-            st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())
-        ),
+        st.dictionaries(st.text(), st.one_of(st.integers(), st.floats(), st.characters(), st.text())),
         st.dictionaries(
             st.text(),
             st.one_of(st.integers(), st.floats(), st.characters(), st.text()),
@@ -78,9 +74,7 @@ def test_fuzz_is_not_rule(var):
         ),
     ),
     key_list=st.lists(st.text()),
-    val=st.one_of(
-        st.functions(pure=True), st.integers(), st.floats(), st.characters(), st.text()
-    ),
+    val=st.one_of(st.functions(pure=True), st.integers(), st.floats(), st.characters(), st.text()),
 )
 @settings(report_multiple_bugs=False)
 def test_fuzz_patch(map_obj, key_list, val):
@@ -107,7 +101,7 @@ def test_fuzz_patch(map_obj, key_list, val):
                 flock.util.patch(map=map_obj, key_list=key_list, val=val)
         if ok_to_test:
             expect_final_error = False
-            if isinstance(map_iter, list) and not isinstance(key_list[-1], (int, slice)) and key_list[-1] != 'append':
+            if isinstance(map_iter, list) and not isinstance(key_list[-1], (int, slice)) and key_list[-1] != "append":
                 expect_final_error = True
             if expect_final_error:
                 with raises(KeyError):

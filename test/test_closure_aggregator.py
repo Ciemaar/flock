@@ -68,9 +68,7 @@ class ReductionTestCase(unittest.TestCase):
             assert getattr(sheared.sum, f"attr_{x}") == x * 3
 
     def test_shear_func(self):
-        self.cc.sum = ClosureReduction(
-            lambda: [getattr(self.cc, ls) for ls in ["x", "y"]], sum
-        )
+        self.cc.sum = ClosureReduction(lambda: [getattr(self.cc, ls) for ls in ["x", "y"]], sum)
         assert not self.cc.check()
 
         for x in range(1, 10):
