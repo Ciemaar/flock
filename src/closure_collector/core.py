@@ -1,8 +1,8 @@
 import inspect
 from abc import ABCMeta, abstractmethod
+from collections.abc import Iterable, Mapping
 from itertools import chain
 from pprint import pformat
-from typing import Iterable, Mapping
 
 from closure_collector.util import ClosureCollectorException, is_rule, rebind
 
@@ -66,7 +66,7 @@ class DynamicClosureCollector(CCBase):
 
     def __init__(self, root=None):
         """ """
-        super(DynamicClosureCollector, self).__init__()
+        super().__init__()
         self.cache = {}
         self.root = root
         self.peers = set()
@@ -98,7 +98,7 @@ class ClosurePromiseCollector(DynamicClosureCollector):
     def __init__(self, root=None):
         """ """
         self.promises = {}
-        super(ClosurePromiseCollector, self).__init__(root=root)
+        super().__init__(root=root)
 
     def __setattr__(self, item, val):
         """
@@ -110,7 +110,7 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         Any other handling should be dealt with via direct access to the promises dict.
         """
         if item in CLOSURE_ATTRS:
-            return super(ClosurePromiseCollector, self).__setattr__(item, val)
+            return super().__setattr__(item, val)
         value = self.make_callable(val)
         self.promises[item] = value
         self.clear_cache()
@@ -123,19 +123,19 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         :return: the value of the lamba when executed
         """
         if item.startswith("_") or item in {"root", "cache", "peers", "promises"}:
-            return super(ClosurePromiseCollector, self).__getattribute__(item)
+            return super().__getattribute__(item)
         if item in self.cache:
             return self.cache[item]
         else:
             if item in self.promises:
                 promise = self.promises[item]
             else:  # If the promise is not there, fallback ultimately to an error.
-                return super(ClosurePromiseCollector, self).__getattribute__(item)
+                return super().__getattribute__(item)
 
             try:
                 ret = promise()
             except Exception as e:
-                raise ClosureCollectorException("Error calculating attribute:%s" % item) from e
+                raise ClosureCollectorException(f"Error calculating attribute:{item}") from e
             self.cache[item] = ret
             return ret
 
@@ -177,7 +177,7 @@ class ClosureCollector(ClosurePromiseCollector):
         Values from indict are assigned to self one at a time.
 
         """
-        super(ClosureCollector, self).__init__()
+        super().__init__()
         for key, value in indict.items():
             setattr(self, key, value)
 
@@ -288,18 +288,17 @@ class ClosureReduction:
         try:
             cross_items = [getattr(source, item) for source in self.get_sources() if hasattr(source, item)]
             if not cross_items:
-                raise AttributeError("Attribute %s not found" % item)
+                raise AttributeError(f"Attribute {item} not found")
             return self.function(cross_items)
         except AttributeError:
             raise
         except Exception as e:
             raise ClosureCollectorException(
-                "Error Calculating %s:  " % item
+                f"Error Calculating {item}:  "
                 + str(e)
                 + "\n"
                 + ",".join(
-                    "%s:%s"
-                    % (
+                    "{}:{}".format(
                         source,
                         getattr(source, item, "NO VALUE"),
                     )

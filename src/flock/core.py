@@ -7,10 +7,10 @@ from collections.abc import (
     Mapping,
     MutableMapping,
     MutableSequence,
+    Sequence,
 )
 from copy import copy
 from itertools import chain
-from typing import Sequence
 
 from closure_collector.core import CCBase, DynamicClosureCollector
 from closure_collector.util import is_rule
@@ -70,7 +70,7 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
 
     def __init__(self, root=None):
         """Initialize the object."""
-        super(MutableFlock, self).__init__()
+        super().__init__()
 
     @abstractmethod
     def __setitem__(self, key, val):
@@ -114,7 +114,7 @@ class PromiseFlock(MutableFlock):
 
     def __init__(self, root=None):
         """Initialize the object."""
-        super(PromiseFlock, self).__init__(root=root)
+        super().__init__(root=root)
         self.promises = {}
 
     def __setitem__(self, key, val):
@@ -144,7 +144,7 @@ class PromiseFlock(MutableFlock):
             try:
                 ret = promise()
             except Exception as e:
-                raise FlockException("Error calculating key:%s" % key) from e
+                raise FlockException(f"Error calculating key:{key}") from e
             self.cache[key] = ret
             return ret
 
@@ -187,7 +187,7 @@ class FlockList(PromiseFlock, MutableSequence):
         Values from indict are assigned to self one at a time.
 
         """
-        super(FlockList, self).__init__()
+        super().__init__()
         self.promises = []
         self.cache = {}
         self.root = root
@@ -281,7 +281,7 @@ class FlockDict(PromiseFlock, MutableMapping):
         Values from indict are assigned to self one at a time.
 
         """
-        super(FlockDict, self).__init__()
+        super().__init__()
         self.promises = {}
         self.cache = {}
         self.root = root
@@ -421,12 +421,8 @@ class Aggregator:
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(
-                            e=str(e),
-                            value=value,
-                            function=self.function.__name__,
-                        )
-                        ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
+                        msg = f"function {self.function.__name__} incompatible with value {value} exception: {str(e)}"
+                        ret[key][f"Source: {sourceNo}"] = msg
                         # raise
         return ret
 
@@ -516,13 +512,13 @@ class FlockAggregator(FlockBase, Mapping):
         try:
             cross_items = [source[key] for source in self.get_sources() if key in source]
             if not cross_items:
-                raise KeyError("Key %s not found" % key)
+                raise KeyError(f"Key {key} not found")
             return self.function(cross_items)
         except KeyError:
             raise
         except Exception as e:
             raise FlockException(
-                "Error Calculating %s:  " % key + str(e) + "\n" + ",".join("%s:%s" % (source, source[key]) for source in self.get_sources() if key in source)
+                f"Error Calculating {key}:  " + str(e) + "\n" + ",".join(f"{source}:{source[key]}" for source in self.get_sources() if key in source)
             ) from e
 
     def __len__(self):
@@ -560,12 +556,8 @@ class FlockAggregator(FlockBase, Mapping):
                     try:
                         self.function([value])
                     except Exception as e:
-                        msg = "function {function} incompatible with value {value} exception: {e}".format(
-                            e=str(e),
-                            value=value,
-                            function=self.function.__name__,
-                        )
-                        ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
+                        msg = f"function {self.function.__name__} incompatible with value {value} exception: {str(e)}"
+                        ret[key][f"Source: {sourceNo}"] = msg
                         # raise
         return ret
 
@@ -588,4 +580,4 @@ class FlockAggregator(FlockBase, Mapping):
         return ret
 
     def __repr__(self):
-        return "flock.core.FlockAggregator(%s)" % str(self.shear())
+        return f"flock.core.FlockAggregator({str(self.shear())})"

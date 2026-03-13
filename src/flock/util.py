@@ -1,6 +1,5 @@
 import logging
-from collections.abc import MutableMapping
-from typing import Hashable
+from collections.abc import Hashable, MutableMapping
 
 log = logging.getLogger(__name__)
 
