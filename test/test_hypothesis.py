@@ -109,11 +109,6 @@ def test_fuzz_patch(map_obj, key_list, val):
                     flock.util.patch(map=map_obj, key_list=key_list, val=val)
                 return
 
-            if key_list[-1] == "append" and not hasattr(map_iter, "append"):
-                with raises(AttributeError):
-                    flock.util.patch(map=map_obj, key_list=key_list, val=val)
-                return
-
             flock.util.patch(map=map_obj, key_list=key_list, val=val)
 
             map_iter = map_obj

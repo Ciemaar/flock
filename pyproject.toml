@@ -101,3 +101,4 @@ warn_unused_configs = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+namespaces = false

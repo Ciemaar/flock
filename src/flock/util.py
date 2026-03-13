@@ -27,10 +27,10 @@ def patch(map: MutableMapping, key_list: list[Hashable], val):
             map[key] = {}
             map = map[key]
     if key_list[-1] == "append":
-        if hasattr(map, "append"):
+        if isinstance(map, list):
             map.append(val)
         else:
-            raise AttributeError(f"'{type(map).__name__}' object has no attribute 'append'")
+            raise KeyError("Cannot append to non-list mapping.")
     else:
         try:
             map[key_list[-1]] = val
