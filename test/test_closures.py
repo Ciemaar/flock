@@ -2,6 +2,7 @@ import unittest
 import uuid as uuid
 
 import pytest
+from glom import GlomError, PathAccessError  # type: ignore
 
 from closure_collector.closures import (
     attr_reference,
@@ -38,7 +39,7 @@ class ClosureAttrTestCase(unittest.TestCase):
 
     def test_attr_reference_no_default(self):
         probe = uuid.uuid4()
-        with pytest.raises(AttributeError):
+        with pytest.raises(PathAccessError):
             assert probe is attr_reference(self.base_obj, "x")()
 
 
@@ -58,7 +59,7 @@ class ClosureIndexTestCase(unittest.TestCase):
 
     def test_attr_reference_no_default(self):
         probe = uuid.uuid4()
-        with pytest.raises(KeyError):
+        with pytest.raises(GlomError):
             assert probe is index_reference(self.base_dict, "x")()
 
     def test_lookup(self):

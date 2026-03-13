@@ -1,3 +1,5 @@
+from glom import Path, glom  # type: ignore
+
 from closure_collector.util import ClosureCollectorException
 from flock import FlockException
 
@@ -9,54 +11,47 @@ def collection_reduce(int_collection, func):
 
 def index_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    return closure that references values stored elsewhere using glom.
     :type flock: flock.core.FlockDict
-    :param indexes: lambdas to be resolved in order (tree walking)
+    :param indexes: keys or attributes to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        currObj = flock
-
         try:
-            # recursively resolve indexes
-            for index in indexes:
-                currObj = currObj[index]
-            return currObj
+            # We specifically want item access since this is index_reference
+
+            # Helper to access by items for index_reference
+            def item_access(target):
+                curr = target
+                for key in indexes:
+                    curr = curr[key]
+                return curr
+
+            if "default" in kwargs:
+                return glom(flock, item_access, default=kwargs["default"], skip_exc=KeyError)
+            return glom(flock, item_access)
         except (ClosureCollectorException, FlockException):
             raise
-        except KeyError:
-            if "default" in kwargs:
-                return kwargs["default"]
-            else:
-                raise
 
     return de_ref
 
 
 def attr_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    return closure that references values stored elsewhere using glom.
     :type flock: flock.core.FlockDict
-    :param indexes: lambdas to be resolved in order (tree walking)
+    :param indexes: attributes or keys to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        currObj = flock
-
         try:
-            # recursively resolve indexes
-            for index in indexes:
-                currObj = getattr(currObj, index)
-            return currObj
+            if "default" in kwargs:
+                return glom(flock, Path(*indexes), default=kwargs["default"], skip_exc=AttributeError)
+            return glom(flock, Path(*indexes))
         except (ClosureCollectorException, FlockException):
             raise
-        except AttributeError:
-            if "default" in kwargs:
-                return kwargs["default"]
-            else:
-                raise
 
     return de_ref
 
