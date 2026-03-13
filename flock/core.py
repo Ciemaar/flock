@@ -69,7 +69,7 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
     """The abstract base class for flocks with items that can be set"""
 
     def __init__(self, root=None):
-        """ """
+        """Initialize the object."""
         super(MutableFlock, self).__init__()
 
     @abstractmethod
@@ -113,7 +113,7 @@ class PromiseFlock(MutableFlock):
     """A convenience class for default implementations of methods from MutableFlock"""
 
     def __init__(self, root=None):
-        """ """
+        """Initialize the object."""
         super(PromiseFlock, self).__init__(root=root)
         self.promises = {}
 
@@ -227,7 +227,7 @@ class FlockList(PromiseFlock, MutableSequence):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)
+            assert callable(value)  # noqa: S101
         return ret
 
     def shear(self, record_errors=False):
@@ -324,7 +324,7 @@ class FlockDict(PromiseFlock, MutableMapping):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)
+            assert callable(value)  # noqa: S101
         return ret
 
     def shear(self, record_errors=False):

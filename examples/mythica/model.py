@@ -237,7 +237,6 @@ class HeroicSkill(Skill):
                 name=self.name,
                 skill_type=self.skill_type,
                 cost=self.cost,
-                xp=self.xp,
                 level=self.level,
                 bonuses=self.bonuses,
                 cls_name=self.__class__.__name__,
@@ -260,27 +259,19 @@ class Conduit(HeroicSkill):
 
     def __repr__(self):
         return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(
-            name=self.name,
             skill_type=self.skill_type,
             spell_type=self.spell_type,
             cost=self.cost,
-            xp=self.xp,
             level=self.level,
-            bonuses=self.bonuses,
             cls_name=self.__class__.__name__,
         )
 
     def __str__(self):
         return "{name} x{cost} {bonuses})".format(
             name=self.name,
-            skill_type=self.skill_type,
-            spell_type=self.spell_type,
             cost=self.cost,
-            xp=self.xp,
-            level=self.level,
             bonuses=self.bonuses,
-            cls_name=self.__class__.__name__,
-        )
+            )
 
     @property
     def bonuses(self):

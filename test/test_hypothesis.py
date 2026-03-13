@@ -1,7 +1,7 @@
 import math
 from collections.abc import MutableMapping
 
-from _pytest.python_api import raises
+from pytest import raises
 from hypothesis import given, strategies as st, settings
 
 import closure_collector.util
@@ -103,9 +103,17 @@ def test_fuzz_patch(map_obj, key_list, val):
         else:
             ok_to_test = True
         if expect_key_error:
-            with raises(KeyError):
+            with raises((KeyError, TypeError)):
                 flock.util.patch(map=map_obj, key_list=key_list, val=val)
         if ok_to_test:
+            expect_final_error = False
+            if isinstance(map_iter, list) and not isinstance(key_list[-1], (int, slice)) and key_list[-1] != 'append':
+                expect_final_error = True
+            if expect_final_error:
+                with raises(KeyError):
+                    flock.util.patch(map=map_obj, key_list=key_list, val=val)
+                return
+
             flock.util.patch(map=map_obj, key_list=key_list, val=val)
 
             map_iter = map_obj

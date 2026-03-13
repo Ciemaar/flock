@@ -25,7 +25,7 @@ def index_reference(flock, *indexes, **kwargs):
             return currObj
         except (ClosureCollectorException, FlockException):
             raise
-        except KeyError as e:
+        except KeyError:
             if "default" in kwargs:
                 return kwargs["default"]
             else:
@@ -52,7 +52,7 @@ def attr_reference(flock, *indexes, **kwargs):
             return currObj
         except (ClosureCollectorException, FlockException):
             raise
-        except AttributeError as e:
+        except AttributeError:
             if "default" in kwargs:
                 return kwargs["default"]
             else:

@@ -1,3 +1,10 @@
+
+[project]
+name = "closure_collector"
+version = "0.0.2"
+description = "A generalized closure collection dictionary and toolset."
+authors = [{ name = "Andy P Fundinger", email = "Andy@ciemaar.com" }]
+requires-python = ">=3.12"
 [build-system]
 requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
@@ -5,7 +12,7 @@ build-backend = "setuptools.build_meta"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = clean,py39,py310,py311,py312,report
+envlist = py312, py313, lint, type
 
 [testenv]
 # install pytest in the virtualenv where commands will be executed
@@ -37,3 +44,6 @@ commands = coverage erase
 
 [tool.ruff.lint]
 ignore = ['E731']
+
+[tool.setuptools]
+packages = ["flock", "closure_collector"]

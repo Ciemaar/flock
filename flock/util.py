@@ -18,12 +18,12 @@ def patch(map: MutableMapping, key_list: list[Hashable], val: Any):
     for key in key_list[0:-1]:
         try:
             map = map[key]
-        except FlockException as e:
+        except FlockException:
             raise
         except TypeError as e:
             raise KeyError from e
 
-        except KeyError as e:
+        except KeyError:
             map[key] = {}
             map = map[key]
     if key_list[-1] == "append":
@@ -32,6 +32,4 @@ def patch(map: MutableMapping, key_list: list[Hashable], val: Any):
         try:
             map[key_list[-1]] = val
         except TypeError as e:
-            raise KeyError from e
-
-
+            raise KeyError(str(e)) from e
