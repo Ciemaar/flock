@@ -1,6 +1,6 @@
 import logging
 from collections.abc import MutableMapping
-from typing import Hashable, Any
+from typing import Hashable
 
 log = logging.getLogger(__name__)
 
@@ -11,7 +11,7 @@ class FlockException(KeyError):
     pass
 
 
-def patch(map: MutableMapping, key_list: list[Hashable], val: Any):
+def patch(map: MutableMapping, key_list: list[Hashable], val):
     if not key_list:
         raise TypeError("Empty key_lists are invalid for patch.")
 

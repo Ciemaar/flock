@@ -6,8 +6,28 @@ description = "A generalized closure collection dictionary and toolset."
 authors = [{ name = "Andy P Fundinger", email = "Andy@ciemaar.com" }]
 requires-python = ">=3.12"
 dependencies = [
-    "PyYAML>=6.0",
-    "glom>=23.3.0",
+    "PyYAML",
+    "pydantic-settings",
+    "click",
+    "glom>=23.3.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "hypothesis",
+    "pytest-cov",
+    "coverage",
+    "ruff",
+    "mypy",
+    "mdformat",
+    "tox"
+]
+test = [
+    "pytest",
+    "hypothesis",
+    "pytest-cov",
+    "coverage"
 ]
 
 [build-system]
@@ -21,17 +41,13 @@ envlist = py312, py313, lint, type
 
 [testenv]
 # install pytest in the virtualenv where commands will be executed
-deps = pytest
-    -rrequirements.txt
-    hypothesis
-    coverage
-    pytest-cov
+extras = test
 depends =
     {py39,py310,py311,py312}: clean
     report: py39,py310,py311,py312
 commands =
     # NOTE: you can run any command line tool here - not just tests
-    pytest --cov --cov-append --cov-report=term-missing  --cov-branch
+    pytest --cov=src --cov-append --cov-report=term-missing --cov-branch
 
 [testenv:report]
 deps = coverage
@@ -44,11 +60,44 @@ commands =
 deps = coverage
 skip_install = true
 commands = coverage erase
+
+[testenv:lint]
+extras = dev
+commands =
+    ruff check src test
+    ruff format --check src test
+
+[testenv:type]
+extras = dev
+commands =
+    mypy src test
 """
 
+[tool.pytest.ini_options]
+addopts = "--cov=src --cov-branch --cov-report=term-missing"
+testpaths = ["test"]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.ruff]
+line-length = 160
+src = ["src", "test"]
 
 [tool.ruff.lint]
-ignore = ['E731']
+select = ["E", "F", "W", "I"]
+ignore = ["E731"]
 
-[tool.setuptools]
-packages = ["flock", "closure_collector"]
+[tool.ruff.lint.per-file-ignores]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = false
+warn_unused_configs = true
+
+[tool.setuptools.packages.find]
+where = ["src"]

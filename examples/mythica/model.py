@@ -1,4 +1,4 @@
-import argparse
+import click
 import csv
 import logging
 import os.path
@@ -318,35 +318,15 @@ MentalSkill = partial(Skill, skill_type=MENTAL)
 WeaponSkill = partial(Skill, skill_type=WEAPON)
 
 
-def get_parser():
-    parser = argparse.ArgumentParser(
-        description="Mythica Character manager",
-    )
-
-    parser.add_argument(
-        "--infile",
-        type=argparse.FileType("r"),
-        default=None,
-        help="File to read character from.",
-    )
-    parser.add_argument(
-        "--outfile",
-        type=argparse.FileType("w"),
-        default=None,
-        help="File to read character from.",
-    )
-    return parser
-
-
-if __name__ == "__main__":
+@click.command()
+@click.option("--infile", type=click.File("r"), default=None, help="File to read character from.")
+@click.option("--outfile", type=click.File("w"), default=None, help="File to save character to.")
+def main(infile, outfile):
     logging.basicConfig()
-    parser = get_parser()
-    opt = parser.parse_args()
 
-    # char = load_character("Mondavite2.pkl")
     char = FlockDict()
 
-    if not opt.infile:
+    if not infile:
         char["base_stats"] = {
             "Combat Skill": 13,
             "Dexterity": 16,
@@ -415,17 +395,18 @@ if __name__ == "__main__":
         char["Race"] = "Human"
         char["level"] = 8
     else:
-        for key, value in yaml.load(opt.infile).items():
+        for key, value in yaml.load(infile, Loader=yaml.Loader).items():
             char[key] = value
 
     apply_rules(char)
     char.check()
-    # pprint(char.shear())
     sheared = char.shear()
     for attribute in chain([], sheared["base_stats"].keys()):
         print("%s: %s" % (attribute, sheared.pop(attribute)))
     pprint(sheared)
-    if opt.outfile:
-        # sheared['skills'] = []
-        # for skill in sheared.skill:
-        yaml.dump(sheared, opt.outfile, width=80)
+    if outfile:
+        yaml.dump(sheared, outfile, width=80)
+
+
+if __name__ == "__main__":
+    main()
