@@ -5,33 +5,32 @@ build-backend = "setuptools.build_meta"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = clean,py39,py310,py311,py312,report
+envlist = py312, py313, lint, type
+isolated_build = True
 
 [testenv]
-# install pytest in the virtualenv where commands will be executed
-deps = pytest
-    -rrequirements.txt
-    hypothesis
-    coverage
-    pytest-cov
-depends =
-    {py39,py310,py311,py312}: clean
-    report: py39,py310,py311,py312
+deps =
+    .[test]
 commands =
-    # NOTE: you can run any command line tool here - not just tests
-    pytest --cov --cov-append --cov-report=term-missing  --cov-branch
+    pytest
 
-[testenv:report]
-deps = coverage
-skip_install = true
+[testenv:lint]
+deps =
+    .[dev]
+allowlist_externals = mdformat
 commands =
-    coverage report
-    coverage html
+    ruff check .
+    ruff format --check .
+    mdformat --check README.md AGENTS.md TOOLING_EVALUATION.md .github flock closure_collector examples
 
-[testenv:clean]
-deps = coverage
-skip_install = true
-commands = coverage erase
+[testenv:type]
+deps =
+    .[dev]
+    .[test]
+allowlist_externals = mypy
+commands =
+    mypy closure_collector/ flock/ examples/ test/
+
 """
 
 
