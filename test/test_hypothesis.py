@@ -102,7 +102,7 @@ def test_fuzz_patch(map_obj, key_list, val):
                 flock.util.patch(map=map_obj, key_list=key_list, val=val)
         if ok_to_test:
             expect_final_error = False
-            if isinstance(map_iter, list) and not isinstance(key_list[-1], (int, slice)) and key_list[-1] != "append":
+            if isinstance(map_iter, list) and not isinstance(key_list[-1], int | slice) and key_list[-1] != "append":
                 expect_final_error = True
             if expect_final_error:
                 with raises(KeyError):
