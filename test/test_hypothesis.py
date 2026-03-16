@@ -135,7 +135,11 @@ def test_hypothesis_index_reference(keys, value):
 
     # Test that index_reference successfully resolves the path
     ref_closure = index_reference(base_dict, *keys)
-    assert ref_closure() == value
+    result = ref_closure()
+    if isinstance(value, float) and math.isnan(value):
+        assert isinstance(result, float) and math.isnan(result)
+    else:
+        assert result == value
 
 
 @given(
@@ -153,4 +157,8 @@ def test_hypothesis_attr_reference(keys, value):
 
     # Test that attr_reference successfully resolves the path
     ref_closure = attr_reference(base_obj, *keys)
-    assert ref_closure() == value
+    result = ref_closure()
+    if isinstance(value, float) and math.isnan(value):
+        assert isinstance(result, float) and math.isnan(result)
+    else:
+        assert result == value
