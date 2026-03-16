@@ -13,7 +13,7 @@ def index_reference(flock, *indexes, **kwargs):
     """
     return closure that references values stored elsewhere using glom.
     :type flock: flock.core.FlockDict
-    :param indexes: keys or attributes to be resolved in order (tree walking)
+    :param indexes: keys to be resolved in order via item access (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 

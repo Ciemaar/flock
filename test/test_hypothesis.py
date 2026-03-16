@@ -10,6 +10,8 @@ import flock
 import flock.closures
 import flock.core
 import flock.util
+from closure_collector.closures import attr_reference, index_reference
+from closure_collector.core import ClosureCollector
 from flock import FlockDict
 
 MAX_TEST_LENGTH = 100
@@ -119,3 +121,36 @@ def test_fuzz_patch(map_obj, key_list, val):
             if callable(val) and isinstance(map_iter, FlockDict):
                 val = val()
             assert stored_value == val or (math.isnan(stored_value) and math.isnan(val))
+
+
+@given(keys=st.lists(st.text(), min_size=1, max_size=5), value=st.one_of(st.integers(), st.floats(), st.text()))
+def test_hypothesis_index_reference(keys, value):
+    # Construct a nested dictionary structure based on the generated keys
+    base_dict = {}
+    current = base_dict
+    for key in keys[:-1]:
+        current[key] = {}
+        current = current[key]
+    current[keys[-1]] = value
+
+    # Test that index_reference successfully resolves the path
+    ref_closure = index_reference(base_dict, *keys)
+    assert ref_closure() == value
+
+
+@given(
+    keys=st.lists(st.text(min_size=1, alphabet=st.characters(whitelist_categories=["Lu", "Ll"])), min_size=1, max_size=5),
+    value=st.one_of(st.integers(), st.floats(), st.text()),
+)
+def test_hypothesis_attr_reference(keys, value):
+    # Construct a nested object structure based on the generated attributes
+    base_obj = ClosureCollector()
+    current = base_obj
+    for key in keys[:-1]:
+        setattr(current, key, ClosureCollector())
+        current = getattr(current, key)
+    setattr(current, keys[-1], value)
+
+    # Test that attr_reference successfully resolves the path
+    ref_closure = attr_reference(base_obj, *keys)
+    assert ref_closure() == value
