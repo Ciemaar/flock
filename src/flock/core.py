@@ -8,32 +8,46 @@ except ImportError:
 try:
     import warnings
 except ImportError:
+
     class warnings:  # type: ignore[no-redef]
         @staticmethod
         def warn(*args: Any, **kwargs: Any) -> None:
             pass
 
+
+from typing import Callable, TypeVar
+
+_FuncT = TypeVar('_FuncT', bound=Callable[..., Any])
+
 try:
     from abc import ABCMeta, abstractmethod
 except ImportError:
+
     class ABCMeta(type):  # type: ignore[no-redef]
         pass
-    def abstractmethod(func: Any) -> Any: return func  # type: ignore[misc]
+
+    def abstractmethod(funcobj: _FuncT) -> _FuncT:
+        return funcobj  # type: ignore[misc]
+
 
 try:
     from collections import OrderedDict, defaultdict
 except ImportError:
+
     class OrderedDict(dict):  # type: ignore[no-redef]
         pass
+
     class defaultdict(dict):  # type: ignore[no-redef]
         def __init__(self, default_factory: Any = None, *args: Any, **kwargs: Any):
             super().__init__(*args, **kwargs)
             self.default_factory = default_factory
+
         def __missing__(self, key: Any) -> Any:
             if self.default_factory is None:
                 raise KeyError(key)
             ret = self[key] = self.default_factory()
             return ret
+
 
 try:
     from collections.abc import (
@@ -53,23 +67,32 @@ except ImportError:
         MutableSequence = object  # type: ignore[assignment,misc]
         Sequence = object  # type: ignore[assignment,misc]
 
+_T = TypeVar('_T')
+
 try:
     from copy import copy
 except ImportError:
-    def copy(obj: Any) -> Any: return obj  # type: ignore[misc]
+
+    def copy(x: _T) -> _T:
+        return x  # type: ignore[misc]
+
 
 try:
     from itertools import chain
 except ImportError:
+
     class chain:  # type: ignore[no-redef]
         def __init__(self, *iterables: Any):
             self.iterables = iterables
+
         def __iter__(self) -> Any:
             for it in self.iterables:
                 yield from it
+
         @classmethod
         def from_iterable(cls, iterables: Any) -> Any:
             return cls(*iterables)
+
 
 from closure_collector.core import CCBase, DynamicClosureCollector
 from closure_collector.util import is_rule

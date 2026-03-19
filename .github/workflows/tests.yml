@@ -39,7 +39,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox mdformat mdformat-gfm
     - name: MDFormat check
-      run: mdformat --check README.md AGENTS.md SESSION_INSTRUCTIONS.md docs/tooling_evaluation.md
+      run: mdformat --check README.md AGENTS.md SESSION_INSTRUCTIONS.md
       continue-on-error: true
     - name: Lint with tox
       run: tox -e lint

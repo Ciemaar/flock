@@ -5,12 +5,20 @@ try:
 except ImportError:
     inspect = None  # type: ignore[assignment]
 
+from typing import Callable, TypeVar
+
+_FuncT = TypeVar('_FuncT', bound=Callable[..., Any])
+
 try:
     from abc import ABCMeta, abstractmethod
 except ImportError:
+
     class ABCMeta(type):  # type: ignore[no-redef]
         pass
-    def abstractmethod(func: Any) -> Any: return func  # type: ignore[misc]
+
+    def abstractmethod(funcobj: _FuncT) -> _FuncT:
+        return funcobj  # type: ignore[misc]
+
 
 try:
     from collections.abc import Iterable, Mapping
@@ -19,20 +27,24 @@ except ImportError:
         from collections.abc import Iterable, Mapping
     except ImportError:
         Iterable = object  # type: ignore[assignment,misc]
-        Mapping = object   # type: ignore[assignment,misc]
+        Mapping = object  # type: ignore[assignment,misc]
 
 try:
     from itertools import chain
 except ImportError:
+
     class chain:  # type: ignore[no-redef]
         def __init__(self, *iterables: Any):
             self.iterables = iterables
+
         def __iter__(self) -> Any:
             for it in self.iterables:
                 yield from it
+
         @classmethod
         def from_iterable(cls, iterables: Any) -> Any:
             return cls(*iterables)
+
 
 try:
     from pprint import pformat

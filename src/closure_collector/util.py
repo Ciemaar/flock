@@ -1,5 +1,3 @@
-from typing import Any
-
 try:
     from numbers import Number
 except ImportError:

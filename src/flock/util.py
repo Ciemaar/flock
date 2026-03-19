@@ -3,19 +3,25 @@ from typing import Any
 try:
     import logging
 except ImportError:
+
     class logging:  # type: ignore[no-redef]
         @staticmethod
         def getLogger(name: str) -> Any:
             class Logger:
                 def warning(self, msg: str, *args: Any) -> None:
                     print(msg % args if args else msg)
+
                 def info(self, msg: str, *args: Any) -> None:
                     print(msg % args if args else msg)
+
                 def debug(self, msg: str, *args: Any) -> None:
                     pass
+
                 def error(self, msg: str, *args: Any) -> None:
                     print(msg % args if args else msg)
+
             return Logger()
+
 
 try:
     from collections.abc import Hashable, MutableMapping
