@@ -36,7 +36,7 @@ build-backend = "setuptools.build_meta"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py312, py313, lint, type
+envlist = py312, py313, pyodide, micropython, lint, type
 
 [testenv]
 # install pytest in the virtualenv where commands will be executed
@@ -47,6 +47,19 @@ depends =
 commands =
     # NOTE: you can run any command line tool here - not just tests
     pytest --cov=src --cov-append --cov-report=term-missing --cov-branch
+
+[testenv:pyodide]
+extras = test
+deps =
+    pytest-pyodide
+commands =
+    pytest test/ --run-in-pyodide
+
+[testenv:micropython]
+skip_install = true
+allowlist_externals = micropython
+commands =
+    micropython run_micropython_tests.py
 
 [testenv:report]
 deps = coverage

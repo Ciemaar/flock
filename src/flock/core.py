@@ -1,16 +1,75 @@
-import inspect
-import warnings
-from abc import ABCMeta, abstractmethod
-from collections import OrderedDict, defaultdict
-from collections.abc import (
-    Iterable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Sequence,
-)
-from copy import copy
-from itertools import chain
+from typing import Any
+
+try:
+    import inspect
+except ImportError:
+    inspect = None  # type: ignore[assignment]
+
+try:
+    import warnings
+except ImportError:
+    class warnings:  # type: ignore[no-redef]
+        @staticmethod
+        def warn(*args: Any, **kwargs: Any) -> None:
+            pass
+
+try:
+    from abc import ABCMeta, abstractmethod
+except ImportError:
+    class ABCMeta(type):  # type: ignore[no-redef]
+        pass
+    def abstractmethod(func: Any) -> Any: return func  # type: ignore[misc]
+
+try:
+    from collections import OrderedDict, defaultdict
+except ImportError:
+    class OrderedDict(dict):  # type: ignore[no-redef]
+        pass
+    class defaultdict(dict):  # type: ignore[no-redef]
+        def __init__(self, default_factory: Any = None, *args: Any, **kwargs: Any):
+            super().__init__(*args, **kwargs)
+            self.default_factory = default_factory
+        def __missing__(self, key: Any) -> Any:
+            if self.default_factory is None:
+                raise KeyError(key)
+            ret = self[key] = self.default_factory()
+            return ret
+
+try:
+    from collections.abc import (
+        Iterable,
+        Mapping,
+        MutableMapping,
+        MutableSequence,
+        Sequence,
+    )
+except ImportError:
+    try:
+        from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence, Sequence
+    except ImportError:
+        Iterable = object  # type: ignore[assignment,misc]
+        Mapping = object  # type: ignore[assignment,misc]
+        MutableMapping = object  # type: ignore[assignment,misc]
+        MutableSequence = object  # type: ignore[assignment,misc]
+        Sequence = object  # type: ignore[assignment,misc]
+
+try:
+    from copy import copy
+except ImportError:
+    def copy(obj: Any) -> Any: return obj  # type: ignore[misc]
+
+try:
+    from itertools import chain
+except ImportError:
+    class chain:  # type: ignore[no-redef]
+        def __init__(self, *iterables: Any):
+            self.iterables = iterables
+        def __iter__(self) -> Any:
+            for it in self.iterables:
+                yield from it
+        @classmethod
+        def from_iterable(cls, iterables: Any) -> Any:
+            return cls(*iterables)
 
 from closure_collector.core import CCBase, DynamicClosureCollector
 from closure_collector.util import is_rule
@@ -32,30 +91,13 @@ __author__ = "Andy Fundinger"
 class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
     @abstractmethod
     def check(self, path):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-        """
+        pass
 
     @abstractmethod
     def shear(self, record_errors=False) -> Iterable:
-        """
-        Convert this Mapping into a simple dict
-
-        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
-        than continuing up the call stack
-
-        :return: a dict() representation of this Aggregator
-        """
         pass
 
     def __call__(self):
-        """
-        Call must be specified so that FlockMappings can be nested within eachother
-
-        :return: self
-        """
         return self
 
     def __hash__(self, *args, **kwargs):
@@ -95,14 +137,29 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
         "Reminder to implement Mapping"
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
+        if callable(value):
+            if inspect is not None:
+                is_zero_arg = len(inspect.signature(value).parameters) == 0
+            else:
+                try:
+                    is_zero_arg = value.__code__.co_argcount == 0
+                except AttributeError:
+                    is_zero_arg = True
+        else:
+            is_zero_arg = False
+
+        if is_zero_arg:
             ret = value
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
-        elif isinstance(value, Mapping):
+                    try:
+                        contents = closure.cell_contents
+                    except AttributeError:
+                        contents = closure
+                    if isinstance(contents, DynamicClosureCollector):
+                        contents.peers.add(self)
+        elif isinstance(value, Mapping) and Mapping is not object:
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
             ret = lambda: value
@@ -144,6 +201,7 @@ class PromiseFlock(MutableFlock):
             try:
                 ret = promise()
             except Exception as e:
+                print(f"Original Exception: {e}")
                 raise FlockException(f"Error calculating key:{key}") from e
             self.cache[key] = ret
             return ret

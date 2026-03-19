@@ -1,5 +1,14 @@
-from numbers import Number
-from types import FunctionType
+from typing import Any
+
+try:
+    from numbers import Number
+except ImportError:
+    Number = (int, float, complex)  # type: ignore[assignment,misc]
+
+try:
+    from types import FunctionType
+except ImportError:
+    FunctionType = type(lambda: None)  # type: ignore[assignment,misc]
 
 
 class ClosureCollectorException(AttributeError):
@@ -19,7 +28,11 @@ def is_rule(func):
 
     if getattr(func, "__closure__", False):  ## TODO replace with inspect_getclosurevars, probably inspect only nonlocals
         for cell in func.__closure__:
-            if not isinstance(cell.cell_contents, (str, Number, bytes, tuple, frozenset)):
+            try:
+                contents = cell.cell_contents
+            except AttributeError:
+                contents = cell
+            if not isinstance(contents, (str, Number, bytes, tuple, frozenset)):
                 return True
     try:
         if set(func.__globals__).intersection(func.__code__.co_names):
