@@ -5,9 +5,10 @@ try:
 except ImportError:
     inspect = None  # type: ignore[assignment]
 
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
-_FuncT = TypeVar('_FuncT', bound=Callable[..., Any])
+_FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
 
 try:
     from abc import ABCMeta, abstractmethod
@@ -16,7 +17,7 @@ except ImportError:
     class ABCMeta(type):  # type: ignore[no-redef]
         pass
 
-    def abstractmethod(funcobj: _FuncT) -> _FuncT:
+    def abstractmethod(funcobj: _FuncT) -> _FuncT:  # noqa: UP047
         return funcobj  # type: ignore[misc]
 
 
@@ -51,7 +52,7 @@ try:
 except ImportError:
     pformat = repr  # type: ignore[assignment]
 
-from closure_collector.util import ClosureCollectorException, is_rule, rebind
+from closure_collector.util import ClosureCollectorException, is_rule, rebind  # noqa: E402
 
 CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
 

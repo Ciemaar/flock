@@ -15,9 +15,10 @@ except ImportError:
             pass
 
 
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
-_FuncT = TypeVar('_FuncT', bound=Callable[..., Any])
+_FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
 
 try:
     from abc import ABCMeta, abstractmethod
@@ -26,7 +27,7 @@ except ImportError:
     class ABCMeta(type):  # type: ignore[no-redef]
         pass
 
-    def abstractmethod(funcobj: _FuncT) -> _FuncT:
+    def abstractmethod(funcobj: _FuncT) -> _FuncT:  # noqa: UP047
         return funcobj  # type: ignore[misc]
 
 
@@ -67,13 +68,13 @@ except ImportError:
         MutableSequence = object  # type: ignore[assignment,misc]
         Sequence = object  # type: ignore[assignment,misc]
 
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 try:
     from copy import copy
 except ImportError:
 
-    def copy(x: _T) -> _T:
+    def copy(x: _T) -> _T:  # noqa: UP047
         return x  # type: ignore[misc]
 
 
@@ -94,9 +95,9 @@ except ImportError:
             return cls(*iterables)
 
 
-from closure_collector.core import CCBase, DynamicClosureCollector
-from closure_collector.util import is_rule
-from flock.util import FlockException
+from closure_collector.core import CCBase, DynamicClosureCollector  # noqa: E402
+from closure_collector.util import is_rule  # noqa: E402
+from flock.util import FlockException  # noqa: E402
 
 __author__ = "Andy Fundinger"
 
