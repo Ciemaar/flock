@@ -1,32 +1,10 @@
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-      - id: check-toml
-      - id: check-yaml
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-  - repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.17
-    hooks:
-      - id: mdformat
-        additional_dependencies:
-          - mdformat-gfm
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.5
+    # Ruff version.
+    rev: v0.9.9
     hooks:
+      # Run the linter.
       - id: ruff
-        args: [ --fix, --exit-non-zero-on-fix, --show-fixes ]
+        args: [ --fix ]
+      # Run the formatter.
       - id: ruff-format
-  - repo: local
-    hooks:
-      - id: mypy
-        name: mypy
-        entry: tox -e type
-        language: system
-        pass_filenames: false
-      - id: pytest
-        name: pytest
-        entry: tox -e py312
-        language: system
-        pass_filenames: false

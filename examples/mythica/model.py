@@ -1,21 +1,21 @@
-import click
 import csv
 import logging
 import os.path
 import pickle
 import sys
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 from fractions import Fraction
-from functools import reduce, partial
+from functools import partial, reduce
 from itertools import chain
 from operator import add
 from pprint import pprint
 
+import click
 import yaml
 
 from closure_collector.closures import index_reference
 from flock.closures import lookup
-from flock.core import FlockDict, FlockAggregator
+from flock.core import FlockAggregator, FlockDict
 from flock.util import FlockException
 
 GENERAL = "General"
@@ -41,8 +41,8 @@ def get_attribute_table():
     dReader = csv.DictReader(table_file, fieldnames=fieldNames)
     table = [x for x in dReader]
     for row in table:
-        for lookup, value in row.items():
-            if lookup == ("", ""):
+        for k, value in row.items():
+            if k == ("", ""):
                 continue
             try:
                 value = float(Fraction(value))
@@ -53,7 +53,7 @@ def get_attribute_table():
                     value = float(value[:-4])
                 elif value[-5:] == "/hour":
                     value = float(value[:-5])
-            _attribute_table[lookup][int(row[("", "")])] = value
+            _attribute_table[k][int(row[("", "")])] = value
     return _attribute_table
 
 
@@ -63,9 +63,7 @@ def apply_attribute_table(character):
     for (attribute, bonus), table in get_attribute_table().items():
         character["Attribute_Bonuses"][bonus] = lookup(character, attribute, table)
     character["base_bonuses"] = {"Spell Points Multiple": {"General": 1}}
-    character["bonuses"] = FlockAggregator(
-        [character["Attribute_Bonuses"], character["base_bonuses"]], cross_total
-    )
+    character["bonuses"] = FlockAggregator([character["Attribute_Bonuses"], character["base_bonuses"]], cross_total)
 
 
 def apply_attribs(character):
@@ -90,16 +88,10 @@ def apply_level_allotments(character):
         character["level"] = 1
     character.setdefault("points", FlockDict())
     character["points"].setdefault("total", FlockDict({"universal": 10}))
-    character["points"]["total"]["mental"] = (
-        lambda: character["level"] * character["bonuses"]["Mental Skill Points"]
-    )
+    character["points"]["total"]["mental"] = lambda: character["level"] * character["bonuses"]["Mental Skill Points"]
 
-    character["points"]["total"]["physical"] = (
-        lambda: character["level"] * character["bonuses"]["Phy Skill Points"]
-    )
-    character["points"]["total"]["heroic"] = lambda: character["level"] * (
-        character["level"] + 1 + character["bonuses"]["heroics"]
-    )
+    character["points"]["total"]["physical"] = lambda: character["level"] * character["bonuses"]["Phy Skill Points"]
+    character["points"]["total"]["heroic"] = lambda: character["level"] * (character["level"] + 1 + character["bonuses"]["heroics"])
 
 
 def apply_skills(character):
@@ -111,36 +103,16 @@ def apply_skills(character):
     character["points"].setdefault("spent", FlockDict())
     character["points"].setdefault("available", FlockDict())
 
-    character["points"]["spent"]["mental"] = lambda: sum(
-        skill.cost for skill in character["skills"] if skill.isMental
-    )
-    character["points"]["available"]["mental"] = (
-        lambda: character["points"]["total"]["mental"]
-        - character["points"]["spent"]["mental"]
-    )
-    character["points"]["spent"]["physical"] = lambda: sum(
-        skill.cost for skill in character["skills"] if skill.isPhysical
-    )
-    character["points"]["available"]["physical"] = (
-        lambda: character["points"]["total"]["physical"]
-        - character["points"]["spent"]["physical"]
-    )
-    character["points"]["spent"]["heroic"] = lambda: sum(
-        skill.cost for skill in character["skills"] if skill.isHeroic
-    )
-    character["points"]["available"]["heroic"] = (
-        lambda: character["points"]["total"]["heroic"]
-        - character["points"]["spent"]["heroic"]
-    )
+    character["points"]["spent"]["mental"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isMental)
+    character["points"]["available"]["mental"] = lambda: character["points"]["total"]["mental"] - character["points"]["spent"]["mental"]
+    character["points"]["spent"]["physical"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isPhysical)
+    character["points"]["available"]["physical"] = lambda: character["points"]["total"]["physical"] - character["points"]["spent"]["physical"]
+    character["points"]["spent"]["heroic"] = lambda: sum(skill.cost for skill in character["skills"] if skill.isHeroic)
+    character["points"]["available"]["heroic"] = lambda: character["points"]["total"]["heroic"] - character["points"]["spent"]["heroic"]
     character["points"]["spent"]["universal"] = lambda: -sum(
-        min(0, character["points"]["available"][pt_type])
-        for pt_type in character["points"]["available"]
-        if pt_type != "universal"
+        min(0, character["points"]["available"][pt_type]) for pt_type in character["points"]["available"] if pt_type != "universal"
     )
-    character["points"]["available"]["universal"] = (
-        lambda: character["points"]["total"]["universal"]
-        - character["points"]["spent"]["universal"]
-    )
+    character["points"]["available"]["universal"] = lambda: character["points"]["total"]["universal"] - character["points"]["spent"]["universal"]
 
 
 def cross_total(inputs):
@@ -195,7 +167,7 @@ def save_character(character, filename):
     pickle.dump(character.shear(), open(filename, "wb"))
 
 
-class Skill(object):
+class Skill:
     def __init__(self, name, skill_type, cost=1, xp=0, level=1):
         self.name = name
         self.skill_type = skill_type
@@ -204,13 +176,7 @@ class Skill(object):
         self.level = max(level, cost)
 
     def __repr__(self):
-        return "Skill('{name}', {skill_type}, {cost}, {xp}, {level})".format(
-            name=self.name,
-            skill_type=self.skill_type,
-            cost=self.cost,
-            xp=self.xp,
-            level=self.level,
-        )
+        return f"Skill('{self.name}', {self.skill_type}, {self.cost}, {self.xp}, {self.level})"
 
     @property
     def isPhysical(self):
@@ -228,20 +194,11 @@ class Skill(object):
 class HeroicSkill(Skill):
     def __init__(self, name, skill_type=HEROIC, cost=1, level=1, bonuses={}):
         assert skill_type == HEROIC
-        super(HeroicSkill, self).__init__(name, skill_type, cost, xp=None, level=level)
+        super().__init__(name, skill_type, cost, xp=None, level=level)
         self.bonuses = bonuses
 
     def __repr__(self):
-        return (
-            "{cls_name}('{name}', '{skill_type}', {cost}, {level}, {bonuses})".format(
-                name=self.name,
-                skill_type=self.skill_type,
-                cost=self.cost,
-                level=self.level,
-                bonuses=self.bonuses,
-                cls_name=self.__class__.__name__,
-            )
-        )
+        return f"{self.__class__.__name__}('{self.name}', '{self.skill_type}', {self.cost}, {self.level}, {self.bonuses})"
 
     @property
     def xp(self):
@@ -258,20 +215,10 @@ class Conduit(HeroicSkill):
         super().__init__(self.name, skill_type, cost, level, None)
 
     def __repr__(self):
-        return "{cls_name}('{skill_type}', {cost}, {level}, {spell_type})".format(
-            skill_type=self.skill_type,
-            spell_type=self.spell_type,
-            cost=self.cost,
-            level=self.level,
-            cls_name=self.__class__.__name__,
-        )
+        return f"{self.__class__.__name__}('{self.skill_type}', {self.cost}, {self.level}, {self.spell_type})"
 
     def __str__(self):
-        return "{name} x{cost} {bonuses})".format(
-            name=self.name,
-            cost=self.cost,
-            bonuses=self.bonuses,
-            )
+        return f"{self.name} x{self.cost} {self.bonuses})"
 
     @property
     def bonuses(self):
@@ -289,7 +236,7 @@ class Conduit(HeroicSkill):
         if self.spell_type == GENERAL:
             return "Conduit"
         else:
-            return "Conduit -- %s" % self.spell_type
+            return f"Conduit -- {self.spell_type}"
 
     @name.setter
     def name(self, value):
@@ -297,9 +244,7 @@ class Conduit(HeroicSkill):
 
     @staticmethod
     def representer(dumper, data):
-        return dumper.represent_scalar(
-            "!conduit", "{cost} {spt}".format(cost=data.cost, spt=data.spell_type)
-        )
+        return dumper.represent_scalar("!conduit", f"{data.cost} {data.spell_type}")
 
     @classmethod
     def constructor(cls, loader, node):
@@ -402,7 +347,7 @@ def main(infile, outfile):
     char.check()
     sheared = char.shear()
     for attribute in chain([], sheared["base_stats"].keys()):
-        print("%s: %s" % (attribute, sheared.pop(attribute)))
+        print(f"{attribute}: {sheared.pop(attribute)}")
     pprint(sheared)
     if outfile:
         yaml.dump(sheared, outfile, width=80)
