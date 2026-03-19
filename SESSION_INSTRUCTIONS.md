@@ -1,29 +1,51 @@
-# Session Instructions and Guidelines
+# Session Instructions
 
-During this development session, several key architectural, tooling, and stylistic decisions were made and enforced. These guidelines should inform future work in this repository:
+This document records the sequence of prompts and tasks executed during this development session. These instructions can be provided to another AI agent in a future session to replicate or understand the modifications made to the repository.
 
-## 1. Tooling and Linting
+## Task 1: Adapt `index_reference` and `attr_reference` to `glom`
 
-- **Ruff:** We use `ruff` as our primary linter and formatter. Auto-generated or placeholder docstrings (e.g., `"""Module providing X implementation."""` or `"""Execute the Y operation."""`) are strictly prohibited, as they trigger reviewer rejections. All `ruff` `D` checks (docstrings) must be satisfied with **meaningful, context-aware descriptions**.
-- **Mypy:** We use `mypy` for static type checking. Due to the highly dynamic and metaprogramming-heavy nature of `closure_collector`, `mypy` is currently preferred over `pyright` as it correctly evaluates duck typing, callable interfaces, and default values without emitting false positive errors or requiring blanket `Any` suppressions.
-- **Markdown Formatting:** All markdown files must be formatted with `mdformat`.
-- **Tox:** We use `tox` for cross-version testing and CI orchestration. `tox.ini` has been integrated into `pyproject.toml` via `legacy_tox_ini`.
+**Prompt:**
 
-## 2. Type Hinting in Closure Collector
+> Adapt `index_reference` and `attr_reference` to use the `glom` library.
+>
+> **Q&A regarding implementation details:**
+>
+> - **Question:** How should `glom` be used for the references? Should we preserve the current signature taking `*indexes` and translate them into a glom spec (e.g., passing them as a tuple to `glom()`)?
+>   **Answer:** I believe the only use of these functions is within this codebase as an example, we'll adopt the `glom` standards.
+>
+> - **Question:** Error Handling & Defaults: Currently, `index_reference` catches `KeyError` and `attr_reference` catches `AttributeError` to return the default value. `glom` typically raises a `glom.PathAccessError` or `glom.CoalesceError`. Should we use `glom`'s built-in default mechanism to handle defaults, or catch `glom`'s specific exceptions to mimic the current error handling behavior?
+>   **Answer:** The change in errors is acceptable.
+>
+> - **Question:** Dependencies: Since we are going to use `glom`, I will need to add `glom` to the dependencies in `pyproject.toml`. Can you confirm this is acceptable?
+>   **Answer:** Yes, `glom` will become a dependency.
 
-Type hinting within `closure_collector` and `flock` requires a specific approach due to the reliance on parameter inspection and closures:
+## Task 2: Implement CI formatting checks
 
-- **Avoid Over-Typing with `Any`:** Prefer omitting type hints altogether rather than applying `Any` to parameters that accept dynamic values.
-- **Prefer Lambdas over Local `def`s:** When creating closures, `lambda: value` is preferred over `def inner(): return value`. Some type checkers (like `pyright`) misinterpret local `def` closures and inject `Any` return types incorrectly, whereas `lambda` statements bypass this static analysis quirk.
-- **Callable and Dict:** Use `typing.Mapping` and `typing.Callable` appropriately to represent the dictionaries and rule functions processed by the collectors.
+**Prompt:**
 
-## 3. Architecture
+> I see unused imports, please add checks for unused imports and import sorting to the precommit, ci, and github checks.
 
-- The core functionality of `flock` has been refactored and generalized into a standalone library called `closure_collector`.
-- The `flock` module now serves primarily as a backward-compatibility wrapper (`FlockDict` built on `DynamicClosureCollector`). New functionality should target `closure_collector`.
-- `examples/mythica/model.py` demonstrates a real-world use case for `closure_collector` rules and should be kept functional and lint-free as an integration test.
+*(Subsequent CI Failure Note: The CI pipeline failed because `pre-commit` caught pre-existing linting and formatting errors inside `examples/` and `.ipynb` files that had not been checked previously by the local `tox` runs. Fix these across the entire repository.)*
 
-## 4. Workflows
+## Task 3: Address Pull Request Review Comments
 
-- The CI is defined in `.github/workflows/tests.yml` and utilizes `tox` across Python 3.9, 3.10, 3.11, 3.12, and 3.13.
-- Before submission, all tests must pass locally: `tox -e py312,lint,type`.
+**Prompt:**
+
+> There are comments on the Pull Request. Once you are ready, please read these using `read_pr_comments`, and handle the feedback accordingly.
+>
+> **Comment 1:** (On `src/closure_collector/closures.py` regarding `index_reference`)
+> "This comment says keys or attributes, but the code seems to be limited to indexes, ensure that there are tests to prove the implemented behavior and update the docstring and comments."
+>
+> **Comment 2:** (On `test/test_hypothesis.py`)
+> "@jules Add index and attr reference testing by hypothesis, it should show that multiple levels of indexes or attrs can be traversed."
+
+## Task 4: Fix CI Failure (Hypothesis NaN comparisons)
+
+**Prompt:**
+
+> CI failed
+>
+> **Priority: GitHub CI Check Suite Failure Detected**
+> Your goal now is to analyze the provided check run details, annotations, and logs from GitHub Actions, identify the root cause of the failure, and make a fix.
+>
+> *(Error details indicating that `test_hypothesis_index_reference` and `test_hypothesis_attr_reference` failed because `assert nan == nan` evaluated to `False` in Python).*
