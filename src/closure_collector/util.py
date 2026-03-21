@@ -4,11 +4,6 @@ except ImportError:  # MicroPython compatibility fallback for missing numbers
     Number = (int, float, complex)  # type: ignore[assignment,misc]
 
 try:
-    import inspect
-except ImportError:  # MicroPython compatibility fallback for missing inspect
-    inspect = None  # type: ignore[assignment]
-
-try:
     from typing import Any
 except ImportError:  # MicroPython compatibility fallback for missing typing
     Any = object  # type: ignore[assignment,misc]
@@ -18,8 +13,8 @@ try:
 except ImportError:  # MicroPython compatibility fallback for missing types
     FunctionType = type(lambda: None)  # type: ignore[assignment,misc]
 
-
-if inspect is not None:
+try:
+    import inspect
 
     def is_zero_arg(value: Any) -> bool:
         if not callable(value):
@@ -31,7 +26,8 @@ if inspect is not None:
 
     def set_cell_contents(cell: Any, value: Any) -> None:
         cell.cell_contents = value
-else:
+
+except ImportError:  # MicroPython compatibility fallback for missing inspect
 
     def is_zero_arg(value: Any) -> bool:
         if not callable(value):
