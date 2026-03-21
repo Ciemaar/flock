@@ -2,7 +2,7 @@ from typing import Any
 
 try:
     import inspect
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing inspect
     inspect = None  # type: ignore[assignment]
 
 from collections.abc import Callable
@@ -12,7 +12,7 @@ _FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
 
 try:
     from abc import ABCMeta, abstractmethod
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing abc
 
     class ABCMeta(type):  # type: ignore[no-redef]
         pass
@@ -23,16 +23,16 @@ except ImportError:
 
 try:
     from collections.abc import Iterable, Mapping
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
     try:
         from collections.abc import Iterable, Mapping
-    except ImportError:
+    except ImportError:  # MicroPython compatibility fallback for missing collections.abc
         Iterable = object  # type: ignore[assignment,misc]
         Mapping = object  # type: ignore[assignment,misc]
 
 try:
     from itertools import chain
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing itertools
 
     class chain:  # type: ignore[no-redef]
         def __init__(self, *iterables: Any):
@@ -49,10 +49,10 @@ except ImportError:
 
 try:
     from pprint import pformat
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing pprint
     pformat = repr  # type: ignore[assignment]
 
-from closure_collector.util import ClosureCollectorException, is_rule, rebind  # noqa: E402
+from closure_collector.util import ClosureCollectorException, is_rule, is_zero_arg, rebind  # noqa: E402
 
 CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
 
@@ -198,18 +198,7 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         return bool(self.promises)
 
     def make_callable(self, value):
-        if callable(value):
-            if inspect is not None:
-                is_zero_arg = len(inspect.signature(value).parameters) == 0
-            else:
-                try:
-                    is_zero_arg = value.__code__.co_argcount == 0
-                except AttributeError:
-                    is_zero_arg = True
-        else:
-            is_zero_arg = False
-
-        if is_zero_arg:
+        if is_zero_arg(value):
             ret = value
             if isinstance(value, DynamicClosureCollector):
                 value.peers.add(self)

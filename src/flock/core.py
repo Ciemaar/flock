@@ -2,12 +2,12 @@ from typing import Any
 
 try:
     import inspect
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing inspect
     inspect = None  # type: ignore[assignment]
 
 try:
     import warnings
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing warnings
 
     class warnings:  # type: ignore[no-redef]
         @staticmethod
@@ -22,7 +22,7 @@ _FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
 
 try:
     from abc import ABCMeta, abstractmethod
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing abc
 
     class ABCMeta(type):  # type: ignore[no-redef]
         pass
@@ -33,7 +33,7 @@ except ImportError:
 
 try:
     from collections import OrderedDict, defaultdict
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing collections
 
     class OrderedDict(dict):  # type: ignore[no-redef]
         pass
@@ -61,7 +61,7 @@ try:
 except ImportError:
     try:
         from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence, Sequence
-    except ImportError:
+    except ImportError:  # MicroPython compatibility fallback for missing collections.abc
         Iterable = object  # type: ignore[assignment,misc]
         Mapping = object  # type: ignore[assignment,misc]
         MutableMapping = object  # type: ignore[assignment,misc]
@@ -72,7 +72,7 @@ _T = TypeVar("_T")
 
 try:
     from copy import copy
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing copy
 
     def copy(x: _T) -> _T:  # noqa: UP047
         return x  # type: ignore[misc]
@@ -80,7 +80,7 @@ except ImportError:
 
 try:
     from itertools import chain
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing itertools
 
     class chain:  # type: ignore[no-redef]
         def __init__(self, *iterables: Any):
@@ -96,7 +96,7 @@ except ImportError:
 
 
 from closure_collector.core import CCBase, DynamicClosureCollector  # noqa: E402
-from closure_collector.util import is_rule  # noqa: E402
+from closure_collector.util import is_rule, is_zero_arg  # noqa: E402
 from flock.util import FlockException  # noqa: E402
 
 __author__ = "Andy Fundinger"
@@ -179,18 +179,7 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
         "Reminder to implement Mapping"
 
     def make_callable(self, value):
-        if callable(value):
-            if inspect is not None:
-                is_zero_arg = len(inspect.signature(value).parameters) == 0
-            else:
-                try:
-                    is_zero_arg = value.__code__.co_argcount == 0
-                except AttributeError:
-                    is_zero_arg = True
-        else:
-            is_zero_arg = False
-
-        if is_zero_arg:
+        if is_zero_arg(value):
             ret = value
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:

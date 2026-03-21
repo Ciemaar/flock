@@ -1,12 +1,39 @@
 try:
     from numbers import Number
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing numbers
     Number = (int, float, complex)  # type: ignore[assignment,misc]
 
 try:
+    import inspect
+except ImportError:  # MicroPython compatibility fallback for missing inspect
+    inspect = None  # type: ignore[assignment]
+
+try:
+    from typing import Any
+except ImportError:  # MicroPython compatibility fallback for missing typing
+    Any = object  # type: ignore[assignment,misc]
+
+try:
     from types import FunctionType
-except ImportError:
+except ImportError:  # MicroPython compatibility fallback for missing types
     FunctionType = type(lambda: None)  # type: ignore[assignment,misc]
+
+
+if inspect is not None:
+
+    def is_zero_arg(value: Any) -> bool:
+        if not callable(value):
+            return False
+        return len(inspect.signature(value).parameters) == 0
+else:
+
+    def is_zero_arg(value: Any) -> bool:
+        if not callable(value):
+            return False
+        try:
+            return value.__code__.co_argcount == 0
+        except AttributeError:
+            return True
 
 
 class ClosureCollectorException(AttributeError):
