@@ -1,4 +1,7 @@
-from typing import Any
+try:
+    from typing import Any
+except ImportError:  # MicroPython compatibility fallback for missing typing
+    Any = object  # type: ignore[assignment,misc]
 
 try:
     import logging

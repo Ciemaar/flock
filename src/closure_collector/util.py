@@ -25,6 +25,12 @@ if inspect is not None:
         if not callable(value):
             return False
         return len(inspect.signature(value).parameters) == 0
+
+    def get_cell_contents(cell: Any) -> Any:
+        return cell.cell_contents
+
+    def set_cell_contents(cell: Any, value: Any) -> None:
+        cell.cell_contents = value
 else:
 
     def is_zero_arg(value: Any) -> bool:
@@ -35,6 +41,18 @@ else:
         except AttributeError:
             return True
 
+    def get_cell_contents(cell: Any) -> Any:
+        try:
+            return cell.cell_contents
+        except AttributeError:
+            return cell
+
+    def set_cell_contents(cell: Any, value: Any) -> None:
+        try:
+            cell.cell_contents = value
+        except AttributeError:
+            pass  # Read-only fallback in MicroPython
+
 
 class ClosureCollectorException(AttributeError):
     pass
@@ -43,8 +61,8 @@ class ClosureCollectorException(AttributeError):
 def rebind(callable, from_obj, to_obj):
     if getattr(callable, "__closure__", False):
         for cell in callable.__closure__:
-            if cell.cell_contents is from_obj:
-                cell.cell_contents = to_obj
+            if get_cell_contents(cell) is from_obj:
+                set_cell_contents(cell, to_obj)
 
 
 def is_rule(func):
@@ -53,10 +71,7 @@ def is_rule(func):
 
     if getattr(func, "__closure__", False):  ## TODO replace with inspect_getclosurevars, probably inspect only nonlocals
         for cell in func.__closure__:
-            try:
-                contents = cell.cell_contents
-            except AttributeError:
-                contents = cell
+            contents = get_cell_contents(cell)
             if not isinstance(contents, (str, Number, bytes, tuple, frozenset)):
                 return True
     try:

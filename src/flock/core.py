@@ -1,4 +1,7 @@
-from typing import Any
+try:
+    from typing import Any
+except ImportError:  # MicroPython compatibility fallback for missing typing
+    Any = object  # type: ignore[assignment,misc]
 
 try:
     import inspect
@@ -15,10 +18,23 @@ except ImportError:  # MicroPython compatibility fallback for missing warnings
             pass
 
 
-from collections.abc import Callable
-from typing import TypeVar
+try:
+    from collections.abc import Callable
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+    Callable = object  # type: ignore[assignment,misc]
 
-_FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
+try:
+    from typing import TypeVar
+except ImportError:  # MicroPython compatibility fallback for missing typing
+
+    def TypeVar(name: str, bound: Any = Any) -> Any:  # type: ignore[misc,no-redef]
+        return object
+
+
+try:
+    _FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
+except TypeError:
+    _FuncT = object  # type: ignore[assignment,misc]
 
 try:
     from abc import ABCMeta, abstractmethod
@@ -96,7 +112,7 @@ except ImportError:  # MicroPython compatibility fallback for missing itertools
 
 
 from closure_collector.core import CCBase, DynamicClosureCollector  # noqa: E402
-from closure_collector.util import is_rule, is_zero_arg  # noqa: E402
+from closure_collector.util import get_cell_contents, is_rule, is_zero_arg  # noqa: E402
 from flock.util import FlockException  # noqa: E402
 
 __author__ = "Andy Fundinger"
@@ -112,41 +128,60 @@ __author__ = "Andy Fundinger"
 """
 
 
-class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
-    @abstractmethod
-    def check(self, path):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-        """
-        pass
+if hasattr(ABCMeta, "__new__"):
 
-    @abstractmethod
-    def shear(self, record_errors=False) -> Iterable:
-        """
-        Convert this Mapping into a simple dict
+    class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
+        @abstractmethod
+        def check(self, path):
+            """
+            check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+            :type path: list the path to this object, will be prepended to any errors generated
+            :return: list of errors that prevent items in this Aggregator from being sheared.
+            """
+            pass
 
-        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
-        than continuing up the call stack
+        @abstractmethod
+        def shear(self, record_errors=False) -> Iterable:
+            """
+            Convert this Mapping into a simple dict
 
-        :return: a dict() representation of this Aggregator
-        """
-        pass
+            :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+            than continuing up the call stack
 
-    def __call__(self):
-        """
-        Call must be specified so that FlockMappings can be nested within eachother
+            :return: a dict() representation of this Aggregator
+            """
+            pass
 
-        :return: self
-        """
-        return self
+        def __call__(self):
+            """
+            Call must be specified so that FlockMappings can be nested within eachother
 
-    def __hash__(self, *args, **kwargs):
-        return id(self)
+            :return: self
+            """
+            return self
 
-    def __dir__(self):
-        return object.__dir__(self)
+        def __hash__(self, *args, **kwargs):
+            return id(self)
+
+        def __dir__(self):
+            return object.__dir__(self)
+else:
+
+    class FlockBase(CCBase, Mapping):  # type: ignore[no-redef,misc]
+        def check(self, path):
+            pass
+
+        def shear(self, record_errors=False) -> Iterable:
+            return []
+
+        def __call__(self):
+            return self
+
+        def __hash__(self, *args, **kwargs):
+            return id(self)
+
+        def __dir__(self):
+            return []
 
 
 class MutableFlock(FlockBase, DynamicClosureCollector):
@@ -184,10 +219,7 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    try:
-                        contents = closure.cell_contents
-                    except AttributeError:
-                        contents = closure
+                    contents = get_cell_contents(closure)
                     if isinstance(contents, DynamicClosureCollector):
                         contents.peers.add(self)
         elif isinstance(value, Mapping) and Mapping is not object:
