@@ -72,20 +72,40 @@ class CCBase(metaclass=ABCMeta):
 
     @abstractmethod
     def check(self, path):
+        """
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        :type path: list the path to this object, will be prepended to any errors generated
+        :return: list of errors that prevent items in this Aggregator from being sheared.
+        """
         pass
 
     @abstractmethod
     def shear(self, record_errors=False):
+        """
+        Convert this closure collection into a simple object
+
+        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+        than continuing up the call stack
+
+        :return: a simple object representing these closures
+        """
         pass
 
     @abstractmethod
     def __dir__(self):
+        """Closure collector objects all support the dir() method returning the added attributes"""
         pass
 
     def __call__(self):
+        """
+        Call must be specified so that Closure Collections can be nested within eachother
+
+        :return: self
+        """
         return self
 
     def clear_cache(self):
+        """Empty any cache kept on this object"""
         pass
 
     def get_relatives(self) -> Iterable:
