@@ -4,7 +4,6 @@ from pytest import raises
 
 from closure_collector.closures import index_reference, toggle
 from flock.core import Aggregator, FlockAggregator, FlockDict, FlockList, MetaAggregator
-from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
 
@@ -77,20 +76,20 @@ class BasicFlockTestCase(unittest.TestCase):
     def test_error(self):
         self.flock["bad"] = lambda: 1 / 0
         assert "bad" in self.flock
-        with raises(FlockException) as exc_info:
+        with raises(KeyError) as exc_info:
             self.flock.pop("bad")
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises(FlockException) as exc_info:
+        with raises(KeyError) as exc_info:
             assert self.flock["bad"] != (lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises(FlockException) as exc_info:
+        with raises(KeyError) as exc_info:
             self.flock.shear()
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         error = self.flock.shear(record_errors=True)["bad"]
-        assert isinstance(error, FlockException)
+        assert isinstance(error, KeyError)
         assert isinstance(error.__cause__, ZeroDivisionError)
 
     def test_shear(self):

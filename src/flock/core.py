@@ -17,7 +17,6 @@ from closure_collector.core import (
     ClosureReductionMapping,
     DynamicClosureCollector,
 )
-from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
 
@@ -33,8 +32,6 @@ __author__ = "Andy Fundinger"
 
 
 class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
-    _exception_class: type[Exception] = FlockException
-
     @abstractmethod
     def check(self, path):
         """
@@ -117,7 +114,6 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
 class PromiseFlock(ClosurePromiseMapping):
     """A convenience class for default implementations of methods from MutableFlock"""
 
-    _exception_class: type[Exception] = FlockException
     _list_class: type | None
 
     def clear_cache(self):
@@ -144,7 +140,6 @@ FlockList._list_class = FlockList
 
 
 class FlockDict(ClosureMapping, FlockBase):
-    _exception_class: type[Exception] = FlockException
     _list_class: type | None
     _mapping_class: type
 
@@ -294,25 +289,5 @@ class MetaAggregator:
 
 
 class FlockAggregator(ClosureReductionMapping, FlockBase):
-    def __getitem__(self, key):
-        """
-        Perform the aggregation for the given key across all the sources.
-        """
-        try:
-            return super().__getitem__(key)
-        except FlockException:
-            raise
-        except KeyError:
-            raise
-        except Exception as e:
-            # We wrap exceptions from the base class into FlockException to preserve exact backwards compat
-            # (ClosureReductionMapping raises ClosureCollectorException, we want FlockException)
-            raise FlockException(
-                f"Error Calculating {key}:  "
-                + str(e.__cause__ or e)
-                + "\n"
-                + ",".join(f"{source}:{source[key]}" for source in self.get_sources() if key in source)
-            ) from e
-
     def __repr__(self):
         return f"flock.core.FlockAggregator({str(self.shear())})"
