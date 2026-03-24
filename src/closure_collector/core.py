@@ -18,7 +18,7 @@ CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
 
 
 class ShearedBase:
-    """A basic, dynamic object used as a return type from shear() functions"""
+    """A basic, dynamic object used as a return type from shear() functions."""
 
     def __bool__(self):
         return bool(self.__dict__)
@@ -28,7 +28,7 @@ class ShearedBase:
 
 
 class CCBase(metaclass=ABCMeta):
-    """Base class for Closure Collector Objects of all sorts"""
+    """Base class for Closure Collector Objects of all sorts."""
 
     @abstractmethod
     def check(self, path):
@@ -108,7 +108,12 @@ class DynamicClosureCollector(CCBase):
 
 
 class ClosurePromiseMapping(DynamicClosureCollector):
-    """A convenience class for mapping collections of closures"""
+    """
+    A convenience class for mapping collections of closures.
+
+    This base class implements dictionary-like attribute access (`__getitem__`, `__setitem__`)
+    but delays type specialization to its subclasses (`ClosureMapping` and `ClosureList`).
+    """
 
     def __dir__(self):
         return object.__dir__(self)
@@ -194,10 +199,14 @@ class ClosurePromiseMapping(DynamicClosureCollector):
 
 
 class ClosurePromiseCollector(DynamicClosureCollector):
-    """A convenience class for default implementations of methods from Dynamic Closure Collector"""
+    """
+    A convenience class for default implementations of methods from Dynamic Closure Collector.
+
+    This class enables dot-notation (attribute access) for working with closures rather than dictionary-like indexing.
+    """
 
     def __init__(self, root=None):
-        """ """
+        """Initialize the ClosurePromiseCollector with an optional root."""
         self.promises = {}
         super().__init__(root=root)
 
@@ -266,7 +275,10 @@ class ClosurePromiseCollector(DynamicClosureCollector):
 
 class ClosureCollector(ClosurePromiseCollector):
     """
-    A Closure Collector  intended for use.
+    A Closure Collector intended for general use.
+
+    This acts as a namespace where attributes mapped to functions are automatically invoked
+    as closures upon retrieval, caching their results.
     """
 
     def __init__(self, *, root=None, **indict):
@@ -548,6 +560,10 @@ ClosureList._list_class = ClosureList
 
 
 class ClosureReductionMapping(CCBase, Mapping):
+    """
+    A mapping-based implementation of a closure reduction across multiple maps or parallel data structures.
+    """
+
     def __init__(self, sources, fn, keys=None):
         """
         Aggregate across parallel maps.

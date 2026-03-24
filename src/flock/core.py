@@ -32,6 +32,13 @@ __author__ = "Andy Fundinger"
 
 
 class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
+    """
+    Abstract base class establishing the contract for all legacy `flock` objects.
+
+    This essentially mirrors the core base `closure_collector.CCBase` but integrates with standard Python `Mapping`
+    interfaces expected by legacy code.
+    """
+
     @abstractmethod
     def check(self, path):
         """
@@ -68,7 +75,11 @@ class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
 
 
 class MutableFlock(FlockBase, DynamicClosureCollector):
-    """The abstract base class for flocks with items that can be set"""
+    """
+    The abstract base class for flocks with items that can be set.
+
+    Provides standard mapping-based mutation endpoints (`__setitem__`, etc.) over `closure_collector`'s underlying attribute-based storage logic.
+    """
 
     def __init__(self, root=None):
         """Initialize the object."""
@@ -112,7 +123,12 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
 
 
 class PromiseFlock(ClosurePromiseMapping):
-    """A convenience class for default implementations of methods from MutableFlock"""
+    """
+    A convenience class for default implementations of methods from `MutableFlock`.
+
+    This acts as a shim over `closure_collector`'s `ClosurePromiseMapping`, providing
+    dictionary-style access (`__getitem__`, `__setitem__`) mapping to closures.
+    """
 
     _list_class: type | None
 
@@ -122,6 +138,13 @@ class PromiseFlock(ClosurePromiseMapping):
 
 
 class FlockList(ClosureList, FlockBase):
+    """
+    A sequence implementation equivalent to Python's `list`, natively integrated with closure collection.
+
+    This class leverages `ClosureList` from `closure_collector` to proxy sequence mutations
+    and item accesses through the standard flock promise-evaluation pattern.
+    """
+
     def __init__(self, inlist: Sequence | None = None, root: FlockBase | None = None):
         if inlist is None:
             inlist = ()
@@ -140,14 +163,16 @@ FlockList._list_class = FlockList
 
 
 class FlockDict(ClosureMapping, FlockBase):
+    """
+    A mutable mapping (dictionary-like object) that contains closures to be evaluated upon retrieval.
+
+    This implements legacy `flock.FlockDict` behaviour utilizing `closure_collector`'s `ClosureMapping` namespace logic natively.
+    By doing so, we ensure `FlockDict` maintains Python `MutableMapping` properties while completely relying on the modern
+    `closure_collector` backend execution and dependency graph evaluation flow.
+    """
+
     _list_class: type | None
     _mapping_class: type
-
-    """
-    A mutable mapping that contains lambdas which will be evaluated when indexed
-
-    The actual lambdas must take 0 params and are accessible in the .promises attribute
-    """
 
     def __init__(self, indict: list[tuple] | Mapping | None = None, root=None):
         if indict is None:
@@ -289,5 +314,12 @@ class MetaAggregator:
 
 
 class FlockAggregator(ClosureReductionMapping, FlockBase):
+    """
+    An object representing a mathematical or logical aggregation spanning multiple Flock mapping sources.
+
+    This implements `flock`'s legacy `Aggregator` mapping logic using `ClosureReductionMapping` natively
+    over `closure_collector` objects.
+    """
+
     def __repr__(self):
         return f"flock.core.FlockAggregator({str(self.shear())})"
