@@ -80,20 +80,28 @@ class DynamicClosureCollector(CCBase):
         self.peers = set()
 
     def clear_cache(self):
+        """
+        Recursively clear the cache for this object and all related closure collectors.
+
+        If this object is not the root, it delegates to the root. Otherwise, it performs
+        a graph traversal using object identities (to support unhashable sequence types
+        like ClosureList) and clears the `.cache` attribute of every related object.
+        """
         if self.root is not None:
             self.root.clear_cache()
             return
 
-        to_collect = [self]
-        to_clear = set()
-        while to_collect:
-            curr = to_collect.pop()
+        stack = [self]
+        visited_ids = set()
+
+        while stack:
+            curr = stack.pop()
             curr_id = id(curr)
-            if curr_id not in to_clear:
-                to_clear.add(curr_id)
+            if curr_id not in visited_ids:
+                visited_ids.add(curr_id)
                 if hasattr(curr, "cache"):
-                    curr.cache = {}
-                to_collect.extend(curr.get_relatives())
+                    curr.cache.clear()
+                stack.extend(curr.get_relatives())
 
     def get_relatives(self) -> Iterable:
         return self.peers
