@@ -134,18 +134,8 @@ class ClosurePromiseMapping(DynamicClosureCollector):
         if key in self.cache:
             return self.cache[key]
         else:
-            # For sequences, we need to handle out of bounds or missing differently.
-            # We try indexing into self.promises directly.
-            try:
-                promise = self.promises[key]
-            except IndexError:
-                raise IndexError(key)
-            except KeyError:
-                # We need to raise the expected exception type, since flock expects a FlockException (KeyError subclass)
-                # But when standard missing key occurs, FlockDict raises `KeyError` natively before `try` block,
-                # actually wait: original `FlockDict` raised `KeyError` naturally from `self.promises[key]` before.
-                # However `FlockException` inherits `KeyError`.
-                raise KeyError(key)
+            # self.promises raises KeyError or IndexError natively
+            promise = self.promises[key]
 
             try:
                 ret = promise()
