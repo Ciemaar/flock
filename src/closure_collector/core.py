@@ -9,7 +9,6 @@ from pprint import pformat
 
 from closure_collector.util import (
     ClosureCollectorException,
-    ClosureCollectorKeyError,
     is_rule,
     rebind,
 )
@@ -118,7 +117,7 @@ class ClosurePromiseMapping(DynamicClosureCollector):
     def __dir__(self):
         return object.__dir__(self)
 
-    _exception_class: type[Exception] = ClosureCollectorKeyError
+    _exception_class: type[Exception] = ClosureCollectorException
     # We delay setting _mapping_class until ClosureMapping is defined
     _mapping_class: type  # type: ignore
 

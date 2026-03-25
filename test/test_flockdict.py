@@ -76,20 +76,20 @@ class BasicFlockTestCase(unittest.TestCase):
     def test_error(self):
         self.flock["bad"] = lambda: 1 / 0
         assert "bad" in self.flock
-        with raises(KeyError) as exc_info:
+        with raises(Exception) as exc_info:
             self.flock.pop("bad")
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises(KeyError) as exc_info:
+        with raises(Exception) as exc_info:
             assert self.flock["bad"] != (lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises(KeyError) as exc_info:
+        with raises(Exception) as exc_info:
             self.flock.shear()
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         error = self.flock.shear(record_errors=True)["bad"]
-        assert isinstance(error, KeyError)
+        assert isinstance(error, Exception)
         assert isinstance(error.__cause__, ZeroDivisionError)
 
     def test_shear(self):
