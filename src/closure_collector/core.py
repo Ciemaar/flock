@@ -165,26 +165,17 @@ class ClosurePromiseMapping(DynamicClosureCollector):
                             closure.cell_contents.peers.add(self)
                         except TypeError:
                             pass
-        elif isinstance(value, Mapping):
+            return ret
+        elif getattr(self, "_mapping_class", None) is not None and isinstance(value, Mapping):
             child_root = self.root if self.root is not None else self
             ret = self._mapping_class(value, root=child_root)
             try:
                 ret.peers.add(self)
             except TypeError:
                 pass
-        elif getattr(self, "_list_class", None) is not None and isinstance(value, Sequence) and not isinstance(value, str):
-            # In the old Flock implementation, sequences were NOT wrapped.
-            # But the new code wraps them. If we want them not wrapped, maybe we should just allow `_list_class` to be `None` to bypass this,
-            # or perhaps `FlockList` wrappers should support `==` with `list`.
-            child_root = self.root if self.root is not None else self
-            ret = self._list_class(value, root=child_root)
-            try:
-                ret.peers.add(self)
-            except TypeError:
-                pass
+            return ret
         else:
-            ret = lambda: value
-        return ret
+            return lambda: value
 
 
 class ClosurePromiseCollector(DynamicClosureCollector):
@@ -374,19 +365,13 @@ class ClosureMapping(ClosurePromiseMapping, MutableMapping):
             self[key] = value
 
     def get_relatives(self):
-        rels = set()
+        rels = set(super().get_relatives())
         for promise in self.promises.values():
             if hasattr(promise, "clear_cache"):
                 try:
                     rels.add(promise)
                 except TypeError:
                     # In case the promise (e.g. nested ClosureMapping) is unhashable
-                    pass
-        for peer in self.peers:
-            if hasattr(peer, "clear_cache"):
-                try:
-                    rels.add(peer)
-                except TypeError:
                     pass
         return rels
 
@@ -473,17 +458,11 @@ class ClosureList(ClosurePromiseMapping, MutableSequence):
         self.clear_cache()
 
     def get_relatives(self):
-        rels = set()
+        rels = set(super().get_relatives())
         for promise in self.promises:
             if hasattr(promise, "clear_cache"):
                 try:
                     rels.add(promise)
-                except TypeError:
-                    pass
-        for peer in self.peers:
-            if hasattr(peer, "clear_cache"):
-                try:
-                    rels.add(peer)
                 except TypeError:
                     pass
         return rels
@@ -520,29 +499,15 @@ class ClosureList(ClosurePromiseMapping, MutableSequence):
         return ret
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
-            ret = value
-            if hasattr(value, "__closure__") and value.__closure__:
-                for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
-        elif isinstance(value, Mapping):
+        if getattr(self, "_list_class", None) is not None and isinstance(value, Sequence) and not isinstance(value, str):
             child_root = self.root if self.root is not None else self
-            ret = self._mapping_class(value, root=child_root)
+            ret = self._list_class(value, root=child_root)  # type: ignore[misc]
             try:
                 ret.peers.add(self)
             except TypeError:
                 pass
-        elif isinstance(value, Sequence) and not isinstance(value, str):
-            child_root = self.root if self.root is not None else self
-            ret = self._list_class(value, root=child_root)
-            try:
-                ret.peers.add(self)
-            except TypeError:
-                pass
-        else:
-            ret = lambda: value
-        return ret
+            return ret
+        return super().make_callable(value)
 
 
 ClosureList._list_class = ClosureList
