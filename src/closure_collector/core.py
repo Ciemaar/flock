@@ -376,9 +376,7 @@ class ClosureMapping(ClosurePromiseMapping, MutableMapping):
         return rels
 
     def __iter__(self):
-        # We return a generator for keys, ensuring the generator natively iterates dynamically over promises.
-        # By yielding `k` in `self.promises`, any runtime modifications or evaluations natively trigger `self[k]` when used if overridden.
-        return (key for key in self.promises)
+        return iter(self.promises)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.shear()},{self.root})"
