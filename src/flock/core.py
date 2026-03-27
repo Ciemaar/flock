@@ -1,20 +1,22 @@
 import inspect
 import warnings
 from abc import ABCMeta, abstractmethod
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from collections.abc import (
     Iterable,
     Mapping,
-    MutableMapping,
-    MutableSequence,
     Sequence,
 )
-from copy import copy
 from itertools import chain
 
-from closure_collector.core import CCBase, DynamicClosureCollector
-from closure_collector.util import is_rule
-from flock.util import FlockException
+from closure_collector.core import (
+    CCBase,
+    ClosureList,
+    ClosureMapping,
+    ClosureMappingReduction,
+    ClosurePromiseMapping,
+    DynamicClosureCollector,
+)
 
 __author__ = "Andy Fundinger"
 
@@ -30,6 +32,13 @@ __author__ = "Andy Fundinger"
 
 
 class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
+    """
+    Abstract base class establishing the contract for all legacy `flock` objects.
+
+    This essentially mirrors the core base `closure_collector.CCBase` but integrates with standard Python `Mapping`
+    interfaces expected by legacy code.
+    """
+
     @abstractmethod
     def check(self, path):
         """
@@ -66,7 +75,11 @@ class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
 
 
 class MutableFlock(FlockBase, DynamicClosureCollector):
-    """The abstract base class for flocks with items that can be set"""
+    """
+    The abstract base class for flocks with items that can be set.
+
+    Provides standard mapping-based mutation endpoints (`__setitem__`, etc.) over `closure_collector`'s underlying attribute-based storage logic.
+    """
 
     def __init__(self, root=None):
         """Initialize the object."""
@@ -109,73 +122,29 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
         return ret
 
 
-class PromiseFlock(MutableFlock):
-    """A convenience class for default implementations of methods from MutableFlock"""
+class PromiseFlock(ClosurePromiseMapping):
+    """
+    A convenience class for default implementations of methods from `MutableFlock`.
 
-    def __init__(self, root=None):
-        """Initialize the object."""
-        super().__init__(root=root)
-        self.promises = {}
+    This acts as a shim over `closure_collector`'s `ClosurePromiseMapping`, providing
+    dictionary-style access (`__getitem__`, `__setitem__`) mapping to closures.
+    """
 
-    def __setitem__(self, key, val):
-        """
-        Set a value in a MutableFlock
-
-        default implementation:
-
-        if value is callable it will be added directly to promises, if not it will be converted to a simple lambda.
-        Mappings are converted into MutableFlocks, any other handling should be dealt with via direct access to the promises dict.
-        """
-        value = self.make_callable(val)
-        self.promises[key] = value
-        self.clear_cache()
-
-    def __getitem__(self, key):
-        """
-        Access values by key
-
-        :type key: any hashable type
-        :return: the value of the lamba when executed
-        """
-        if key in self.cache:
-            return self.cache[key]
-        else:
-            promise = self.promises[key]
-            try:
-                ret = promise()
-            except Exception as e:
-                raise FlockException(f"Error calculating key:{key}") from e
-            self.cache[key] = ret
-            return ret
-
-    def __contains__(self, key):
-        return key in self.promises
-
-    def __delitem__(self, key):
-        del self.promises[key]
-        self.clear_cache()
-
-    def __len__(self):
-        return len(self.promises)
+    _list_class: type | None
 
     def clear_cache(self):
-        if self.root is not None:
-            self.root.clear_cache()
-            return
-
-        to_collect = set([self])
-        to_clear = set()
-        while to_collect:
-            curr = to_collect.pop()
-            if curr not in to_clear:
-                to_clear.add(curr)
-                to_collect.update(curr.get_relatives())
-
-        for peer in to_clear:
-            peer.cache = {}
+        # Keeps original behavior in case something specifically depends on it, but uses super() logic.
+        super().clear_cache()
 
 
-class FlockList(PromiseFlock, MutableSequence):
+class FlockList(ClosureList, FlockBase):
+    """
+    A sequence implementation equivalent to Python's `list`, natively integrated with closure collection.
+
+    This class leverages `ClosureList` from `closure_collector` to proxy sequence mutations
+    and item accesses through the standard flock promise-evaluation pattern.
+    """
+
     def __init__(self, inlist: Sequence | None = None, root: FlockBase | None = None):
         if inlist is None:
             inlist = ()
@@ -187,88 +156,23 @@ class FlockList(PromiseFlock, MutableSequence):
         Values from indict are assigned to self one at a time.
 
         """
-        super().__init__()
-        self.promises = []
-        self.cache = {}
-        self.root = root
-        self.peers = set()
-        for key in inlist:
-            self.append(key)
-
-    def __iter__(self):
-        return (self[x] for x in range(len(self)))
-
-    def insert(self, index, value):
-        """
-        Add value to FlockList
-
-        if value is callable it will be added directly to promises, if not it will be converted to  a simple lambda.
-        Mappings are converted into FlockLists, any other handling should be dealt with via direct access to the promises dict.
-        """
-        value = self.make_callable(value)
-        self.promises.insert(index, value)
-        self.clear_cache()
-
-    def get_relatives(self):
-        rels = {promise for promise in self.promises if hasattr(promise, "clear_cache")}
-        rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
-        return rels
-
-    def check(self, path=[]):
-        """
-        check for any contents that would prevent this FlockList from being used normally, esp sheared.
-
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this FlockList from being sheared.
-
-        NOT YET PROPERLY IMPLEMENTED
-        """
-        ret = {}
-        for key, value in enumerate(self.promises):
-            if hasattr(value, "check"):
-                value_check = value.check(path + [key])
-                if value_check:  # if anything showed up wrong in the check
-                    ret[key] = value_check
-            assert callable(value)  # noqa: S101
-        return ret
-
-    def shear(self, record_errors=False):
-        """
-        Recursively convert this FlockList into a normal python dict.
-
-        Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
-         with a shear() function.
-
-        :param record_errors:
-        :return: a dict()
-        """
-        ret = []
-        for key, promise in enumerate(self.promises):
-            if hasattr(promise, "shear"):
-                ret.append(promise.shear(record_errors=record_errors))
-            elif key in self.cache:
-                ret.append(self.cache[key])
-            elif callable(promise):
-                try:
-                    ret.append(promise())
-                except Exception as e:
-                    if record_errors:
-                        ret.append(e)
-                    else:
-                        raise
-            else:
-                warnings.warn(DeprecationWarning("Non callable in promises"))
-                ret.append(copy(promise))
-            self.cache[key] = ret[key]
-        return ret
+        super().__init__(inlist=inlist, root=root)
 
 
-class FlockDict(PromiseFlock, MutableMapping):
+FlockList._list_class = FlockList
+
+
+class FlockDict(ClosureMapping, FlockBase):
     """
-    A mutable mapping that contains lambdas which will be evaluated when indexed
+    A mutable mapping (dictionary-like object) that contains closures to be evaluated upon retrieval.
 
-    The actual lambdas must take 0 params and are accessible in the .promises attribute
+    This implements legacy `flock.FlockDict` behaviour utilizing `closure_collector`'s `ClosureMapping` namespace logic natively.
+    By doing so, we ensure `FlockDict` maintains Python `MutableMapping` properties while completely relying on the modern
+    `closure_collector` backend execution and dependency graph evaluation flow.
     """
+
+    _list_class: type | None
+    _mapping_class: type
 
     def __init__(self, indict: list[tuple] | Mapping | None = None, root=None):
         if indict is None:
@@ -281,86 +185,14 @@ class FlockDict(PromiseFlock, MutableMapping):
         Values from indict are assigned to self one at a time.
 
         """
-        super().__init__()
-        self.promises = {}
-        self.cache = {}
-        self.root = root
-        self.peers = set()
-        if not hasattr(indict, "items"):
-            indict = dict(indict)
-        for key, value in indict.items():  # type: ignore
-            self[key] = value
+        super().__init__(indict=indict, root=root)
 
-    def get_relatives(self):
-        rels = {promise for promise in self.promises.values() if hasattr(promise, "clear_cache")}
-        rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
-        return rels
 
-    def __iter__(self):
-        return iter(self.promises)
+FlockDict._mapping_class = FlockDict
+FlockDict._list_class = None
 
-    def __len__(self):
-        return len(self.promises)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.shear()},{self.root})"
-
-    #
-    # def __hash__(self):
-    #     return id(self)
-
-    def check(self, path=[]):
-        """
-        check for any contents that would prevent this FlockDict from being used normally, esp sheared.
-
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this FlockDict from being sheared.
-
-        NOT YET PROPERLY IMPLEMENTED
-        """
-        ret = {}
-        for key, value in self.promises.items():
-            if hasattr(value, "check"):
-                value_check = value.check(path + [key])
-                if value_check:  # if anything showed up wrong in the check
-                    ret[key] = value_check
-            assert callable(value)  # noqa: S101
-        return ret
-
-    def shear(self, record_errors=False):
-        """
-        Recursively convert this FlockDict into a normal python dict.
-
-        Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
-         with a shear() function.
-
-        :param record_errors:
-        :return: a dict()
-        """
-        ret = OrderedDict()
-        for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
-            promise = self.promises[key]
-            if hasattr(promise, "shear"):
-                ret[key] = promise.shear(record_errors=record_errors)
-            elif key in self.cache:
-                ret[key] = self.cache[key]
-            else:
-                try:
-                    ret[key] = self[key]
-                except FlockException as e:
-                    if record_errors:
-                        ret[key] = e
-                    else:
-                        raise
-            if not isinstance(ret, MutableMapping):
-                self.cache[key] = ret[key]
-        return ret
-
-    def dataset(self):
-        return {k: v() for k, v in self.promises.items() if not is_rule(v)}
-
-    def ruleset(self):
-        return {k: v for k, v in self.promises.items() if is_rule(v)}
+PromiseFlock._mapping_class = FlockDict
+PromiseFlock._list_class = None
 
 
 class Aggregator:
@@ -481,103 +313,13 @@ class MetaAggregator:
         return ret
 
 
-class FlockAggregator(FlockBase, Mapping):
-    def __init__(self, sources, fn, keys=None):
-        """
-        Aggregate across parallel maps.
+class FlockAggregator(ClosureMappingReduction, FlockBase):
+    """
+    An object representing a mathematical or logical aggregation spanning multiple Flock mapping sources.
 
-        :type sources: one of:
-            - list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
-            - Mapping the values in sources are used as the list above, keys are ignored
-            - a callable that returns the list of sources
-
-            Precedence is Mapping, callable, then list
-
-        :type fn: function must take a generator, there is no constraint on the return value
-        """
-        ##TODO:  Allow lists as arguments
-        self.sources = sources
-        self.function = fn
-        if keys is not None and not callable(keys):
-            keys = set(keys)
-        self.source_keys = keys
-
-    def __getitem__(self, key):
-        """
-        Perform the aggregation for the given key across all the sources.
-
-        :type key: str key to aggregate
-        :return: value as returned by the function for that key.
-        """
-        try:
-            cross_items = [source[key] for source in self.get_sources() if key in source]
-            if not cross_items:
-                raise KeyError(f"Key {key} not found")
-            return self.function(cross_items)
-        except KeyError:
-            raise
-        except Exception as e:
-            raise FlockException(
-                f"Error Calculating {key}:  " + str(e) + "\n" + ",".join(f"{source}:{source[key]}" for source in self.get_sources() if key in source)
-            ) from e
-
-    def __len__(self):
-        return sum(1 for x in self.__iter__())
-
-    def __iter__(self):
-        if self.source_keys is not None:
-            if callable(self.source_keys):
-                return iter(set(self.source_keys()))
-            else:
-                return iter(self.source_keys)
-        return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
-
-    def get_sources(self):
-        if isinstance(self.sources, Mapping):
-            return self.sources.values()
-        elif callable(self.sources):
-            return self.sources()
-        else:
-            return self.sources
-
-    def check(self, path=[]):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-
-        NOT YET PROPERLY IMPLEMENTED
-        """
-        ret = defaultdict(dict)
-        for key in self.__iter__():
-            for sourceNo, source in enumerate(self.get_sources()):
-                if key in source:
-                    value = source[key]
-                    try:
-                        self.function([value])
-                    except Exception as e:
-                        msg = f"function {self.function.__name__} incompatible with value {value} exception: {str(e)}"
-                        ret[key][f"Source: {sourceNo}"] = msg
-                        # raise
-        return ret
-
-    def shear(self, record_errors=False):
-        """
-        Convert this Aggregator into a simple dict
-
-        :param record_errors:
-        :return: a dict() wmrepresentation of this Aggregator
-        """
-        ret = {}
-        for key in self.__iter__():
-            try:
-                ret[key] = self[key]
-            except Exception as e:
-                if record_errors:
-                    ret[key] = e
-                else:
-                    raise
-        return ret
+    This implements `flock`'s legacy `Aggregator` mapping logic using `ClosureMappingReduction` natively
+    over `closure_collector` objects.
+    """
 
     def __repr__(self):
         return f"flock.core.FlockAggregator({str(self.shear())})"

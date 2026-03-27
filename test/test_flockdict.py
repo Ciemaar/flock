@@ -3,8 +3,8 @@ from types import FunctionType
 from pytest import raises
 
 from closure_collector.closures import index_reference, toggle
+from closure_collector.util import ClosureCollectorException
 from flock.core import Aggregator, FlockAggregator, FlockDict, FlockList, MetaAggregator
-from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
 
@@ -19,6 +19,14 @@ class BasicFlockTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.flock = FlockDict()
+
+    def test_missing_key(self):
+        """
+        Test that accessing a missing key raises a KeyError.
+        """
+        assert "bad" not in self.flock
+        with raises(KeyError):
+            _ = self.flock["bad"]
 
     def test_simple_values(self):
         """
@@ -77,20 +85,20 @@ class BasicFlockTestCase(unittest.TestCase):
     def test_error(self):
         self.flock["bad"] = lambda: 1 / 0
         assert "bad" in self.flock
-        with raises(FlockException) as exc_info:
+        with raises(ClosureCollectorException) as exc_info:
             self.flock.pop("bad")
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises(FlockException) as exc_info:
+        with raises(ClosureCollectorException) as exc_info:
             assert self.flock["bad"] != (lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises(FlockException) as exc_info:
+        with raises(ClosureCollectorException) as exc_info:
             self.flock.shear()
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         error = self.flock.shear(record_errors=True)["bad"]
-        assert isinstance(error, FlockException)
+        assert isinstance(error, ClosureCollectorException)
         assert isinstance(error.__cause__, ZeroDivisionError)
 
     def test_shear(self):
@@ -157,6 +165,14 @@ class FlockListTestCase(unittest.TestCase):
         self.assertEqual(self.flock[2], ["Mary", "Joshua", "Isaac"])
         self.flock[1] = "John"
         self.assertEqual(self.flock[1], "John")
+
+    def test_missing_index(self):
+        """
+        Test that accessing an out-of-bounds index raises an IndexError.
+        """
+        self.flock.append(1)
+        with raises(IndexError):
+            _ = self.flock[1]
 
     def test_simple_list(self):
         """
