@@ -1,20 +1,119 @@
-import inspect
-import warnings
-from abc import ABCMeta, abstractmethod
-from collections import OrderedDict, defaultdict
-from collections.abc import (
-    Iterable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Sequence,
-)
-from copy import copy
-from itertools import chain
+try:
+    from typing import Any
+except ImportError:  # MicroPython compatibility fallback for missing typing
+    Any = object  # type: ignore[assignment,misc]
 
-from closure_collector.core import CCBase, DynamicClosureCollector
-from closure_collector.util import is_rule
-from flock.util import FlockException
+try:
+    import inspect
+except ImportError:  # MicroPython compatibility fallback for missing inspect
+    inspect = None  # type: ignore[assignment]
+
+try:
+    import warnings
+except ImportError:  # MicroPython compatibility fallback for missing warnings
+
+    class warnings:  # type: ignore[no-redef]
+        @staticmethod
+        def warn(*args: Any, **kwargs: Any) -> None:
+            pass
+
+
+try:
+    from collections.abc import Callable
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+    Callable = object  # type: ignore[assignment,misc]
+
+try:
+    from typing import TypeVar
+except ImportError:  # MicroPython compatibility fallback for missing typing
+
+    def TypeVar(name: str, bound: Any = Any) -> Any:  # type: ignore[misc,no-redef]
+        return object
+
+
+try:
+    _FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
+except TypeError:
+    _FuncT = object  # type: ignore[assignment,misc]
+
+try:
+    from abc import ABCMeta, abstractmethod
+except ImportError:  # MicroPython compatibility fallback for missing abc
+
+    class ABCMeta(type):  # type: ignore[no-redef]
+        pass
+
+    def abstractmethod(funcobj: _FuncT) -> _FuncT:  # noqa: UP047
+        return funcobj  # type: ignore[misc]
+
+
+try:
+    from collections import OrderedDict, defaultdict
+except ImportError:  # MicroPython compatibility fallback for missing collections
+
+    class OrderedDict(dict):  # type: ignore[no-redef]
+        pass
+
+    class defaultdict(dict):  # type: ignore[no-redef]
+        def __init__(self, default_factory: Any = None, *args: Any, **kwargs: Any):
+            super().__init__(*args, **kwargs)
+            self.default_factory = default_factory
+
+        def __missing__(self, key: Any) -> Any:
+            if self.default_factory is None:
+                raise KeyError(key)
+            ret = self[key] = self.default_factory()
+            return ret
+
+
+try:
+    from collections.abc import (
+        Iterable,
+        Mapping,
+        MutableMapping,
+        MutableSequence,
+        Sequence,
+    )
+except ImportError:
+    try:
+        from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence, Sequence
+    except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+        Iterable = object  # type: ignore[assignment,misc]
+        Mapping = object  # type: ignore[assignment,misc]
+        MutableMapping = object  # type: ignore[assignment,misc]
+        MutableSequence = object  # type: ignore[assignment,misc]
+        Sequence = object  # type: ignore[assignment,misc]
+
+_T = TypeVar("_T")
+
+try:
+    from copy import copy
+except ImportError:  # MicroPython compatibility fallback for missing copy
+
+    def copy(x: _T) -> _T:  # noqa: UP047
+        return x  # type: ignore[misc]
+
+
+try:
+    from itertools import chain
+except ImportError:  # MicroPython compatibility fallback for missing itertools
+
+    class chain:  # type: ignore[no-redef]
+        def __init__(self, *iterables: Any):
+            self.iterables = iterables
+
+        def __iter__(self) -> Any:
+            for it in self.iterables:
+                yield from it
+
+        @classmethod
+        def from_iterable(cls, iterables: Any) -> Any:
+            return cls(*iterables)
+
+
+from closure_collector.core import CCBase, DynamicClosureCollector  # noqa: E402
+from closure_collector.util import get_cell_contents, is_rule, is_zero_arg  # noqa: E402
+from flock.util import FlockException  # noqa: E402
 
 __author__ = "Andy Fundinger"
 
@@ -29,40 +128,60 @@ __author__ = "Andy Fundinger"
 """
 
 
-class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
-    @abstractmethod
-    def check(self, path):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-        """
+if hasattr(ABCMeta, "__new__"):
 
-    @abstractmethod
-    def shear(self, record_errors=False) -> Iterable:
-        """
-        Convert this Mapping into a simple dict
+    class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
+        @abstractmethod
+        def check(self, path):
+            """
+            check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+            :type path: list the path to this object, will be prepended to any errors generated
+            :return: list of errors that prevent items in this Aggregator from being sheared.
+            """
+            pass
 
-        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
-        than continuing up the call stack
+        @abstractmethod
+        def shear(self, record_errors=False) -> Iterable:
+            """
+            Convert this Mapping into a simple dict
 
-        :return: a dict() representation of this Aggregator
-        """
-        pass
+            :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+            than continuing up the call stack
 
-    def __call__(self):
-        """
-        Call must be specified so that FlockMappings can be nested within eachother
+            :return: a dict() representation of this Aggregator
+            """
+            pass
 
-        :return: self
-        """
-        return self
+        def __call__(self):
+            """
+            Call must be specified so that FlockMappings can be nested within eachother
 
-    def __hash__(self, *args, **kwargs):
-        return id(self)
+            :return: self
+            """
+            return self
 
-    def __dir__(self):
-        return object.__dir__(self)
+        def __hash__(self, *args, **kwargs):
+            return id(self)
+
+        def __dir__(self):
+            return object.__dir__(self)
+else:
+
+    class FlockBase(CCBase, Mapping):  # type: ignore[no-redef,misc]
+        def check(self, path):
+            pass
+
+        def shear(self, record_errors=False) -> Iterable:
+            return []
+
+        def __call__(self):
+            return self
+
+        def __hash__(self, *args, **kwargs):
+            return id(self)
+
+        def __dir__(self):
+            return []
 
 
 class MutableFlock(FlockBase, DynamicClosureCollector):
@@ -95,14 +214,15 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
         "Reminder to implement Mapping"
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
+        if is_zero_arg(value):
             ret = value
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
-        elif isinstance(value, Mapping):
+                    contents = get_cell_contents(closure)
+                    if isinstance(contents, DynamicClosureCollector):
+                        contents.peers.add(self)
+        elif isinstance(value, Mapping) and Mapping is not object:
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
             ret = lambda: value
@@ -144,6 +264,7 @@ class PromiseFlock(MutableFlock):
             try:
                 ret = promise()
             except Exception as e:
+                print(f"Original Exception: {e}")
                 raise FlockException(f"Error calculating key:{key}") from e
             self.cache[key] = ret
             return ret
