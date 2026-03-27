@@ -513,29 +513,31 @@ class ClosureList(ClosurePromiseMapping, MutableSequence):
 ClosureList._list_class = ClosureList
 
 
-class ClosureReductionMapping(CCBase, Mapping):
+class BaseClosureReduction:
     """
-    A mapping-based implementation of a closure reduction across multiple maps or parallel data structures.
+    Base class providing common logic for applying a function across a collection of data structures.
     """
 
     def __init__(self, sources, fn, keys=None):
-        """
-        Aggregate across parallel maps.
-
-        :type sources: one of:
-            - list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
-            - Mapping the values in sources are used as the list above, keys are ignored
-            - a callable that returns the list of sources
-
-            Precedence is Mapping, callable, then list
-
-        :type fn: function must take a generator, there is no constraint on the return value
-        """
         self.sources = sources
         self.function = fn
         if keys is not None and not callable(keys):
             keys = set(keys)
         self.source_keys = keys
+
+    def get_sources(self):
+        if isinstance(self.sources, Mapping):
+            return self.sources.values()
+        elif callable(self.sources):
+            return self.sources()
+        else:
+            return self.sources
+
+
+class ClosureMappingReduction(BaseClosureReduction, CCBase, Mapping):
+    """
+    A mapping-based implementation of a closure reduction across multiple maps or parallel data structures.
+    """
 
     def __getitem__(self, key):
         """
@@ -557,7 +559,7 @@ class ClosureReductionMapping(CCBase, Mapping):
         return sum(1 for x in self.__iter__())
 
     def __iter__(self):
-        if self.source_keys is not None:
+        if getattr(self, "source_keys", None) is not None:
             if callable(self.source_keys):
                 return iter(set(self.source_keys()))
             else:
@@ -566,14 +568,6 @@ class ClosureReductionMapping(CCBase, Mapping):
 
     def __dir__(self):
         return set(self.__iter__())
-
-    def get_sources(self):
-        if isinstance(self.sources, Mapping):
-            return self.sources.values()
-        elif callable(self.sources):
-            return self.sources()
-        else:
-            return self.sources
 
     def check(self, path=[]):
         """
@@ -610,33 +604,17 @@ class ClosureReductionMapping(CCBase, Mapping):
         return ret
 
 
-class ClosureReduction:
+class ClosureReduction(BaseClosureReduction):
     """
-    Aggregate across parallel maps.
-
-    :type sources: one of:
-        - a Mapping the values in sources are used as the list above, keys are ignored
-        - a callable that returns the list of sources
-        - a list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
-
-        Precedence is Mapping, callable, then list
-
-    :type fn: function must take a generator, there is no constraint on the return value
+    Aggregate across parallel maps using attribute access instead of mapping access.
     """
 
     def __dir__(self):
         return set(chain.from_iterable(dir(source) for source in self.get_sources()))
 
-    def __init__(self, sources, fn, keys=None):
-        self.sources = sources
-        self.function = fn
-
     def __getattr__(self, item):
         """
-        Perform the reduction for the given key across all the sources.
-
-        :type key: str key to aggregate
-        :return: value as returned by the function for that key.
+        Perform the reduction for the given attribute across all the sources.
         """
         try:
             cross_items = [getattr(source, item) for source in self.get_sources() if hasattr(source, item)]
@@ -659,41 +637,11 @@ class ClosureReduction:
                 )
             ) from e
 
-    def get_sources(self):
-        if isinstance(self.sources, Mapping):
-            return self.sources.values()
-        elif callable(self.sources):
-            return self.sources()
-        else:
-            return self.sources
-
     def shear(self):
         return NotImplemented
 
     def check(self, path=[]):
         """
         check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-
-        NOT YET PROPERLY IMPLEMENTED
         """
         return {}
-        # ret = defaultdict(dict)
-        # for key in set(chain.from_iterable(source.keys() for source in self.sources)):
-        #     for sourceNo, source in enumerate(self.sources):
-        #         if key in source:
-        #             value = source[key]
-        #             try:
-        #                 self.function([value])
-        #             except Exception as e:
-        #                 msg = "function {function} incompatible with value {value} exception: {e}".format(
-        #                     e=str(e),
-        #                     value=value,
-        #                     path=path + [key],
-        #                     sourceNo=sourceNo,
-        #                     function=self.function.__name__,
-        #                 )
-        #                 ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
-        #                 # raise
-        # return ret

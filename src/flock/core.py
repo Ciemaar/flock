@@ -13,8 +13,8 @@ from closure_collector.core import (
     CCBase,
     ClosureList,
     ClosureMapping,
+    ClosureMappingReduction,
     ClosurePromiseMapping,
-    ClosureReductionMapping,
     DynamicClosureCollector,
 )
 
@@ -313,11 +313,11 @@ class MetaAggregator:
         return ret
 
 
-class FlockAggregator(ClosureReductionMapping, FlockBase):
+class FlockAggregator(ClosureMappingReduction, FlockBase):
     """
     An object representing a mathematical or logical aggregation spanning multiple Flock mapping sources.
 
-    This implements `flock`'s legacy `Aggregator` mapping logic using `ClosureReductionMapping` natively
+    This implements `flock`'s legacy `Aggregator` mapping logic using `ClosureMappingReduction` natively
     over `closure_collector` objects.
     """
 
