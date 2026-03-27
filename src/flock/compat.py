@@ -9,6 +9,7 @@ except ImportError:  # MicroPython compatibility fallback for missing warnings
         def warn(*args: Any, **kwargs: Any) -> None:
             pass
 
+
 try:
     from collections import OrderedDict, defaultdict
 except ImportError:  # MicroPython compatibility fallback for missing collections
@@ -26,6 +27,7 @@ except ImportError:  # MicroPython compatibility fallback for missing collection
                 raise KeyError(key)
             ret = self[key] = self.default_factory()
             return ret
+
 
 try:
     from collections.abc import MutableMapping, MutableSequence, Sequence
@@ -49,6 +51,7 @@ except ImportError:  # MicroPython compatibility fallback for missing copy
     def copy(x: Any) -> Any:  # noqa: UP047  # type: ignore[misc,no-redef]
         return x
 
+
 try:
     import logging
 except ImportError:  # MicroPython compatibility fallback for missing logging
@@ -70,6 +73,7 @@ except ImportError:  # MicroPython compatibility fallback for missing logging
                     print(msg % args if args else msg)
 
             return Logger()
+
 
 try:
     from collections.abc import Hashable
