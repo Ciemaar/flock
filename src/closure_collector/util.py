@@ -6,6 +6,10 @@ class ClosureCollectorException(AttributeError):
     pass
 
 
+class ClosureCollectorKeyError(KeyError):
+    pass
+
+
 def rebind(callable, from_obj, to_obj):
     if getattr(callable, "__closure__", False):
         for cell in callable.__closure__:
