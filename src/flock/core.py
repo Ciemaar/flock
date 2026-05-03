@@ -1,4 +1,3 @@
-import inspect
 import warnings
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
@@ -15,7 +14,6 @@ from closure_collector.core import (
     ClosureMapping,
     ClosureMappingReduction,
     ClosurePromiseMapping,
-    DynamicClosureCollector,
 )
 
 __author__ = "Andy Fundinger"
@@ -74,57 +72,9 @@ class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
         return object.__dir__(self)
 
 
-class MutableFlock(FlockBase, DynamicClosureCollector):
-    """
-    The abstract base class for flocks with items that can be set.
-
-    Provides standard mapping-based mutation endpoints (`__setitem__`, etc.) over `closure_collector`'s underlying attribute-based storage logic.
-    """
-
-    def __init__(self, root=None):
-        """Initialize the object."""
-        super().__init__()
-
-    @abstractmethod
-    def __setitem__(self, key, val):
-        """Set a value in a MutableFlock
-
-        some amount of processing may need to be done."""
-
-    @abstractmethod
-    def __getitem__(self, key):
-        "Reminder to implement Mapping"
-
-    @abstractmethod
-    def __contains__(self, key):
-        "Reminder to implement Mapping"
-
-    @abstractmethod
-    def __delitem__(self, key):
-        "Reminder to implement Mapping"
-
-    @abstractmethod
-    def __len__(self):
-        "Reminder to implement Mapping"
-
-    def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
-            ret = value
-            # if it's a closure and there is something in there
-            if hasattr(value, "__closure__") and value.__closure__:
-                for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
-        elif isinstance(value, Mapping):
-            ret = FlockDict(value, root=self.root if self.root is not None else self)
-        else:
-            ret = lambda: value
-        return ret
-
-
 class PromiseFlock(ClosurePromiseMapping):
     """
-    A convenience class for default implementations of methods from `MutableFlock`.
+    A convenience class for mapping collections of closures (legacy).
 
     This acts as a shim over `closure_collector`'s `ClosurePromiseMapping`, providing
     dictionary-style access (`__getitem__`, `__setitem__`) mapping to closures.
