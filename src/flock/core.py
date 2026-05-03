@@ -4,7 +4,6 @@ from collections import defaultdict
 from collections.abc import (
     Iterable,
     Mapping,
-    Sequence,
 )
 from itertools import chain
 
@@ -15,6 +14,7 @@ from closure_collector.core import (
     ClosureMappingReduction,
     ClosurePromiseMapping,
 )
+from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
 
@@ -82,10 +82,6 @@ class PromiseFlock(ClosurePromiseMapping):
 
     _list_class: type | None
 
-    def clear_cache(self):
-        # Keeps original behavior in case something specifically depends on it, but uses super() logic.
-        super().clear_cache()
-
 
 class FlockList(ClosureList, FlockBase):
     """
@@ -94,19 +90,6 @@ class FlockList(ClosureList, FlockBase):
     This class leverages `ClosureList` from `closure_collector` to proxy sequence mutations
     and item accesses through the standard flock promise-evaluation pattern.
     """
-
-    def __init__(self, inlist: Sequence | None = None, root: FlockBase | None = None):
-        if inlist is None:
-            inlist = ()
-        """
-        A mutable mapping that contains lambdas which will be evaluated when indexed
-
-        :type inlist: List to be used to create the new FlockList
-
-        Values from indict are assigned to self one at a time.
-
-        """
-        super().__init__(inlist=inlist, root=root)
 
 
 FlockList._list_class = FlockList
@@ -124,29 +107,14 @@ class FlockDict(ClosureMapping, FlockBase):
     _list_class: type | None
     _mapping_class: type
 
-    from flock.util import FlockException
-
     _exception_class = FlockException
-
-    def __init__(self, indict: list[tuple] | Mapping | None = None, root=None):
-        if indict is None:
-            indict = {}
-        """
-        A mutable mapping that contains lambdas which will be evaluated when indexed
-
-        :type indict: Mapping to be used to create the new FlockDict
-
-        Values from indict are assigned to self one at a time.
-
-        """
-        super().__init__(indict=indict, root=root)
 
 
 FlockDict._mapping_class = FlockDict
-FlockDict._list_class = None
+FlockDict._list_class = FlockList
 
 PromiseFlock._mapping_class = FlockDict
-PromiseFlock._list_class = None
+PromiseFlock._list_class = FlockList
 
 
 class Aggregator:
