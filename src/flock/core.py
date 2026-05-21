@@ -1,11 +1,8 @@
-import warnings
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 from collections.abc import (
     Iterable,
     Mapping,
 )
-from itertools import chain
 
 from closure_collector.core import (
     CCBase,
@@ -14,7 +11,6 @@ from closure_collector.core import (
     ClosureMappingReduction,
     ClosurePromiseMapping,
 )
-from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
 
@@ -107,134 +103,12 @@ class FlockDict(ClosureMapping, FlockBase):
     _list_class: type | None
     _mapping_class: type
 
-    _exception_class = FlockException
-
 
 FlockDict._mapping_class = FlockDict
 FlockDict._list_class = FlockList
 
 PromiseFlock._mapping_class = FlockDict
 PromiseFlock._list_class = FlockList
-
-
-class Aggregator:
-    """
-    Aggregate across parallel maps.
-
-    Deprecated - use FlockAggregator
-    """
-
-    def __init__(self, sources, fn):
-        """
-        Aggregate across parallel maps.
-
-        :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or
-        FlockDict, not all keys need to be present in all sources.
-        :type fn: function must take a generator, there is no constraint on the return value
-        """
-        warnings.warn(
-            "Aggregator is generally replaced with FlockAggregator and will be removed.",
-            DeprecationWarning,
-        )
-        ##TODO:  Allow lists as arguments
-        self.sources = sources
-        self.function = fn
-
-    def __getitem__(self, key):
-        """
-        Perform the aggregation for the given key across all the sources.
-
-        :type key: str key to aggregate
-        :return: value as returned by the function for that key.
-        """
-        return self.function(source[key] for source in self.sources if key in source)
-
-    # def __getattr__(self, key):
-    #     return self[key]()
-
-    def __call__(self):
-        """
-        When an Aggregator is returned from a FlockDict or otherwise called, shear it.
-        :return:  a sheared version of this Aggrgator
-        """
-        return self.shear()
-
-    def check(self, path=None):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-
-        NOT YET PROPERLY IMPLEMENTED
-        """
-        if path is None:
-            path = []
-        ret = defaultdict(dict)
-        for key in set(chain.from_iterable(source.keys() for source in self.sources)):
-            for sourceNo, source in enumerate(self.sources):
-                if key in source:
-                    value = source[key]
-                    try:
-                        self.function([value])
-                    except Exception as e:
-                        msg = f"function {self.function.__name__} incompatible with value {value} exception: {str(e)}"
-                        ret[key][f"Source: {sourceNo}"] = msg
-                        # raise
-        return ret
-
-    def shear(self, record_errors=False):
-        """
-        Convert this Aggregator into a simple dict
-
-        :return: a dict() representation of this Aggregator
-        """
-        ret = {}
-        for key in set(chain.from_iterable(source.keys() for source in self.sources)):
-            try:
-                ret[key] = self[key]
-            except Exception as e:
-                if record_errors:
-                    ret[key] = e
-                else:
-                    raise
-        return ret
-
-
-class MetaAggregator:
-    """
-    Misnamed class that should be merged with the normal aggregator
-
-    Deprecated -  use FlockAggregator
-    """
-
-    def __init__(self, source_function, fn):
-        warnings.warn(
-            "MetaAggregator is generally replaced with FlockAggregator and will be removed.",
-            DeprecationWarning,
-        )
-        self.source_function = source_function
-        self.function = fn
-
-    def __getitem__(self, key):
-        return lambda: self.function(source[key] for source in self.source_function() if key in source)
-
-    # def __getattr__(self, key):
-    #     return self[key]()
-
-    def __call__(self):
-        return self.shear()
-
-    def shear(self, record_errors=False):
-        ret = {}
-        for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
-            try:
-                ret[key] = self[key]()
-            except Exception as e:
-                if record_errors:
-                    ret[key] = e
-                else:
-                    raise
-        return ret
 
 
 class FlockAggregator(ClosureMappingReduction, FlockBase):

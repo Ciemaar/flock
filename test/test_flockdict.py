@@ -4,8 +4,7 @@ from pytest import raises
 
 from closure_collector.closures import index_reference, toggle
 from closure_collector.util import ClosureCollectorException
-from flock.core import Aggregator, FlockAggregator, FlockDict, FlockList, MetaAggregator
-from flock.util import FlockException
+from flock.core import FlockAggregator, FlockDict, FlockList
 
 __author__ = "Andy Fundinger"
 
@@ -86,20 +85,20 @@ class BasicFlockTestCase(unittest.TestCase):
     def test_error(self):
         self.flock["bad"] = lambda: 1 / 0
         assert "bad" in self.flock
-        with raises((ClosureCollectorException, FlockException)) as exc_info:
+        with raises(ClosureCollectorException) as exc_info:
             self.flock.pop("bad")
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises((ClosureCollectorException, FlockException)) as exc_info:
+        with raises(ClosureCollectorException) as exc_info:
             assert self.flock["bad"] != (lambda: 1 / 0), "This should not be called at all as the exception should be raised"
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
-        with raises((ClosureCollectorException, FlockException)) as exc_info:
+        with raises(ClosureCollectorException) as exc_info:
             self.flock.shear()
         assert isinstance(exc_info.value.__cause__, ZeroDivisionError)
 
         error = self.flock.shear(record_errors=True)["bad"]
-        assert isinstance(error, (ClosureCollectorException, FlockException))
+        assert isinstance(error, ClosureCollectorException)
         assert isinstance(error.__cause__, ZeroDivisionError)
 
     def test_shear(self):
@@ -257,48 +256,6 @@ class FlockCacheTestCase(unittest.TestCase):
         assert self.flock2["dest"] == "1st New Value"
         assert self.flock2["nested_dest"]["dest"] == "2nd New Value"
         assert self.flock2["jump_dest"]["dest"] == "2nd New Value"
-
-
-class AggregatorTestCase(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.flock = FlockDict()
-        self.flock["x"] = {x: x for x in range(1, 10)}
-        self.flock["y"] = {x: 2 * x for x in range(1, 10)}
-
-    def test_shear(self):
-        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: sum(x))
-        assert not self.flock.check()
-        sheared = self.flock.shear()
-        assert len(sheared) == 3
-        assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
-        assert dict(self.flock()) == sheared
-
-    def test_check(self):
-        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: int(x))
-        check = self.flock.check()
-        assert check
-        assert len(check["sum"]) == 9
-        for value in check["sum"].values():
-            assert len(value) == 2
-
-
-class MetaAggregatorTestCase(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.flock = FlockDict()
-        self.flock["x"] = {x: x for x in range(1, 10)}
-        self.flock["y"] = {x: 2 * x for x in range(1, 10)}
-
-    def test_shear(self):
-        self.flock["sum"] = MetaAggregator(lambda: [self.flock[ls] for ls in ["x", "y"]], sum)
-        assert not self.flock.check()
-        sheared = self.flock.shear()
-        assert len(sheared) == 3
-        assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
-        assert dict(self.flock()) == sheared
 
 
 class FlockAggregatorTestCase(unittest.TestCase):

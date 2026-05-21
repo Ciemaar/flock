@@ -13,7 +13,7 @@ from closure_collector.util import (
     rebind,
 )
 
-CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
+CLOSURE_ATTRS = {"root", "cache", "_peers", "promises"}
 
 
 class ShearedBase:
@@ -76,7 +76,7 @@ class DynamicClosureCollector(CCBase):
         super().__init__()
         self.cache = {}
         self.root = root
-        self.peers = set()
+        self._peers = set()
 
     def clear_cache(self):
         """
@@ -103,7 +103,7 @@ class DynamicClosureCollector(CCBase):
                 stack.extend(curr.get_relatives())
 
     def get_relatives(self) -> Iterable:
-        return self.peers
+        return self._peers
 
 
 class ClosurePromiseMapping(DynamicClosureCollector):
@@ -162,7 +162,7 @@ class ClosurePromiseMapping(DynamicClosureCollector):
                 for closure in value.__closure__:
                     if isinstance(closure.cell_contents, DynamicClosureCollector):
                         try:
-                            closure.cell_contents.peers.add(self)
+                            closure.cell_contents._peers.add(self)
                         except TypeError:
                             pass
             return ret
@@ -170,7 +170,7 @@ class ClosurePromiseMapping(DynamicClosureCollector):
             child_root = self.root if self.root is not None else self
             ret = self._mapping_class(value, root=child_root)
             try:
-                ret.peers.add(self)
+                ret._peers.add(self)
             except TypeError:
                 pass
             return ret
@@ -212,7 +212,7 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         :type item: any hashable type
         :return: the value of the lamba when executed
         """
-        if item.startswith("_") or item in {"root", "cache", "peers", "promises"}:
+        if item.startswith("_") or item in {"root", "cache", "_peers", "promises"}:
             return super().__getattribute__(item)
         if item in self.cache:
             return self.cache[item]
@@ -240,14 +240,14 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         if callable(value) and len(inspect.signature(value).parameters) == 0:
             ret = value
             if isinstance(value, DynamicClosureCollector):
-                value.peers.add(self)
+                value._peers.add(self)
                 if value.root is None:
                     value.root = self
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
                     if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
+                        closure.cell_contents._peers.add(self)
         else:
             ret = lambda: value
         return ret
@@ -279,7 +279,7 @@ class ClosureCollector(ClosurePromiseCollector):
 
     def get_relatives(self):
         rels = {promise for promise in self.promises.values() if hasattr(promise, "clear_cache")}
-        rels.update(peer for peer in getattr(self, "peers", ()) if hasattr(peer, "clear_cache"))
+        rels.update(peer for peer in getattr(self, "_peers", ()) if hasattr(peer, "clear_cache"))
         return rels
 
     def __repr__(self):
@@ -338,6 +338,7 @@ class ClosureCollector(ClosurePromiseCollector):
         return ret
 
     def dataset(self):
+        # TODO: Add tests for dataset and ruleset feature
         ret = ShearedBase()
         for k, v in self.promises.items():
             if not is_rule(v):
@@ -406,24 +407,20 @@ class ClosureMapping(ClosurePromiseMapping, MutableMapping):
         """
         ret = OrderedDict()
         for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
-            promise = self.promises[key]
-            if hasattr(promise, "shear"):
-                ret[key] = promise.shear(record_errors=record_errors)
-            elif key in self.cache:
-                ret[key] = self.cache[key]
-            else:
-                try:
-                    ret[key] = self[key]
-                except self._exception_class as e:
-                    if record_errors:
-                        ret[key] = e
-                    else:
-                        raise
-            if not isinstance(ret, MutableMapping):
-                self.cache[key] = ret[key]
+            try:
+                ret[key] = self[key]
+            except self._exception_class as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
+
+            if hasattr(ret[key], "shear"):
+                ret[key] = ret[key].shear(record_errors=record_errors)
         return ret
 
     def dataset(self):
+        # TODO: Add tests for dataset and ruleset feature
         return {k: v() for k, v in self.promises.items() if not is_rule(v)}
 
     def ruleset(self):
@@ -512,7 +509,7 @@ class ClosureList(ClosurePromiseMapping, MutableSequence):
             child_root = self.root if self.root is not None else self
             ret = self._list_class(value, root=child_root)  # type: ignore[misc]
             try:
-                ret.peers.add(self)
+                ret._peers.add(self)
             except TypeError:
                 pass
             return ret
