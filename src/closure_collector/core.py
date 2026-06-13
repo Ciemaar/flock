@@ -1,9 +1,7 @@
 import inspect
-import warnings
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence, Sequence
-from copy import copy
 from itertools import chain
 from pprint import pformat
 
