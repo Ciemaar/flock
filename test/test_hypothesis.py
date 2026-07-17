@@ -143,7 +143,7 @@ def test_hypothesis_index_reference(keys, value):
 
 
 @given(
-    keys=st.lists(st.text(min_size=1, alphabet=st.characters(whitelist_categories=["Lu", "Ll"])), min_size=1, max_size=5),
+    keys=st.lists(st.text(min_size=1, alphabet=st.characters(categories=["Lu", "Ll"])), min_size=1, max_size=5),
     value=st.one_of(st.integers(), st.floats(), st.text()),
 )
 def test_hypothesis_attr_reference(keys, value):

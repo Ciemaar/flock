@@ -1,4 +1,4 @@
-from glom import Path, glom  # type: ignore
+from glom import Path, T, glom  # type: ignore
 
 from closure_collector.util import ClosureCollectorException
 from flock import FlockException
@@ -19,18 +19,13 @@ def index_reference(flock, *indexes, **kwargs):
 
     def de_ref():
         try:
-            # We specifically want item access since this is index_reference
-
-            # Helper to access by items for index_reference
-            def item_access(target):
-                curr = target
-                for key in indexes:
-                    curr = curr[key]
-                return curr
+            spec = T
+            for key in indexes:
+                spec = spec[key]
 
             if "default" in kwargs:
-                return glom(flock, item_access, default=kwargs["default"], skip_exc=KeyError)
-            return glom(flock, item_access)
+                return glom(flock, spec, default=kwargs["default"])
+            return glom(flock, spec)
         except (ClosureCollectorException, FlockException):
             raise
 
@@ -48,7 +43,7 @@ def attr_reference(flock, *indexes, **kwargs):
     def de_ref():
         try:
             if "default" in kwargs:
-                return glom(flock, Path(*indexes), default=kwargs["default"], skip_exc=AttributeError)
+                return glom(flock, Path(*indexes), default=kwargs["default"])
             return glom(flock, Path(*indexes))
         except (ClosureCollectorException, FlockException):
             raise
