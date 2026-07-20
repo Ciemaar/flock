@@ -1,5 +1,39 @@
-import logging
-from collections.abc import Hashable, MutableMapping
+try:
+    from typing import Any
+except ImportError:  # MicroPython compatibility fallback for missing typing
+    Any = object  # type: ignore[assignment,misc]
+
+try:
+    import logging
+except ImportError:  # MicroPython compatibility fallback for missing logging
+
+    class logging:  # type: ignore[no-redef]
+        @staticmethod
+        def getLogger(name: str) -> Any:
+            class Logger:
+                def warning(self, msg: str, *args: Any) -> None:
+                    print(msg % args if args else msg)
+
+                def info(self, msg: str, *args: Any) -> None:
+                    print(msg % args if args else msg)
+
+                def debug(self, msg: str, *args: Any) -> None:
+                    pass
+
+                def error(self, msg: str, *args: Any) -> None:
+                    print(msg % args if args else msg)
+
+            return Logger()
+
+
+try:
+    from collections.abc import Hashable, MutableMapping
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+    try:
+        from collections.abc import Hashable, MutableMapping
+    except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+        Hashable = object  # type: ignore[assignment,misc]
+        MutableMapping = object  # type: ignore[assignment,misc]
 
 log = logging.getLogger(__name__)
 

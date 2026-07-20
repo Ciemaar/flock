@@ -1,5 +1,40 @@
-from numbers import Number
-from types import FunctionType
+from closure_collector.compat import Any, FunctionType, Number
+
+try:
+    import inspect
+
+    def is_zero_arg(value: Any) -> bool:
+        if not callable(value):
+            return False
+        return len(inspect.signature(value).parameters) == 0
+
+    def get_cell_contents(cell: Any) -> Any:
+        return cell.cell_contents
+
+    def set_cell_contents(cell: Any, value: Any) -> None:
+        cell.cell_contents = value
+
+except ImportError:  # MicroPython compatibility fallback for missing inspect
+
+    def is_zero_arg(value: Any) -> bool:
+        if not callable(value):
+            return False
+        try:
+            return value.__code__.co_argcount == 0
+        except AttributeError:
+            return True
+
+    def get_cell_contents(cell: Any) -> Any:
+        try:
+            return cell.cell_contents
+        except AttributeError:
+            return cell
+
+    def set_cell_contents(cell: Any, value: Any) -> None:
+        try:
+            cell.cell_contents = value
+        except AttributeError:
+            pass  # Read-only fallback in MicroPython
 
 
 class ClosureCollectorException(AttributeError):
@@ -9,8 +44,8 @@ class ClosureCollectorException(AttributeError):
 def rebind(callable, from_obj, to_obj):
     if getattr(callable, "__closure__", False):
         for cell in callable.__closure__:
-            if cell.cell_contents is from_obj:
-                cell.cell_contents = to_obj
+            if get_cell_contents(cell) is from_obj:
+                set_cell_contents(cell, to_obj)
 
 
 def is_rule(func):
@@ -19,7 +54,8 @@ def is_rule(func):
 
     if getattr(func, "__closure__", False):  ## TODO replace with inspect_getclosurevars, probably inspect only nonlocals
         for cell in func.__closure__:
-            if not isinstance(cell.cell_contents, (str, Number, bytes, tuple, frozenset)):
+            contents = get_cell_contents(cell)
+            if not isinstance(contents, (str, Number, bytes, tuple, frozenset)):
                 return True
     try:
         if set(func.__globals__).intersection(func.__code__.co_names):

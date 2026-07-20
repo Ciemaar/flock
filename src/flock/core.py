@@ -1,20 +1,7 @@
-import inspect
-import warnings
-from abc import ABCMeta, abstractmethod
-from collections import OrderedDict, defaultdict
-from collections.abc import (
-    Iterable,
-    Mapping,
-    MutableMapping,
-    MutableSequence,
-    Sequence,
-)
-from copy import copy
-from itertools import chain
-
-from closure_collector.core import CCBase, DynamicClosureCollector
-from closure_collector.util import is_rule
-from flock.util import FlockException
+from closure_collector.core import CCBase, DynamicClosureCollector  # noqa: E402
+from closure_collector.util import get_cell_contents, is_rule, is_zero_arg  # noqa: E402
+from flock.compat import ABCMeta, Iterable, Mapping, MutableMapping, MutableSequence, OrderedDict, Sequence, abstractmethod, chain, copy, defaultdict, warnings
+from flock.util import FlockException  # noqa: E402
 
 __author__ = "Andy Fundinger"
 
@@ -29,40 +16,78 @@ __author__ = "Andy Fundinger"
 """
 
 
-class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
-    @abstractmethod
-    def check(self, path):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-        """
+if hasattr(ABCMeta, "__new__"):
 
-    @abstractmethod
-    def shear(self, record_errors=False) -> Iterable:
-        """
-        Convert this Mapping into a simple dict
+    class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
+        @abstractmethod
+        def check(self, path):
+            """
+            check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+            :type path: list the path to this object, will be prepended to any errors generated
+            :return: list of errors that prevent items in this Aggregator from being sheared.
+            """
+            pass
 
-        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
-        than continuing up the call stack
+        @abstractmethod
+        def shear(self, record_errors=False) -> Iterable:
+            """
+            Convert this Mapping into a simple dict
 
-        :return: a dict() representation of this Aggregator
-        """
-        pass
+            :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+            than continuing up the call stack
 
-    def __call__(self):
-        """
-        Call must be specified so that FlockMappings can be nested within eachother
+            :return: a dict() representation of this Aggregator
+            """
+            pass
 
-        :return: self
-        """
-        return self
+        def __call__(self):
+            """
+            Call must be specified so that FlockMappings can be nested within eachother
 
-    def __hash__(self, *args, **kwargs):
-        return id(self)
+            :return: self
+            """
+            return self
 
-    def __dir__(self):
-        return object.__dir__(self)
+        def __hash__(self, *args, **kwargs):
+            return id(self)
+
+        def __dir__(self):
+            return object.__dir__(self)
+else:
+
+    class FlockBase(CCBase, Mapping):  # type: ignore[no-redef,misc]
+        def check(self, path):
+            """
+            check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+            :type path: list the path to this object, will be prepended to any errors generated
+            :return: list of errors that prevent items in this Aggregator from being sheared.
+            """
+            pass
+
+        def shear(self, record_errors=False) -> Iterable:
+            """
+            Convert this Mapping into a simple dict
+
+            :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+            than continuing up the call stack
+
+            :return: a dict() representation of this Aggregator
+            """
+            return []
+
+        def __call__(self):
+            """
+            Call must be specified so that FlockMappings can be nested within eachother
+
+            :return: self
+            """
+            return self
+
+        def __hash__(self, *args, **kwargs):
+            return id(self)
+
+        def __dir__(self):
+            return []
 
 
 class MutableFlock(FlockBase, DynamicClosureCollector):
@@ -95,14 +120,15 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
         "Reminder to implement Mapping"
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
+        if is_zero_arg(value):
             ret = value
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
-        elif isinstance(value, Mapping):
+                    contents = get_cell_contents(closure)
+                    if isinstance(contents, DynamicClosureCollector):
+                        contents.peers.add(self)
+        elif isinstance(value, Mapping) and Mapping is not object:
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
             ret = lambda: value
