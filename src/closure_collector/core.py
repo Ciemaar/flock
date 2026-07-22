@@ -254,7 +254,8 @@ class ClosureCollector(ClosurePromiseCollector):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)
+            if not callable(value):
+                raise ValueError("Value must be callable")
         return ret
 
     def shear(self, record_errors=False):
