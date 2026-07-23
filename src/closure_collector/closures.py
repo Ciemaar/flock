@@ -1,8 +1,5 @@
 from glom import Path, T, glom  # type: ignore
 
-from closure_collector.util import ClosureCollectorException
-from flock import FlockException
-
 
 def collection_reduce(int_collection, func):
     """Create a closure that consists of lazily executing a function on an iterable"""
@@ -18,16 +15,13 @@ def index_reference(flock, *indexes, **kwargs):
     """
 
     def de_ref():
-        try:
-            spec = T
-            for key in indexes:
-                spec = spec[key]
+        spec = T
+        for key in indexes:
+            spec = spec[key]
 
-            if "default" in kwargs:
-                return glom(flock, spec, default=kwargs["default"])
-            return glom(flock, spec)
-        except (ClosureCollectorException, FlockException):
-            raise
+        if "default" in kwargs:
+            return glom(flock, spec, default=kwargs["default"])
+        return glom(flock, spec)
 
     return de_ref
 
@@ -41,12 +35,9 @@ def attr_reference(flock, *indexes, **kwargs):
     """
 
     def de_ref():
-        try:
-            if "default" in kwargs:
-                return glom(flock, Path(*indexes), default=kwargs["default"])
-            return glom(flock, Path(*indexes))
-        except (ClosureCollectorException, FlockException):
-            raise
+        if "default" in kwargs:
+            return glom(flock, Path(*indexes), default=kwargs["default"])
+        return glom(flock, Path(*indexes))
 
     return de_ref
 
