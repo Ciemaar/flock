@@ -1,6 +1,19 @@
+from closure_collector.compat import (
+    ABCMeta,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    OrderedDict,
+    Sequence,
+    abstractmethod,
+    chain,
+    copy,
+    defaultdict,
+    warnings,
+)
 from closure_collector.core import CCBase, DynamicClosureCollector  # noqa: E402
 from closure_collector.util import get_cell_contents, is_rule, is_zero_arg  # noqa: E402
-from flock.compat import ABCMeta, Iterable, Mapping, MutableMapping, MutableSequence, OrderedDict, Sequence, abstractmethod, chain, copy, defaultdict, warnings
 from flock.util import FlockException  # noqa: E402
 
 __author__ = "Andy Fundinger"
