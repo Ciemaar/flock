@@ -4,6 +4,7 @@ import random
 from functools import partial
 
 import mythica.model
+
 from flock.core import FlockDict
 
 sheet = {"seed": 42}

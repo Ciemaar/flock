@@ -5,7 +5,7 @@ for root, _, files in os.walk("src"):
     for file in files:
         if file.endswith(".py"):
             path = os.path.join(root, file)
-            with open(path, "r") as f:
+            with open(path) as f:
                 content = f.read()
 
             content = re.sub(r'-> Any:', r':', content)
