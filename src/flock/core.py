@@ -10,7 +10,6 @@ from collections.abc import (
     Sequence,
 )
 from copy import copy
-from itertools import chain
 
 from closure_collector.core import CCBase, DynamicClosureCollector
 from closure_collector.util import is_rule
@@ -414,7 +413,7 @@ class Aggregator:
         NOT YET PROPERLY IMPLEMENTED
         """
         ret = defaultdict(dict)
-        for key in set(chain.from_iterable(source.keys() for source in self.sources)):
+        for key in set().union(*(source.keys() for source in self.sources)):
             for sourceNo, source in enumerate(self.sources):
                 if key in source:
                     value = source[key]
@@ -433,7 +432,7 @@ class Aggregator:
         :return: a dict() representation of this Aggregator
         """
         ret = {}
-        for key in set(chain.from_iterable(source.keys() for source in self.sources)):
+        for key in set().union(*(source.keys() for source in self.sources)):
             try:
                 ret[key] = self[key]
             except Exception as e:
@@ -470,7 +469,7 @@ class MetaAggregator:
 
     def shear(self, record_errors=False):
         ret = {}
-        for key in set(chain.from_iterable(source.keys() for source in self.source_function())):
+        for key in set().union(*(source.keys() for source in self.source_function())):
             try:
                 ret[key] = self[key]()
             except Exception as e:
@@ -530,7 +529,7 @@ class FlockAggregator(FlockBase, Mapping):
                 return iter(set(self.source_keys()))
             else:
                 return iter(self.source_keys)
-        return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
+        return iter(set().union(*(source.keys() for source in self.get_sources())))
 
     def get_sources(self):
         if isinstance(self.sources, Mapping):
