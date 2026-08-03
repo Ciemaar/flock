@@ -414,8 +414,9 @@ class Aggregator:
         NOT YET PROPERLY IMPLEMENTED
         """
         ret = defaultdict(dict)
-        for key in set(chain.from_iterable(source.keys() for source in self.sources)):
-            for sourceNo, source in enumerate(self.sources):
+        valid_keys = tuple(set(chain.from_iterable(source.keys() for source in self.sources)))
+        for sourceNo, source in enumerate(self.sources):
+            for key in valid_keys:
                 if key in source:
                     value = source[key]
                     try:
@@ -549,8 +550,9 @@ class FlockAggregator(FlockBase, Mapping):
         NOT YET PROPERLY IMPLEMENTED
         """
         ret = defaultdict(dict)
-        for key in self.__iter__():
-            for sourceNo, source in enumerate(self.get_sources()):
+        valid_keys = tuple(self)
+        for sourceNo, source in enumerate(self.get_sources()):
+            for key in valid_keys:
                 if key in source:
                     value = source[key]
                     try:
