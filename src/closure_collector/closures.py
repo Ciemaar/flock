@@ -1,5 +1,4 @@
-from closure_collector.util import ClosureCollectorException
-from flock import FlockException
+from glom import Path, T, glom  # type: ignore
 
 
 def collection_reduce(int_collection, func):
@@ -9,54 +8,36 @@ def collection_reduce(int_collection, func):
 
 def index_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    return closure that references values stored elsewhere using glom.
     :type flock: flock.core.FlockDict
-    :param indexes: lambdas to be resolved in order (tree walking)
+    :param indexes: keys to be resolved in order via item access (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        currObj = flock
+        spec = T
+        for key in indexes:
+            spec = spec[key]
 
-        try:
-            # recursively resolve indexes
-            for index in indexes:
-                currObj = currObj[index]
-            return currObj
-        except (ClosureCollectorException, FlockException):
-            raise
-        except KeyError:
-            if "default" in kwargs:
-                return kwargs["default"]
-            else:
-                raise
+        if "default" in kwargs:
+            return glom(flock, spec, default=kwargs["default"])
+        return glom(flock, spec)
 
     return de_ref
 
 
 def attr_reference(flock, *indexes, **kwargs):
     """
-    return closure that references values stored elsewhere in a mapping
+    return closure that references values stored elsewhere using glom.
     :type flock: flock.core.FlockDict
-    :param indexes: lambdas to be resolved in order (tree walking)
+    :param indexes: attributes or keys to be resolved in order (tree walking)
     :return: 0 parameter function with all parameters included as a closure, returns referenced value
     """
 
     def de_ref():
-        currObj = flock
-
-        try:
-            # recursively resolve indexes
-            for index in indexes:
-                currObj = getattr(currObj, index)
-            return currObj
-        except (ClosureCollectorException, FlockException):
-            raise
-        except AttributeError:
-            if "default" in kwargs:
-                return kwargs["default"]
-            else:
-                raise
+        if "default" in kwargs:
+            return glom(flock, Path(*indexes), default=kwargs["default"])
+        return glom(flock, Path(*indexes))
 
     return de_ref
 

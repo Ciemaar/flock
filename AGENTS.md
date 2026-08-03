@@ -11,6 +11,7 @@ mathematical models to allow non-linear execution. It uses a `FlockDict` to enca
 
 - **Language**: Python 3.12, 3.13
 - **Build System**: `pyproject.toml` (setuptools backend)
+- **Data Access Tooling**: `glom` for resilient, declarative nested data access
 - **Testing**: `pytest`, orchestrated by `tox`.
 - **Linting**: `ruff` (line length 160).
 - **Type Checking**: `mypy`.
