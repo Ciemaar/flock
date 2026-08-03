@@ -1,10 +1,5 @@
-import inspect
-from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Mapping
-from itertools import chain
-from pprint import pformat
-
-from closure_collector.util import ClosureCollectorException, is_rule, rebind
+from closure_collector.compat import ABCMeta, Iterable, Mapping, abstractmethod, chain, pformat
+from closure_collector.util import ClosureCollectorException, get_cell_contents, is_rule, is_zero_arg, rebind  # noqa: E402
 
 CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
 
@@ -19,46 +14,93 @@ class ShearedBase:
         return pformat(self.__dict__)
 
 
-class CCBase(metaclass=ABCMeta):
-    """Base class for Closure Collector Objects of all sorts"""
+if hasattr(ABCMeta, "__new__"):
 
-    @abstractmethod
-    def check(self, path):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-        """
+    class CCBase(metaclass=ABCMeta):
+        """Base class for Closure Collector Objects of all sorts"""
 
-    @abstractmethod
-    def shear(self, record_errors=False):
-        """
-        Convert this closure collection into a simple object
+        @abstractmethod
+        def check(self, path):
+            """
+            check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+            :type path: list the path to this object, will be prepended to any errors generated
+            :return: list of errors that prevent items in this Aggregator from being sheared.
+            """
+            pass
 
-        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
-        than continuing up the call stack
+        @abstractmethod
+        def shear(self, record_errors=False):
+            """
+            Convert this closure collection into a simple object
 
-        :return: a simple object representing these closures
-        """
+            :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+            than continuing up the call stack
 
-    @abstractmethod
-    def __dir__(self):
-        """Closure collector objects all support the dir() method returning the added attributes"""
-        pass
+            :return: a simple object representing these closures
+            """
+            pass
 
-    def __call__(self):
-        """
-        Call must be specified so that Closure Collections can be nested within eachother
+        @abstractmethod
+        def __dir__(self):
+            """Closure collector objects all support the dir() method returning the added attributes"""
+            pass
 
-        :return: self
-        """
-        return self
+        def __call__(self):
+            """
+            Call must be specified so that Closure Collections can be nested within eachother
 
-    def clear_cache(self):
-        """Empty any cache kept on this object"""
+            :return: self
+            """
+            return self
 
-    def get_relatives(self) -> Iterable:
-        return ()
+        def clear_cache(self):
+            """Empty any cache kept on this object"""
+            pass
+
+        def get_relatives(self) -> Iterable:
+            return ()
+else:
+
+    class CCBase:  # type: ignore[no-redef]
+        """Base class for Closure Collector Objects of all sorts"""
+
+        def check(self, path):
+            """
+            check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+            :type path: list the path to this object, will be prepended to any errors generated
+            :return: list of errors that prevent items in this Aggregator from being sheared.
+            """
+            pass
+
+        def shear(self, record_errors=False):
+            """
+            Convert this closure collection into a simple object
+
+            :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+            than continuing up the call stack
+
+            :return: a simple object representing these closures
+            """
+            pass
+
+        def __dir__(self):
+            """Closure collector objects all support the dir() method returning the added attributes"""
+            return []
+
+        def __call__(self):
+            """
+            Call must be specified so that Closure Collections can be nested within eachother
+
+            :return: self
+            """
+            return self
+
+        def clear_cache(self):
+            """Empty any cache kept on this object"""
+            pass
+
+        def get_relatives(self) -> Iterable:
+            return ()
 
 
 class DynamicClosureCollector(CCBase):
@@ -147,17 +189,18 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         return bool(self.promises)
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
+        if is_zero_arg(value):
             ret = value
             if isinstance(value, DynamicClosureCollector):
                 value.peers.add(self)
-                if value.root is None:
+                if getattr(value, "root", None) is None:
                     value.root = self
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
+                    contents = get_cell_contents(closure)
+                    if isinstance(contents, DynamicClosureCollector):
+                        contents.peers.add(self)
         else:
             ret = lambda: value
         return ret
@@ -211,7 +254,8 @@ class ClosureCollector(ClosurePromiseCollector):
                 value_check = value.check(path + [key])
                 if value_check:  # if anything showed up wrong in the check
                     ret[key] = value_check
-            assert callable(value)
+            if not callable(value):
+                raise ValueError("Value must be callable")
         return ret
 
     def shear(self, record_errors=False):
