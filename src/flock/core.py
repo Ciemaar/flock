@@ -419,7 +419,7 @@ class Aggregator:
         Returns:
             A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
-        ret = defaultdict(dict)
+        ret: dict = defaultdict(dict)
         for key in set().union(*self.sources):
             for sourceNo, source in enumerate(self.sources):
                 if key in source:
@@ -555,7 +555,7 @@ class FlockAggregator(FlockBase, Mapping):
         Returns:
             A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
-        ret = defaultdict(dict)
+        ret: dict = defaultdict(dict)
         for key in self.__iter__():
             for sourceNo, source in enumerate(self.get_sources()):
                 if key in source:
