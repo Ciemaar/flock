@@ -23,11 +23,15 @@ class CCBase(metaclass=ABCMeta):
     """Base class for Closure Collector Objects of all sorts"""
 
     @abstractmethod
-    def check(self, path):
+    def check(self, path: list[str]) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
 
     @abstractmethod
@@ -192,18 +196,17 @@ class ClosureCollector(ClosurePromiseCollector):
     def __repr__(self):
         return f"{self.__class__.__name__}({self.shear()})"
 
-    #
-    # def __hash__(self):
-    #     return id(self)
-
-    def check(self, path=[]):
+    def check(self, path: list[str] = []) -> dict:
         """
-        check for any contents that would prevent this ClosureCollector from being used normally, esp sheared.
+        Check for any contents that would prevent this ClosureCollector from being used normally, especially sheared.
 
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this ClosureCollector from being sheared.
+        NOT YET PROPERLY IMPLEMENTED.
 
-        NOT YET PROPERLY IMPLEMENTED
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this ClosureCollector from being sheared.
         """
         ret = {}
         for key, value in self.promises.items():
@@ -317,13 +320,17 @@ class ClosureReduction:
     def shear(self):
         return NotImplemented
 
-    def check(self, path=[]):
+    def check(self, path: list[str] = []) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
 
-        NOT YET PROPERLY IMPLEMENTED
+        NOT YET PROPERLY IMPLEMENTED.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
         return {}
         # ret = defaultdict(dict)

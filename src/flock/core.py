@@ -30,11 +30,15 @@ __author__ = "Andy Fundinger"
 
 class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
     @abstractmethod
-    def check(self, path):
+    def check(self, path: list[str]) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
 
     @abstractmethod
@@ -213,14 +217,17 @@ class FlockList(PromiseFlock, MutableSequence):
         rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
         return rels
 
-    def check(self, path=[]):
+    def check(self, path: list[str] = []) -> dict:
         """
-        check for any contents that would prevent this FlockList from being used normally, esp sheared.
+        Check for any contents that would prevent this FlockList from being used normally, especially sheared.
 
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this FlockList from being sheared.
+        NOT YET PROPERLY IMPLEMENTED.
 
-        NOT YET PROPERLY IMPLEMENTED
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this FlockList from being sheared.
         """
         ret = {}
         for key, value in enumerate(self.promises):
@@ -304,18 +311,17 @@ class FlockDict(PromiseFlock, MutableMapping):
     def __repr__(self):
         return f"{self.__class__.__name__}({self.shear()},{self.root})"
 
-    #
-    # def __hash__(self):
-    #     return id(self)
-
-    def check(self, path=[]):
+    def check(self, path: list[str] = []) -> dict:
         """
-        check for any contents that would prevent this FlockDict from being used normally, esp sheared.
+        Check for any contents that would prevent this FlockDict from being used normally, especially sheared.
 
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this FlockDict from being sheared.
+        NOT YET PROPERLY IMPLEMENTED.
 
-        NOT YET PROPERLY IMPLEMENTED
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this FlockDict from being sheared.
         """
         ret = {}
         for key, value in self.promises.items():
@@ -394,9 +400,6 @@ class Aggregator:
         """
         return self.function(source[key] for source in self.sources if key in source)
 
-    # def __getattr__(self, key):
-    #     return self[key]()
-
     def __call__(self):
         """
         When an Aggregator is returned from a FlockDict or otherwise called, shear it.
@@ -404,13 +407,17 @@ class Aggregator:
         """
         return self.shear()
 
-    def check(self, path=[]):
+    def check(self, path: list[str] = []) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
 
-        NOT YET PROPERLY IMPLEMENTED
+        NOT YET PROPERLY IMPLEMENTED.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
         ret = defaultdict(dict)
         for key in set().union(*self.sources):
@@ -460,9 +467,6 @@ class MetaAggregator:
 
     def __getitem__(self, key):
         return lambda: self.function(source[key] for source in self.source_function() if key in source)
-
-    # def __getattr__(self, key):
-    #     return self[key]()
 
     def __call__(self):
         return self.shear()
@@ -539,13 +543,17 @@ class FlockAggregator(FlockBase, Mapping):
         else:
             return self.sources
 
-    def check(self, path=[]):
+    def check(self, path: list[str] = []) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
 
-        NOT YET PROPERLY IMPLEMENTED
+        NOT YET PROPERLY IMPLEMENTED.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
         ret = defaultdict(dict)
         for key in self.__iter__():
