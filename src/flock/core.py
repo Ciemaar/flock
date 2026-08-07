@@ -418,7 +418,7 @@ class Aggregator:
         """
         if path is None:
             path = []
-        ret = defaultdict(dict)
+        ret: defaultdict = defaultdict(dict)
         for key in set().union(*self.sources):
             for sourceNo, source in enumerate(self.sources):
                 if key in source:
@@ -555,7 +555,7 @@ class FlockAggregator(FlockBase, Mapping):
         """
         if path is None:
             path = []
-        ret = defaultdict(dict)
+        ret: defaultdict = defaultdict(dict)
         for key in self.__iter__():
             for sourceNo, source in enumerate(self.get_sources()):
                 if key in source:
