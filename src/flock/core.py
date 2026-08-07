@@ -304,10 +304,6 @@ class FlockDict(PromiseFlock, MutableMapping):
     def __repr__(self):
         return f"{self.__class__.__name__}({self.shear()},{self.root})"
 
-    #
-    # def __hash__(self):
-    #     return id(self)
-
     def check(self, path=[]):
         """
         check for any contents that would prevent this FlockDict from being used normally, esp sheared.
@@ -385,7 +381,7 @@ class Aggregator:
         self.sources = sources
         self.function = fn
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         """
         Perform the aggregation for the given key across all the sources.
 
@@ -394,13 +390,10 @@ class Aggregator:
         """
         return self.function(source[key] for source in self.sources if key in source)
 
-    # def __getattr__(self, key):
-    #     return self[key]()
-
-    def __call__(self):
+    def __call__(self) -> dict:
         """
         When an Aggregator is returned from a FlockDict or otherwise called, shear it.
-        :return:  a sheared version of this Aggrgator
+        :return:  a sheared version of this Aggregator
         """
         return self.shear()
 
@@ -458,13 +451,10 @@ class MetaAggregator:
         self.source_function = source_function
         self.function = fn
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         return lambda: self.function(source[key] for source in self.source_function() if key in source)
 
-    # def __getattr__(self, key):
-    #     return self[key]()
-
-    def __call__(self):
+    def __call__(self) -> dict:
         return self.shear()
 
     def shear(self, record_errors=False):
