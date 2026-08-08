@@ -196,7 +196,7 @@ class ClosureCollector(ClosurePromiseCollector):
     # def __hash__(self):
     #     return id(self)
 
-    def check(self, path=[]):
+    def check(self, path=None):
         """
         check for any contents that would prevent this ClosureCollector from being used normally, esp sheared.
 
@@ -205,6 +205,8 @@ class ClosureCollector(ClosurePromiseCollector):
 
         NOT YET PROPERLY IMPLEMENTED
         """
+        if path is None:
+            path = []
         ret = {}
         for key, value in self.promises.items():
             if hasattr(value, "check"):
@@ -317,7 +319,7 @@ class ClosureReduction:
     def shear(self):
         return NotImplemented
 
-    def check(self, path=[]):
+    def check(self, path=None):
         """
         check for any contents that would prevent this Aggregator from being used normally, esp sheared.
         :type path: list the path to this object, will be prepended to any errors generated
@@ -325,6 +327,8 @@ class ClosureReduction:
 
         NOT YET PROPERLY IMPLEMENTED
         """
+        if path is None:
+            path = []
         return {}
         # ret = defaultdict(dict)
         # for key in set(chain.from_iterable(source.keys() for source in self.sources)):
