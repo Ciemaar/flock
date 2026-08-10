@@ -494,7 +494,17 @@ class MetaAggregator:
     def __call__(self) -> dict:
         return self.shear()
 
-    def shear(self, record_errors=False):
+    def shear(self, record_errors: bool = False):
+        """
+        Convert this Aggregator into a simple dict
+
+        Args:
+            record_errors (bool): if True any exception raised will be stored in place of the result that caused it rather
+                than continuing up the call stack
+
+        Returns:
+            dict: a representation of this Aggregator
+        """
         ret = {}
         for key in set().union(*self.source_function()):
             try:
