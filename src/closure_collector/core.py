@@ -1,10 +1,74 @@
-import inspect
-from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Mapping
-from itertools import chain
-from pprint import pformat
+try:
+    from typing import Any
+except ImportError:  # MicroPython compatibility fallback for missing typing
+    Any = object  # type: ignore[assignment,misc]
 
-from closure_collector.util import ClosureCollectorException, is_rule, rebind
+try:
+    import inspect
+except ImportError:  # MicroPython compatibility fallback for missing inspect
+    inspect = None  # type: ignore[assignment]
+
+try:
+    from collections.abc import Callable
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+    Callable = object  # type: ignore[assignment,misc]
+
+try:
+    from typing import TypeVar
+except ImportError:  # MicroPython compatibility fallback for missing typing
+
+    def TypeVar(name: str, bound: Any = Any) -> Any:  # type: ignore[misc,no-redef]
+        return object
+
+
+try:
+    _FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
+except TypeError:
+    _FuncT = object  # type: ignore[assignment,misc]
+
+try:
+    from abc import ABCMeta, abstractmethod
+except ImportError:  # MicroPython compatibility fallback for missing abc
+
+    class ABCMeta(type):  # type: ignore[no-redef]
+        pass
+
+    def abstractmethod(funcobj: _FuncT) -> _FuncT:  # noqa: UP047
+        return funcobj  # type: ignore[misc]
+
+
+try:
+    from collections.abc import Iterable, Mapping
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+    try:
+        from collections.abc import Iterable, Mapping
+    except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+        Iterable = object  # type: ignore[assignment,misc]
+        Mapping = object  # type: ignore[assignment,misc]
+
+try:
+    from itertools import chain
+except ImportError:  # MicroPython compatibility fallback for missing itertools
+
+    class chain:  # type: ignore[no-redef]
+        def __init__(self, *iterables: Any):
+            self.iterables = iterables
+
+        def __iter__(self) -> Any:
+            for it in self.iterables:
+                yield from it
+
+        @classmethod
+        def from_iterable(cls, iterables: Any) -> Any:
+            return cls(*iterables)
+
+
+try:
+    from pprint import pformat
+except ImportError:  # MicroPython compatibility fallback for missing pprint
+    pformat = repr  # type: ignore[assignment]
+
+from closure_collector.util import ClosureCollectorException, get_cell_contents, is_rule, is_zero_arg, rebind  # noqa: E402
 
 CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
 
@@ -19,46 +83,73 @@ class ShearedBase:
         return pformat(self.__dict__)
 
 
-class CCBase(metaclass=ABCMeta):
-    """Base class for Closure Collector Objects of all sorts"""
+if hasattr(ABCMeta, "__new__"):
 
-    @abstractmethod
-    def check(self, path):
-        """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
-        """
+    class CCBase(metaclass=ABCMeta):
+        """Base class for Closure Collector Objects of all sorts"""
 
-    @abstractmethod
-    def shear(self, record_errors=False):
-        """
-        Convert this closure collection into a simple object
+        @abstractmethod
+        def check(self, path):
+            """
+            check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+            :type path: list the path to this object, will be prepended to any errors generated
+            :return: list of errors that prevent items in this Aggregator from being sheared.
+            """
+            pass
 
-        :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
-        than continuing up the call stack
+        @abstractmethod
+        def shear(self, record_errors=False):
+            """
+            Convert this closure collection into a simple object
 
-        :return: a simple object representing these closures
-        """
+            :param record_errors: if True any exception raised will be stored in place of the result that caused it rather
+            than continuing up the call stack
 
-    @abstractmethod
-    def __dir__(self):
-        """Closure collector objects all support the dir() method returning the added attributes"""
-        pass
+            :return: a simple object representing these closures
+            """
+            pass
 
-    def __call__(self):
-        """
-        Call must be specified so that Closure Collections can be nested within eachother
+        @abstractmethod
+        def __dir__(self):
+            """Closure collector objects all support the dir() method returning the added attributes"""
+            pass
 
-        :return: self
-        """
-        return self
+        def __call__(self):
+            """
+            Call must be specified so that Closure Collections can be nested within eachother
 
-    def clear_cache(self):
-        """Empty any cache kept on this object"""
+            :return: self
+            """
+            return self
 
-    def get_relatives(self) -> Iterable:
-        return ()
+        def clear_cache(self):
+            """Empty any cache kept on this object"""
+            pass
+
+        def get_relatives(self) -> Iterable:
+            return ()
+else:
+
+    class CCBase:  # type: ignore[no-redef]
+        """Base class for Closure Collector Objects of all sorts"""
+
+        def check(self, path):
+            pass
+
+        def shear(self, record_errors=False):
+            pass
+
+        def __dir__(self):
+            return []
+
+        def __call__(self):
+            return self
+
+        def clear_cache(self):
+            pass
+
+        def get_relatives(self) -> Iterable:
+            return ()
 
 
 class DynamicClosureCollector(CCBase):
@@ -147,17 +238,18 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         return bool(self.promises)
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
+        if is_zero_arg(value):
             ret = value
             if isinstance(value, DynamicClosureCollector):
                 value.peers.add(self)
-                if value.root is None:
+                if getattr(value, "root", None) is None:
                     value.root = self
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
+                    contents = get_cell_contents(closure)
+                    if isinstance(contents, DynamicClosureCollector):
+                        contents.peers.add(self)
         else:
             ret = lambda: value
         return ret
