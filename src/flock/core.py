@@ -438,8 +438,9 @@ class Aggregator:
         if path is None:
             path = []
         ret: dict = defaultdict(dict)
-        for key in set().union(*self.sources):
-            for sourceNo, source in enumerate(self.sources):
+        valid_keys = tuple(set().union(*(source.keys() for source in self.sources)))
+        for sourceNo, source in enumerate(self.sources):
+            for key in valid_keys:
                 if key in source:
                     value = source[key]
                     try:
@@ -462,7 +463,7 @@ class Aggregator:
             dict: a representation of this Aggregator
         """
         ret = {}
-        for key in set().union(*self.sources):
+        for key in set().union(*(source.keys() for source in self.sources)):
             try:
                 ret[key] = self[key]
             except Exception as e:
@@ -506,7 +507,7 @@ class MetaAggregator:
             dict: a representation of this Aggregator
         """
         ret = {}
-        for key in set().union(*self.source_function()):
+        for key in set().union(*(source.keys() for source in self.source_function())):
             try:
                 ret[key] = self[key]()
             except Exception as e:
@@ -570,7 +571,7 @@ class FlockAggregator(FlockBase, Mapping):
                 return iter(set(self.source_keys()))
             else:
                 return iter(self.source_keys)
-        return iter(set().union(*self.get_sources()))
+        return iter(set().union(*(source.keys() for source in self.get_sources())))
 
     def get_sources(self):
         if isinstance(self.sources, Mapping):
@@ -595,8 +596,9 @@ class FlockAggregator(FlockBase, Mapping):
         if path is None:
             path = []
         ret: dict = defaultdict(dict)
-        for key in self.__iter__():
-            for sourceNo, source in enumerate(self.get_sources()):
+        valid_keys = tuple(self)
+        for sourceNo, source in enumerate(self.get_sources()):
+            for key in valid_keys:
                 if key in source:
                     value = source[key]
                     try:

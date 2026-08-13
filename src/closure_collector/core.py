@@ -338,7 +338,7 @@ class ClosureReduction:
             path = []
         return {}
         # ret = defaultdict(dict)
-        # for key in set(chain.from_iterable(source.keys() for source in self.sources)):
+        # for key in set().union(*(source.keys() for source in self.sources)):
         #     for sourceNo, source in enumerate(self.sources):
         #         if key in source:
         #             value = source[key]
