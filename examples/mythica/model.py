@@ -220,7 +220,9 @@ class Skill:
 
 
 class HeroicSkill(Skill):
-    def __init__(self, name, skill_type=HEROIC, cost=1, level=1, bonuses={}):
+    def __init__(self, name, skill_type=HEROIC, cost=1, level=1, bonuses: dict | None = None):
+        if bonuses is None:
+            bonuses = {}
         assert skill_type == HEROIC
         super().__init__(name, skill_type, cost, xp=None, level=level)
         self.bonuses = bonuses

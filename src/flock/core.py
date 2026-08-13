@@ -30,11 +30,15 @@ __author__ = "Andy Fundinger"
 
 class FlockBase(CCBase, Mapping, metaclass=ABCMeta):
     @abstractmethod
-    def check(self, path):
+    def check(self, path: list[str] | None = None) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
 
     @abstractmethod
@@ -213,15 +217,20 @@ class FlockList(PromiseFlock, MutableSequence):
         rels.update(peer for peer in self.peers if hasattr(peer, "clear_cache"))
         return rels
 
-    def check(self, path=[]):
+    def check(self, path: list[str] | None = None) -> dict:
         """
-        check for any contents that would prevent this FlockList from being used normally, esp sheared.
+        Check for any contents that would prevent this FlockList from being used normally, especially sheared.
 
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this FlockList from being sheared.
+        NOT YET PROPERLY IMPLEMENTED.
 
-        NOT YET PROPERLY IMPLEMENTED
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this FlockList from being sheared.
         """
+        if path is None:
+            path = []
         ret = {}
         for key, value in enumerate(self.promises):
             if hasattr(value, "check"):
@@ -231,15 +240,19 @@ class FlockList(PromiseFlock, MutableSequence):
             assert callable(value)  # noqa: S101
         return ret
 
-    def shear(self, record_errors=False):
+    def shear(self, record_errors: bool = False):
         """
         Recursively convert this FlockList into a normal python dict.
 
         Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
          with a shear() function.
 
-        :param record_errors:
-        :return: a dict()
+        Args:
+            record_errors (bool): if True any exception raised will be stored in place of the result that caused it rather
+                than continuing up the call stack
+
+        Returns:
+            list: a list representation of the FlockList
         """
         ret = []
         for key, promise in enumerate(self.promises):
@@ -270,8 +283,6 @@ class FlockDict(PromiseFlock, MutableMapping):
     """
 
     def __init__(self, indict: list[tuple] | Mapping | None = None, root=None):
-        if indict is None:
-            indict = {}
         """
         A mutable mapping that contains lambdas which will be evaluated when indexed
 
@@ -280,6 +291,8 @@ class FlockDict(PromiseFlock, MutableMapping):
         Values from indict are assigned to self one at a time.
 
         """
+        if indict is None:
+            indict = {}
         super().__init__()
         self.promises = {}
         self.cache = {}
@@ -304,19 +317,20 @@ class FlockDict(PromiseFlock, MutableMapping):
     def __repr__(self):
         return f"{self.__class__.__name__}({self.shear()},{self.root})"
 
-    #
-    # def __hash__(self):
-    #     return id(self)
-
-    def check(self, path=[]):
+    def check(self, path: list[str] | None = None) -> dict:
         """
-        check for any contents that would prevent this FlockDict from being used normally, esp sheared.
+        Check for any contents that would prevent this FlockDict from being used normally, especially sheared.
 
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this FlockDict from being sheared.
+        NOT YET PROPERLY IMPLEMENTED.
 
-        NOT YET PROPERLY IMPLEMENTED
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this FlockDict from being sheared.
         """
+        if path is None:
+            path = []
         ret = {}
         for key, value in self.promises.items():
             if hasattr(value, "check"):
@@ -326,15 +340,19 @@ class FlockDict(PromiseFlock, MutableMapping):
             assert callable(value)  # noqa: S101
         return ret
 
-    def shear(self, record_errors=False):
+    def shear(self, record_errors: bool = False):
         """
         Recursively convert this FlockDict into a normal python dict.
 
         Removes all the lambda 'woolieness' from this flock by calling every item and recursively calling anything
          with a shear() function.
 
-        :param record_errors:
-        :return: a dict()
+        Args:
+            record_errors (bool): if True any exception raised will be stored in place of the result that caused it rather
+                than continuing up the call stack
+
+        Returns:
+            dict: a dictionary representation of the FlockDict
         """
         ret = OrderedDict()
         for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
@@ -373,9 +391,10 @@ class Aggregator:
         """
         Aggregate across parallel maps.
 
-        :type sources: list of sources to aggregate across, each source should be a map, generally a dict, or
-        FlockDict, not all keys need to be present in all sources.
-        :type fn: function must take a generator, there is no constraint on the return value
+        Args:
+            sources (list): list of sources to aggregate across, each source should be a map, generally a dict, or
+                FlockDict, not all keys need to be present in all sources.
+            fn (callable): function must take a generator, there is no constraint on the return value
         """
         warnings.warn(
             "Aggregator is generally replaced with FlockAggregator and will be removed.",
@@ -385,34 +404,40 @@ class Aggregator:
         self.sources = sources
         self.function = fn
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         """
         Perform the aggregation for the given key across all the sources.
 
-        :type key: str key to aggregate
-        :return: value as returned by the function for that key.
+        Args:
+            key (str): key to aggregate
+
+        Returns:
+            Any: value as returned by the function for that key.
         """
         return self.function(source[key] for source in self.sources if key in source)
 
-    # def __getattr__(self, key):
-    #     return self[key]()
-
-    def __call__(self):
+    def __call__(self) -> dict:
         """
         When an Aggregator is returned from a FlockDict or otherwise called, shear it.
-        :return:  a sheared version of this Aggrgator
+        :return:  a sheared version of this Aggregator
         """
         return self.shear()
 
-    def check(self, path=[]):
+    def check(self, path: list[str] | None = None) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
 
-        NOT YET PROPERLY IMPLEMENTED
+        NOT YET PROPERLY IMPLEMENTED.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
-        ret = defaultdict(dict)
+        if path is None:
+            path = []
+        ret: dict = defaultdict(dict)
         for key in set().union(*self.sources):
             for sourceNo, source in enumerate(self.sources):
                 if key in source:
@@ -425,11 +450,16 @@ class Aggregator:
                         # raise
         return ret
 
-    def shear(self, record_errors=False):
+    def shear(self, record_errors: bool = False):
         """
         Convert this Aggregator into a simple dict
 
-        :return: a dict() representation of this Aggregator
+        Args:
+            record_errors (bool): if True any exception raised will be stored in place of the result that caused it rather
+                than continuing up the call stack
+
+        Returns:
+            dict: a representation of this Aggregator
         """
         ret = {}
         for key in set().union(*self.sources):
@@ -458,16 +488,23 @@ class MetaAggregator:
         self.source_function = source_function
         self.function = fn
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         return lambda: self.function(source[key] for source in self.source_function() if key in source)
 
-    # def __getattr__(self, key):
-    #     return self[key]()
-
-    def __call__(self):
+    def __call__(self) -> dict:
         return self.shear()
 
-    def shear(self, record_errors=False):
+    def shear(self, record_errors: bool = False):
+        """
+        Convert this Aggregator into a simple dict
+
+        Args:
+            record_errors (bool): if True any exception raised will be stored in place of the result that caused it rather
+                than continuing up the call stack
+
+        Returns:
+            dict: a representation of this Aggregator
+        """
         ret = {}
         for key in set().union(*self.source_function()):
             try:
@@ -485,14 +522,15 @@ class FlockAggregator(FlockBase, Mapping):
         """
         Aggregate across parallel maps.
 
-        :type sources: one of:
-            - list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
-            - Mapping the values in sources are used as the list above, keys are ignored
-            - a callable that returns the list of sources
-
-            Precedence is Mapping, callable, then list
-
-        :type fn: function must take a generator, there is no constraint on the return value
+        Args:
+            sources (list | Mapping | callable): one of:
+                - list of sources to aggregate across, each source should be a map,
+                  generally a dict, or FlockDict, not all keys need to be present in all sources.
+                - Mapping the values in sources are used as the list above, keys are ignored
+                - a callable that returns the list of sources
+                Precedence is Mapping, callable, then list
+            fn (callable): function must take a generator, there is no constraint on the return value
+            keys (set | None): optional set of keys to aggregate across
         """
         ##TODO:  Allow lists as arguments
         self.sources = sources
@@ -501,12 +539,15 @@ class FlockAggregator(FlockBase, Mapping):
             keys = set(keys)
         self.source_keys = keys
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         """
         Perform the aggregation for the given key across all the sources.
 
-        :type key: str key to aggregate
-        :return: value as returned by the function for that key.
+        Args:
+            key (str): key to aggregate
+
+        Returns:
+            Any: value as returned by the function for that key.
         """
         try:
             cross_items = [source[key] for source in self.get_sources() if key in source]
@@ -539,15 +580,21 @@ class FlockAggregator(FlockBase, Mapping):
         else:
             return self.sources
 
-    def check(self, path=[]):
+    def check(self, path: list[str] | None = None) -> dict:
         """
-        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
-        :type path: list the path to this object, will be prepended to any errors generated
-        :return: list of errors that prevent items in this Aggregator from being sheared.
+        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
 
-        NOT YET PROPERLY IMPLEMENTED
+        NOT YET PROPERLY IMPLEMENTED.
+
+        Args:
+            path: The path to this object, will be prepended to any errors generated.
+
+        Returns:
+            A dictionary of errors that prevent items in this Aggregator from being sheared.
         """
-        ret = defaultdict(dict)
+        if path is None:
+            path = []
+        ret: dict = defaultdict(dict)
         for key in self.__iter__():
             for sourceNo, source in enumerate(self.get_sources()):
                 if key in source:
@@ -560,12 +607,16 @@ class FlockAggregator(FlockBase, Mapping):
                         # raise
         return ret
 
-    def shear(self, record_errors=False):
+    def shear(self, record_errors: bool = False):
         """
         Convert this Aggregator into a simple dict
 
-        :param record_errors:
-        :return: a dict() wmrepresentation of this Aggregator
+        Args:
+            record_errors (bool): if True any exception raised will be stored in place of the result that caused it rather
+                than continuing up the call stack
+
+        Returns:
+            dict: a representation of this Aggregator
         """
         ret = {}
         for key in self.__iter__():
