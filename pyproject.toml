@@ -8,7 +8,8 @@ requires-python = ">=3.12"
 dependencies = [
     "PyYAML",
     "pydantic-settings",
-    "click"
+    "click",
+    "glom"
 ]
 
 [project.optional-dependencies]
@@ -110,7 +111,6 @@ convention = "google"
 python_version = "3.12"
 warn_return_any = false
 warn_unused_configs = true
-disable_error_code = ["misc"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

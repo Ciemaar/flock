@@ -1,4 +1,65 @@
-from closure_collector.compat import Any, TypeVar  # type: ignore[import-untyped]
+from closure_collector.compat import Any, TypeVar
+
+__all__ = [
+    "Any",
+    "TypeVar",
+    "warnings",
+    "OrderedDict",
+    "defaultdict",
+    "MutableMapping",
+    "MutableSequence",
+    "Sequence",
+    "_T",
+    "copy",
+    "logging",
+    "Hashable",
+    "Iterable",
+    "Mapping",
+    "chain",
+    "ABCMeta",
+    "abstractmethod",
+    "inspect",
+]
+
+try:
+    from collections.abc import Iterable, Mapping
+except ImportError:
+    Iterable = object  # type: ignore[assignment,misc]
+    Mapping = object  # type: ignore[assignment,misc]
+
+try:
+    from itertools import chain
+except ImportError:
+
+    class chain:  # type: ignore[no-redef]
+        def __init__(self, *iterables: Any):
+            self.iterables = iterables
+
+        def __iter__(self) -> Any:
+            for it in self.iterables:
+                yield from it
+
+        @classmethod
+        def from_iterable(cls, iterables: Any) -> Any:
+            return cls(*iterables)
+
+
+try:
+    from abc import ABCMeta, abstractmethod
+except ImportError:
+
+    class ABCMeta(type):  # type: ignore[no-redef]
+        pass
+
+    def abstractmethod(funcobj: Any) -> Any:  # type: ignore[misc,no-redef]
+        return funcobj
+
+
+try:
+    import inspect
+except ImportError:
+    inspect = None  # type: ignore[assignment]
+
 
 try:
     import warnings
@@ -31,13 +92,10 @@ except ImportError:  # MicroPython compatibility fallback for missing collection
 
 try:
     from collections.abc import MutableMapping, MutableSequence, Sequence
-except ImportError:
-    try:
-        from collections.abc import MutableMapping, MutableSequence, Sequence
-    except ImportError:  # MicroPython compatibility fallback for missing collections.abc
-        MutableMapping = object  # type: ignore[assignment,misc]
-        MutableSequence = object  # type: ignore[assignment,misc]
-        Sequence = object  # type: ignore[assignment,misc]
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+    MutableMapping = object  # type: ignore[assignment,misc]
+    MutableSequence = object  # type: ignore[assignment,misc]
+    Sequence = object  # type: ignore[assignment,misc]
 
 try:
     _T = TypeVar("_T")
@@ -77,8 +135,5 @@ except ImportError:  # MicroPython compatibility fallback for missing logging
 
 try:
     from collections.abc import Hashable
-except ImportError:
-    try:
-        from collections.abc import Hashable
-    except ImportError:  # MicroPython compatibility fallback for missing collections.abc
-        Hashable = object  # type: ignore[assignment,misc]
+except ImportError:  # MicroPython compatibility fallback for missing collections.abc
+    Hashable = object  # type: ignore[assignment,misc]
