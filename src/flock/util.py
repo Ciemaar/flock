@@ -1,5 +1,4 @@
-import logging
-from collections.abc import Hashable, MutableMapping
+from flock.compat import Hashable, MutableMapping, logging
 
 log = logging.getLogger(__name__)
 

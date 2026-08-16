@@ -1,18 +1,18 @@
-import inspect
-import warnings
-from abc import ABCMeta, abstractmethod
-from collections import OrderedDict, defaultdict
-from collections.abc import (
+from closure_collector.core import CCBase, DynamicClosureCollector
+from closure_collector.util import get_cell_contents, is_rule, is_zero_arg
+from flock.compat import (
+    ABCMeta,
     Iterable,
     Mapping,
     MutableMapping,
     MutableSequence,
+    OrderedDict,
     Sequence,
+    abstractmethod,
+    copy,
+    defaultdict,
+    warnings,
 )
-from copy import copy
-
-from closure_collector.core import CCBase, DynamicClosureCollector
-from closure_collector.util import is_rule
 from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
@@ -98,14 +98,15 @@ class MutableFlock(FlockBase, DynamicClosureCollector):
         "Reminder to implement Mapping"
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
+        if is_zero_arg(value):
             ret = value
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
-        elif isinstance(value, Mapping):
+                    contents = get_cell_contents(closure)
+                    if isinstance(contents, DynamicClosureCollector):
+                        contents.peers.add(self)
+        elif isinstance(value, Mapping) and Mapping is not object:
             ret = FlockDict(value, root=self.root if self.root is not None else self)
         else:
             ret = lambda: value
