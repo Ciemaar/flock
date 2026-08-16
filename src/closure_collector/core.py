@@ -1,7 +1,6 @@
 import inspect
 from abc import ABCMeta, abstractmethod
 from collections.abc import Iterable, Mapping
-from itertools import chain
 from pprint import pformat
 
 from closure_collector.util import ClosureCollectorException, is_rule, rebind
@@ -277,7 +276,7 @@ class ClosureReduction:
     """
 
     def __dir__(self):
-        return set(chain.from_iterable(dir(source) for source in self.get_sources()))
+        return set().union(*(dir(source) for source in self.get_sources()))
 
     def __init__(self, sources, fn, keys=None):
         self.sources = sources
@@ -338,7 +337,7 @@ class ClosureReduction:
             path = []
         return {}
         # ret = defaultdict(dict)
-        # for key in set(chain.from_iterable(source.keys() for source in self.sources)):
+        # for key in set().union(*(source.keys() for source in self.sources)):
         #     for sourceNo, source in enumerate(self.sources):
         #         if key in source:
         #             value = source[key]
