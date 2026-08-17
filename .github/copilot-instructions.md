@@ -29,13 +29,19 @@ These instructions define the coding standards and development workflow for the 
 - Run linting: `tox -e lint`
 - Run type checking: `tox -e type`
 
+## Branch Management & PRs
+
+- When working on an existing, previous branch (e.g., rebasing or merging), features must not be removed if they have been added to the main branch in the intermediate interval.
+- All branches being merged in, as well as their matching PRs, must be referenced in the commit comments and any new PRs.
+
 ## CI/CD
 
 - GitHub Actions workflows are located in `.github/workflows/tests.yml`.
 - CI runs on Ubuntu and macOS.
+
 # Copilot Instructions
 
-*   **Type Hinting in Closure Collector:** When working with `closure_collector` and `flock`, avoid over-typing with `Any`. Prefer omitting type hints if the parameters must accept dynamic values.
-*   **Closures:** When creating closures, prefer `lambda: value` over nested `def inner(): return value` statements. This helps the static analysis engine (`mypy`) correctly identify the return types without raising false positives on callable signatures.
-*   **Documentation:** All classes, methods, and functions must have meaningful docstrings. Do not use placeholder phrases like "Module providing X".
-*   **Tooling:** Ensure you run `ruff check .` and `mypy` to verify changes. `tox` is used for test orchestration. Python versions 3.12 and 3.13 are officially supported.
+- **Type Hinting in Closure Collector:** When working with `closure_collector` and `flock`, avoid over-typing with `Any`. Prefer omitting type hints if the parameters must accept dynamic values.
+- **Closures:** When creating closures, prefer `lambda: value` over nested `def inner(): return value` statements. This helps the static analysis engine (`mypy`) correctly identify the return types without raising false positives on callable signatures.
+- **Documentation:** All classes, methods, and functions must have meaningful docstrings. Do not use placeholder phrases like "Module providing X".
+- **Tooling:** Ensure you run `ruff check .` and `mypy` to verify changes. `tox` is used for test orchestration. Python versions 3.12 and 3.13 are officially supported.
