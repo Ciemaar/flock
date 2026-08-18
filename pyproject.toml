@@ -36,6 +36,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.tox]
 legacy_tox_ini = """
+
 [tox]
 envlist = py312, py313, py314, py315, lint, type
 
