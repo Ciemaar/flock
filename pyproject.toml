@@ -37,14 +37,14 @@ build-backend = "setuptools.build_meta"
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py312, py313, lint, type
+envlist = py312, py313, py314, py315, lint, type
 
 [testenv]
 # install pytest in the virtualenv where commands will be executed
 extras = test
 depends =
-    {py39,py310,py311,py312}: clean
-    report: py39,py310,py311,py312
+    {py39,py310,py311,py312,py313,py314,py315}: clean
+    report: py39,py310,py311,py312,py313,py314,py315
 commands =
     # NOTE: you can run any command line tool here - not just tests
     pytest --cov=src --cov-append --cov-report=term-missing --cov-branch
@@ -102,3 +102,11 @@ warn_unused_configs = true
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = false
+
+[tool.tox.gh-actions]
+python = """
+    3.12: py312
+    3.13: py313
+    3.14: py314
+    3.15: py315
+"""
