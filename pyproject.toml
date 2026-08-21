@@ -34,44 +34,7 @@ test = [
 requires = ["setuptools>=42"]
 build-backend = "setuptools.build_meta"
 
-[tool.tox]
-legacy_tox_ini = """
-[tox]
-envlist = py312, py313, lint, type
 
-[testenv]
-# install pytest in the virtualenv where commands will be executed
-extras = test
-depends =
-    {py39,py310,py311,py312}: clean
-    report: py39,py310,py311,py312
-commands =
-    # NOTE: you can run any command line tool here - not just tests
-    pytest --cov=src --cov-append --cov-report=term-missing --cov-branch
-
-[testenv:report]
-deps = coverage
-skip_install = true
-commands =
-    coverage report
-    coverage html
-
-[testenv:clean]
-deps = coverage
-skip_install = true
-commands = coverage erase
-
-[testenv:lint]
-extras = dev
-commands =
-    ruff check src test
-    ruff format --check src test
-
-[testenv:type]
-extras = dev
-commands =
-    mypy src test
-"""
 
 [tool.pytest.ini_options]
 addopts = "--cov=src --cov-branch --cov-report=term-missing"
@@ -102,3 +65,50 @@ warn_unused_configs = true
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = false
+
+[tool.tox]
+env_list = ["py312", "py313", "py314", "py315", "lint", "type"]
+
+[tool.tox.env_run_base]
+extras = ["test"]
+depends = ["clean"]
+commands = [
+    ["pytest", "--cov=src", "--cov-append", "--cov-report=term-missing", "--cov-branch"]
+]
+
+[tool.tox.env.report]
+deps = ["coverage"]
+skip_install = true
+commands = [
+    ["coverage", "report"],
+    ["coverage", "html"]
+]
+depends = ["py39", "py310", "py311", "py312", "py313", "py314", "py315"]
+
+[tool.tox.env.clean]
+deps = ["coverage"]
+skip_install = true
+commands = [
+    ["coverage", "erase"]
+]
+
+[tool.tox.env.lint]
+extras = ["dev"]
+commands = [
+    ["ruff", "check", "src", "test"],
+    ["ruff", "format", "--check", "src", "test"]
+]
+
+[tool.tox.env.type]
+extras = ["dev"]
+commands = [
+    ["mypy", "src", "test"]
+]
+
+[tool.tox.gh-actions]
+python = """
+    3.12: py312, type, lint
+    3.13: py313
+    3.14: py314
+    3.15: py315
+"""
