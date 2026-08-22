@@ -47,6 +47,11 @@ These instructions define the coding standards and development workflow for the 
 - Run linting: `tox -e lint`
 - Run type checking: `tox -e type`
 
+## Branch Management & PRs
+
+- When working on an existing, previous branch (e.g., rebasing or merging), features must not be removed if they have been added to the main branch in the intermediate interval.
+- All branches being merged in, as well as their matching PRs, must be referenced in the commit comments and any new PRs.
+
 ## CI/CD
 
 - GitHub Actions workflows are located in `.github/workflows/tests.yml`.
