@@ -1,7 +1,10 @@
 from closure_collector.compat import Any, FunctionType, Number
 
 try:
-    import inspect
+    from closure_collector.compat import inspect
+
+    if inspect is None:
+        raise ImportError
 
     def is_zero_arg(value: Any) -> bool:
         if not callable(value):
