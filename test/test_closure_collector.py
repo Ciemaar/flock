@@ -20,7 +20,7 @@ def test_dynamic_cc():
     test_obj = ClosureCollector()
     assert not test_obj.get_relatives()
     for i in TEST_LIST:
-        test_obj.peers.add(i)
+        test_obj._peers.add(i)
     assert all(i in DynamicClosureCollector.get_relatives(test_obj) for i in TEST_LIST)
     rep = repr(test_obj)
     assert rep
