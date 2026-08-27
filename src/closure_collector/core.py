@@ -1,15 +1,21 @@
 import inspect
 from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Mapping
+from collections import OrderedDict
+from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence, Sequence
+from itertools import chain
 from pprint import pformat
 
-from closure_collector.util import ClosureCollectorException, is_rule, rebind
+from closure_collector.util import (
+    ClosureCollectorException,
+    is_rule,
+    rebind,
+)
 
-CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
+CLOSURE_ATTRS = {"root", "cache", "_peers", "promises"}
 
 
 class ShearedBase:
-    """A basic, dynamic object used as a return type from shear() functions"""
+    """A basic, dynamic object used as a return type from shear() functions."""
 
     def __bool__(self):
         return bool(self.__dict__)
@@ -19,18 +25,14 @@ class ShearedBase:
 
 
 class CCBase(metaclass=ABCMeta):
-    """Base class for Closure Collector Objects of all sorts"""
+    """Base class for Closure Collector Objects of all sorts."""
 
     @abstractmethod
-    def check(self, path: list[str] | None = None) -> dict:
+    def check(self, path):
         """
-        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
-
-        Args:
-            path: The path to this object, will be prepended to any errors generated.
-
-        Returns:
-            A dictionary of errors that prevent items in this Aggregator from being sheared.
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        :type path: list the path to this object, will be prepended to any errors generated
+        :return: list of errors that prevent items in this Aggregator from being sheared.
         """
 
     @abstractmethod
@@ -72,34 +74,117 @@ class DynamicClosureCollector(CCBase):
         super().__init__()
         self.cache = {}
         self.root = root
-        self.peers = set()
+        self._peers = set()
 
     def clear_cache(self):
+        """
+        Recursively clear the cache for this object and all related closure collectors.
+
+        If this object is not the root, it delegates to the root. Otherwise, it performs
+        a graph traversal using object identities (to support unhashable sequence types
+        like ClosureList) and clears the `.cache` attribute of every related object.
+        """
         if self.root is not None:
             self.root.clear_cache()
             return
 
-        to_collect = {self}
-        to_clear = set()
-        while to_collect:
-            curr = to_collect.pop()
-            if curr not in to_clear:
-                to_clear.add(curr)
-                to_collect.update(curr.get_relatives())
+        stack = [self]
+        visited_ids = set()
 
-        for peer in to_clear:
-            if hasattr(peer, "cache"):
-                peer.cache = {}
+        while stack:
+            curr = stack.pop()
+            curr_id = id(curr)
+            if curr_id not in visited_ids:
+                visited_ids.add(curr_id)
+                if hasattr(curr, "cache"):
+                    curr.cache.clear()
+                stack.extend(curr.get_relatives())
 
     def get_relatives(self) -> Iterable:
-        return self.peers
+        return self._peers
+
+
+class ClosurePromiseMapping(DynamicClosureCollector):
+    """
+    A convenience class for mapping collections of closures.
+
+    This base class implements dictionary-like attribute access (`__getitem__`, `__setitem__`)
+    but delays type specialization to its subclasses (`ClosureMapping` and `ClosureList`).
+    """
+
+    def __dir__(self):
+        return object.__dir__(self)
+
+    _exception_class: type[Exception] = ClosureCollectorException
+    # We delay setting _mapping_class until ClosureMapping is defined
+    _mapping_class: type  # type: ignore
+
+    def __init__(self, root=None):
+        self.promises = {}
+        super().__init__(root=root)
+
+    def __setitem__(self, key, val):
+        value = self.make_callable(val)
+        self.promises[key] = value
+        self.clear_cache()
+
+    def __getitem__(self, key):
+        if key in self.cache:
+            return self.cache[key]
+        else:
+            # self.promises raises KeyError or IndexError natively
+            promise = self.promises[key]
+
+            try:
+                ret = promise()
+            except Exception as e:
+                raise self._exception_class(f"Error calculating key:{key}") from e
+            self.cache[key] = ret
+            return ret
+
+    def __contains__(self, key):
+        return key in self.promises
+
+    def __delitem__(self, key):
+        del self.promises[key]
+        self.clear_cache()
+
+    def __len__(self):
+        return len(self.promises)
+
+    def make_callable(self, value):
+        if callable(value) and len(inspect.signature(value).parameters) == 0:
+            ret = value
+            # if it's a closure and there is something in there
+            if hasattr(value, "__closure__") and value.__closure__:
+                for closure in value.__closure__:
+                    if isinstance(closure.cell_contents, DynamicClosureCollector):
+                        try:
+                            closure.cell_contents._peers.add(self)
+                        except TypeError:
+                            pass
+            return ret
+        elif getattr(self, "_mapping_class", None) is not None and isinstance(value, Mapping):
+            child_root = self.root if self.root is not None else self
+            ret = self._mapping_class(value, root=child_root)
+            try:
+                ret._peers.add(self)
+            except TypeError:
+                pass
+            return ret
+        else:
+            return lambda: value
 
 
 class ClosurePromiseCollector(DynamicClosureCollector):
-    """A convenience class for default implementations of methods from Dynamic Closure Collector"""
+    """
+    A convenience class for default implementations of methods from Dynamic Closure Collector.
+
+    This class enables dot-notation (attribute access) for working with closures rather than dictionary-like indexing.
+    """
 
     def __init__(self, root=None):
-        """ """
+        """Initialize the ClosurePromiseCollector with an optional root."""
         self.promises = {}
         super().__init__(root=root)
 
@@ -125,7 +210,7 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         :type item: any hashable type
         :return: the value of the lamba when executed
         """
-        if item.startswith("_") or item in {"root", "cache", "peers", "promises"}:
+        if item.startswith("_") or item in {"root", "cache", "_peers", "promises"}:
             return super().__getattribute__(item)
         if item in self.cache:
             return self.cache[item]
@@ -153,14 +238,14 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         if callable(value) and len(inspect.signature(value).parameters) == 0:
             ret = value
             if isinstance(value, DynamicClosureCollector):
-                value.peers.add(self)
+                value._peers.add(self)
                 if value.root is None:
                     value.root = self
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
                     if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
+                        closure.cell_contents._peers.add(self)
         else:
             ret = lambda: value
         return ret
@@ -168,7 +253,10 @@ class ClosurePromiseCollector(DynamicClosureCollector):
 
 class ClosureCollector(ClosurePromiseCollector):
     """
-    A Closure Collector  intended for use.
+    A Closure Collector intended for general use.
+
+    This acts as a namespace where attributes mapped to functions are automatically invoked
+    as closures upon retrieval, caching their results.
     """
 
     def __init__(self, *, root=None, **indict):
@@ -189,23 +277,25 @@ class ClosureCollector(ClosurePromiseCollector):
 
     def get_relatives(self):
         rels = {promise for promise in self.promises.values() if hasattr(promise, "clear_cache")}
-        rels.update(peer for peer in getattr(self, "peers", ()) if hasattr(peer, "clear_cache"))
+        rels.update(peer for peer in getattr(self, "_peers", ()) if hasattr(peer, "clear_cache"))
         return rels
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.shear()})"
 
-    def check(self, path: list[str] | None = None) -> dict:
+    #
+    # def __hash__(self):
+    #     return id(self)
+
+    def check(self, path=None):
         """
-        Check for any contents that would prevent this ClosureCollector from being used normally, especially sheared.
+        check for any contents that would prevent this ClosureCollector from being used normally, esp sheared.
+        TODO: Confirm that the promises evaluate successfully.
 
-        NOT YET PROPERLY IMPLEMENTED.
+        :type path: list the path to this object, will be prepended to any errors generated
+        :return: list of errors that prevent items in this ClosureCollector from being sheared.
 
-        Args:
-            path: The path to this object, will be prepended to any errors generated.
-
-        Returns:
-            A dictionary of errors that prevent items in this ClosureCollector from being sheared.
+        NOT YET PROPERLY IMPLEMENTED
         """
         if path is None:
             path = []
@@ -230,22 +320,21 @@ class ClosureCollector(ClosurePromiseCollector):
         """
         ret = ShearedBase()
         for key in sorted(dir(self), key=lambda x: (str(x), repr(x))):
-            promise = self.promises[key]
-            if hasattr(promise, "shear"):
-                setattr(ret, key, promise.shear(record_errors=record_errors))
-            elif key in self.cache:
-                setattr(ret, key, self.cache[key])
-            else:
-                try:
-                    setattr(ret, key, getattr(self, key))
-                except ClosureCollectorException as e:
-                    if record_errors:
-                        setattr(ret, key, e)
-                    else:
-                        raise
+            try:
+                val = getattr(self, key)
+            except ClosureCollectorException as e:
+                if record_errors:
+                    val = e
+                else:
+                    raise
+
+            if hasattr(val, "shear"):
+                val = val.shear(record_errors=record_errors)
+            setattr(ret, key, val)
         return ret
 
     def dataset(self):
+        # TODO: Add tests for dataset and ruleset feature
         ret = ShearedBase()
         for k, v in self.promises.items():
             if not is_rule(v):
@@ -261,33 +350,270 @@ class ClosureCollector(ClosurePromiseCollector):
         return ret
 
 
-class ClosureReduction:
+class ClosureMapping(ClosurePromiseMapping, MutableMapping):
     """
-    Aggregate across parallel maps.
-
-    :type sources: one of:
-        - a Mapping the values in sources are used as the list above, keys are ignored
-        - a callable that returns the list of sources
-        - a list of sources to aggregate across, each source should be a map, generally a dict, or FlockDict, not all keys need to be present in all sources.
-
-        Precedence is Mapping, callable, then list
-
-    :type fn: function must take a generator, there is no constraint on the return value
+    A mutable mapping that contains lambdas which will be evaluated when indexed
     """
 
-    def __dir__(self):
-        return set().union(*(dir(source) for source in self.get_sources()))
+    def __init__(self, indict: list[tuple] | Mapping | None = None, root=None):
+        if indict is None:
+            indict = {}
+        super().__init__(root=root)
+        if not hasattr(indict, "items"):
+            indict = dict(indict)
+        for key, value in indict.items():  # type: ignore
+            self[key] = value
+
+    def get_relatives(self):
+        rels = set(super().get_relatives())
+        for promise in self.promises.values():
+            if hasattr(promise, "clear_cache"):
+                try:
+                    rels.add(promise)
+                except TypeError:
+                    # In case the promise (e.g. nested ClosureMapping) is unhashable
+                    pass
+        return rels
+
+    def __iter__(self):
+        return iter(self.promises)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.shear()},{self.root})"
+
+    def check(self, path=None):
+        """
+        check for any contents that would prevent this ClosureMapping from being used normally.
+        TODO: Confirm that the promises evaluate successfully.
+        """
+        if path is None:
+            path = []
+        ret = {}
+        for key, value in self.promises.items():
+            if hasattr(value, "check"):
+                value_check = value.check(path + [key])
+                if value_check:
+                    ret[key] = value_check
+            assert callable(value)
+        return ret
+
+    def shear(self, record_errors=False):
+        """
+        Recursively convert this ClosureMapping into a normal python dict.
+        """
+        ret = OrderedDict()
+        for key in sorted(self.promises, key=lambda x: (str(x), repr(x))):
+            try:
+                ret[key] = self[key]
+            except self._exception_class as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
+
+            if hasattr(ret[key], "shear"):
+                ret[key] = ret[key].shear(record_errors=record_errors)
+        return ret
+
+    def dataset(self):
+        # TODO: Add tests for dataset and ruleset feature
+        return {k: v() for k, v in self.promises.items() if not is_rule(v)}
+
+    def ruleset(self):
+        return {k: v for k, v in self.promises.items() if is_rule(v)}
+
+
+ClosurePromiseMapping._mapping_class = ClosureMapping
+
+
+class ClosureList(ClosurePromiseMapping, MutableSequence):
+    """
+    A mutable sequence that contains lambdas which will be evaluated when indexed
+    """
+
+    _list_class: type | None = None  # Assigned below
+
+    def __eq__(self, other):
+        if isinstance(other, list):
+            return list(self) == other
+        elif isinstance(other, tuple):
+            return tuple(self) == other
+        return super().__eq__(other)
+
+    def __init__(self, inlist: Sequence | None = None, root=None):
+        if inlist is None:
+            inlist = ()
+        super().__init__(root=root)
+        self.promises = []
+        for key in inlist:
+            self.append(key)
+
+    def __iter__(self):
+        return (self[x] for x in range(len(self)))
+
+    def insert(self, index, value):
+        value = self.make_callable(value)
+        self.promises.insert(index, value)
+        self.clear_cache()
+
+    def get_relatives(self):
+        rels = set(super().get_relatives())
+        for promise in self.promises:
+            if hasattr(promise, "clear_cache"):
+                try:
+                    rels.add(promise)
+                except TypeError:
+                    pass
+        return rels
+
+    def check(self, path=None):
+        if path is None:
+            path = []
+        ret = {}
+        # TODO: Confirm that the promises evaluate successfully.
+        for key, value in enumerate(self.promises):
+            if hasattr(value, "check"):
+                value_check = value.check(path + [key])
+                if value_check:
+                    ret[key] = value_check
+            assert callable(value)
+        return ret
+
+    def shear(self, record_errors=False):
+        ret = []
+        for key in range(len(self.promises)):
+            try:
+                val = self[key]
+            except Exception as e:
+                if record_errors:
+                    val = e
+                else:
+                    raise
+
+            if hasattr(val, "shear"):
+                val = val.shear(record_errors=record_errors)
+            ret.append(val)
+        return ret
+
+    def make_callable(self, value):
+        if getattr(self, "_list_class", None) is not None and isinstance(value, Sequence) and not isinstance(value, str):
+            child_root = self.root if self.root is not None else self
+            ret = self._list_class(value, root=child_root)  # type: ignore[misc]
+            try:
+                ret._peers.add(self)
+            except TypeError:
+                pass
+            return ret
+        return super().make_callable(value)
+
+
+ClosureList._list_class = ClosureList
+
+
+class BaseClosureReduction:
+    """
+    Base class providing common logic for applying a function across a collection of data structures.
+    """
 
     def __init__(self, sources, fn, keys=None):
         self.sources = sources
         self.function = fn
+        if keys is not None and not callable(keys):
+            keys = set(keys)
+        self.source_keys = keys
+
+    def get_sources(self):
+        if isinstance(self.sources, Mapping):
+            return self.sources.values()
+        elif callable(self.sources):
+            return self.sources()
+        else:
+            return self.sources
+
+
+class ClosureMappingReduction(BaseClosureReduction, CCBase, Mapping):
+    """
+    A mapping-based implementation of a closure reduction across multiple maps or parallel data structures.
+    """
+
+    def __getitem__(self, key):
+        """
+        Perform the aggregation for the given key across all the sources.
+        """
+        try:
+            cross_items = [source[key] for source in self.get_sources() if key in source]
+            if not cross_items:
+                raise KeyError(f"Key {key} not found")
+            return self.function(cross_items)
+        except KeyError:
+            raise
+        except Exception as e:
+            raise ClosureCollectorException(
+                f"Error Calculating {key}:  " + str(e) + "\n" + ",".join(f"{source}:{source[key]}" for source in self.get_sources() if key in source)
+            ) from e
+
+    def __len__(self):
+        return sum(1 for x in self.__iter__())
+
+    def __iter__(self):
+        if getattr(self, "source_keys", None) is not None:
+            if callable(self.source_keys):
+                return iter(set(self.source_keys()))
+            else:
+                return iter(self.source_keys)
+        return iter(set(chain.from_iterable(source.keys() for source in self.get_sources())))
+
+    def __dir__(self):
+        return set(self.__iter__())
+
+    def check(self, path=None):
+        """
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
+        """
+        if path is None:
+            path = []
+        ret = {}
+        for key in self.__iter__():
+            for sourceNo, source in enumerate(self.get_sources()):
+                if key in source:
+                    value = source[key]
+                    try:
+                        self.function([value])
+                    except Exception as e:
+                        msg = f"function {self.function.__name__} incompatible with value {value} exception: {str(e)}"
+                        if key not in ret:
+                            ret[key] = {}
+                        ret[key][f"Source: {sourceNo}"] = msg
+                        # raise
+        return ret
+
+    def shear(self, record_errors=False):
+        """
+        Convert this Aggregator into a simple dict
+        """
+        ret = {}
+        for key in self.__iter__():
+            try:
+                ret[key] = self[key]
+            except Exception as e:
+                if record_errors:
+                    ret[key] = e
+                else:
+                    raise
+        return ret
+
+
+class ClosureReduction(BaseClosureReduction):
+    """
+    Aggregate across parallel maps using attribute access instead of mapping access.
+    """
+
+    def __dir__(self):
+        return set(chain.from_iterable(dir(source) for source in self.get_sources()))
 
     def __getattr__(self, item):
         """
-        Perform the reduction for the given key across all the sources.
-
-        :type key: str key to aggregate
-        :return: value as returned by the function for that key.
+        Perform the reduction for the given attribute across all the sources.
         """
         try:
             cross_items = [getattr(source, item) for source in self.get_sources() if hasattr(source, item)]
@@ -310,47 +636,26 @@ class ClosureReduction:
                 )
             ) from e
 
-    def get_sources(self):
-        if isinstance(self.sources, Mapping):
-            return self.sources.values()
-        elif callable(self.sources):
-            return self.sources()
-        else:
-            return self.sources
+    def shear(self, record_errors=False):
+        ret = ShearedBase()
+        for key in dir(self):
+            try:
+                val = getattr(self, key)
+            except Exception as e:
+                if record_errors:
+                    val = e
+                else:
+                    raise
 
-    def shear(self):
-        return NotImplemented
+            if hasattr(val, "shear"):
+                val = val.shear(record_errors=record_errors)
+            setattr(ret, key, val)
+        return ret
 
-    def check(self, path: list[str] | None = None) -> dict:
+    def check(self, path=None):
         """
-        Check for any contents that would prevent this Aggregator from being used normally, especially sheared.
-
-        NOT YET PROPERLY IMPLEMENTED.
-
-        Args:
-            path: The path to this object, will be prepended to any errors generated.
-
-        Returns:
-            A dictionary of errors that prevent items in this Aggregator from being sheared.
+        check for any contents that would prevent this Aggregator from being used normally, esp sheared.
         """
         if path is None:
             path = []
         return {}
-        # ret = defaultdict(dict)
-        # for key in set().union(*(source.keys() for source in self.sources)):
-        #     for sourceNo, source in enumerate(self.sources):
-        #         if key in source:
-        #             value = source[key]
-        #             try:
-        #                 self.function([value])
-        #             except Exception as e:
-        #                 msg = "function {function} incompatible with value {value} exception: {e}".format(
-        #                     e=str(e),
-        #                     value=value,
-        #                     path=path + [key],
-        #                     sourceNo=sourceNo,
-        #                     function=self.function.__name__,
-        #                 )
-        #                 ret[key]["Source: {sourceNo}".format(sourceNo=sourceNo)] = msg
-        #                 # raise
-        # return ret
