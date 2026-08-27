@@ -1,6 +1,4 @@
-from closure_collector.core import CCBase, DynamicClosureCollector
-from closure_collector.util import get_cell_contents, is_rule, is_zero_arg
-from flock.compat import (
+from closure_collector.compat import (
     ABCMeta,
     Iterable,
     Mapping,
@@ -13,6 +11,8 @@ from flock.compat import (
     defaultdict,
     warnings,
 )
+from closure_collector.core import CCBase, DynamicClosureCollector
+from closure_collector.util import get_cell_contents, is_rule, is_zero_arg
 from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
