@@ -1,4 +1,4 @@
-from flock.compat import Hashable, MutableMapping, logging
+from closure_collector.compat import Hashable, MutableMapping, logging
 
 log = logging.getLogger(__name__)
 
