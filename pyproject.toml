@@ -67,13 +67,28 @@ where = ["src"]
 namespaces = false
 
 [tool.tox]
-env_list = ["py312", "py313", "py314", "py315", "lint", "type"]
+env_list = ["py312", "py313", "py314", "py315", "pyodide", "micropython", "lint", "type"]
 
 [tool.tox.env_run_base]
 extras = ["test"]
 depends = ["clean"]
 commands = [
     ["pytest", "--cov=src", "--cov-append", "--cov-report=term-missing", "--cov-branch"]
+]
+
+
+[tool.tox.env.pyodide]
+extras = ["test"]
+deps = ["pytest-pyodide"]
+commands = [
+    ["pytest", "test/", "--run-in-pyodide"]
+]
+
+[tool.tox.env.micropython]
+skip_install = true
+allowlist_externals = ["micropython", "python3"]
+commands = [
+    ["python3", "run_micropython_tests.py"]
 ]
 
 [tool.tox.env.report]
