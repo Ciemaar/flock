@@ -27,6 +27,6 @@ repos:
         pass_filenames: false
       - id: pytest
         name: pytest
-        entry: tox -e py312
+        entry: tox -e py314
         language: system
         pass_filenames: false

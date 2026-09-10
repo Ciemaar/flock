@@ -16,7 +16,7 @@ These instructions define the coding standards and development workflow for the 
 
 ## Tech Stack & Tooling
 
-- **Python**: 3.12, 3.13
+- **Python**: 3.14, 3.15
 - **Build**: `pyproject.toml` using `setuptools`
 - **Testing**: `pytest`, `hypothesis`, `tox`
 - **Linting/Formatting**: `ruff`, `mdformat`
@@ -43,7 +43,7 @@ These instructions define the coding standards and development workflow for the 
 ## Development Commands
 
 - Run all tests and checks: `tox`
-- Run specific python version tests: `tox -e py312`
+- Run specific python version tests: `tox -e py314`
 - Run linting: `tox -e lint`
 - Run type checking: `tox -e type`
 

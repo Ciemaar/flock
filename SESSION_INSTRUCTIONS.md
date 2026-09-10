@@ -25,5 +25,5 @@ Type hinting within `closure_collector` and `flock` requires a specific approach
 
 ## 4. Workflows
 
-- The CI is defined in `.github/workflows/tests.yml` and utilizes `tox` across Python 3.9, 3.10, 3.11, 3.12, and 3.13.
-- Before submission, all tests must pass locally: `tox -e py312,lint,type`.
+- The CI is defined in `.github/workflows/tests.yml` and utilizes `tox` across Python 3.14, 3.15.
+- Before submission, all tests must pass locally: `tox -e py314,lint,type`.
