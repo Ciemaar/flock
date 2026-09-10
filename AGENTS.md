@@ -17,7 +17,7 @@ This document provides context and guidelines for AI agents working on the Flock
 
 ## Tech Stack & Tooling
 
-- **Language**: Python 3.12, 3.13 (Python 3.12 or later is required).
+- **Language**: Python 3.14, 3.15 (Python 3.14 or later is required).
 - **Build System & Configuration**: All build (`setuptools`) and tool configuration, including `tox` (via `legacy_tox_ini`), `ruff`, `mypy`, and `pytest`, is centrally managed in `pyproject.toml`.
 - **Dependencies**: `PyYAML`, `pydantic-settings`, `click`, and `glom`.
   - Optional dependencies in `pyproject.toml`: `test` (`pytest`, `hypothesis`, `pytest-cov`, `coverage`), `dev` (`ruff`, `mypy`, `mdformat`, `tox`) allow developers to easily install all required tooling.
@@ -31,10 +31,10 @@ This document provides context and guidelines for AI agents working on the Flock
 ## Testing & Environments
 
 - **Tox Environment**: Orchestrates testing and linting environments.
-  - `tox -e py312` (or `py313`): Execute test suites.
+  - `tox -e py314` (or `py315`): Execute test suites.
   - `tox -e lint`: Run code formatting checks (`ruff` and `mdformat`).
   - `tox -e type`: Run static type checking (`mypy`).
-  - To run a specific test file using `tox` with `pytest` arguments, pass the file path after a double dash (e.g., `tox -e py312 -- test/test_flockdict.py`).
+  - To run a specific test file using `tox` with `pytest` arguments, pass the file path after a double dash (e.g., `tox -e py314 -- test/test_flockdict.py`).
 - **MicroPython Environment**: Supported. MicroPython tests are executed using a tailored test runner script, `run_micropython_tests.py`, which is configured and invoked within the `tox` environment. Missing standard modules (e.g., `typing`, `inspect`, `abc`) must be centrally managed in `compat.py` modules (e.g., `src/closure_collector/compat.py` and `src/flock/compat.py`) rather than written inline.
 - **Pyodide Environment**: Supported. Pyodide compatibility tests are executed via `tox -e pyodide` using the `pytest-pyodide` dependency and the `pytest test/ --run-in-pyodide` command.
 

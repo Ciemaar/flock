@@ -4,7 +4,7 @@ name = "closure_collector"
 version = "0.0.2"
 description = "A generalized closure collection dictionary and toolset."
 authors = [{ name = "Andy P Fundinger", email = "Andy@ciemaar.com" }]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "PyYAML",
     "pydantic-settings",
@@ -58,7 +58,7 @@ ignore = ["E731"]
 convention = "google"
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 warn_return_any = false
 warn_unused_configs = true
 
@@ -67,7 +67,7 @@ where = ["src"]
 namespaces = false
 
 [tool.tox]
-env_list = ["py312", "py313", "py314", "py315", "lint", "type"]
+env_list = ["py314", "py315", "lint", "type"]
 
 [tool.tox.env_run_base]
 extras = ["test"]
@@ -83,7 +83,7 @@ commands = [
     ["coverage", "report"],
     ["coverage", "html"]
 ]
-depends = ["py39", "py310", "py311", "py312", "py313", "py314", "py315"]
+depends = ["py314", "py315"]
 
 [tool.tox.env.clean]
 deps = ["coverage"]
@@ -107,8 +107,6 @@ commands = [
 
 [tool.tox.gh-actions]
 python = """
-    3.12: py312, type, lint
-    3.13: py313
-    3.14: py314
+    3.14: py314, type, lint
     3.15: py315
 """
