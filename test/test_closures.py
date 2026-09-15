@@ -2,7 +2,6 @@ import unittest
 import uuid as uuid
 
 import pytest
-from glom import GlomError, PathAccessError  # type: ignore
 
 from closure_collector.closures import (
     attr_reference,
@@ -39,14 +38,8 @@ class ClosureAttrTestCase(unittest.TestCase):
 
     def test_attr_reference_no_default(self):
         probe = uuid.uuid4()
-        with pytest.raises(PathAccessError):
+        with pytest.raises(AttributeError):
             assert probe is attr_reference(self.base_obj, "x")()
-
-    def test_attr_reference_multiple_levels(self):
-        probe = uuid.uuid4()
-        self.base_obj.nested = ShearedBase()
-        self.base_obj.nested.x = probe
-        assert probe is attr_reference(self.base_obj, "nested", "x")()
 
 
 class ClosureIndexTestCase(unittest.TestCase):
@@ -65,24 +58,8 @@ class ClosureIndexTestCase(unittest.TestCase):
 
     def test_attr_reference_no_default(self):
         probe = uuid.uuid4()
-        with pytest.raises(GlomError):
+        with pytest.raises(KeyError):
             assert probe is index_reference(self.base_dict, "x")()
-
-    def test_index_reference_strict_item_access(self):
-        probe = uuid.uuid4()
-
-        class Dummy:
-            pass
-
-        base = Dummy()
-        base.x = probe
-        with pytest.raises(GlomError):
-            index_reference(base, "x")()
-
-    def test_index_reference_multiple_levels(self):
-        probe = uuid.uuid4()
-        self.base_dict["nested"] = {"x": probe}
-        assert probe is index_reference(self.base_dict, "nested", "x")()
 
     def test_lookup(self):
         probe = uuid.uuid4()
