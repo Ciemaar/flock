@@ -1,9 +1,17 @@
-import inspect
-from abc import ABCMeta, abstractmethod
-from collections.abc import Iterable, Mapping
-from pprint import pformat
-
-from closure_collector.util import ClosureCollectorException, is_rule, rebind
+from closure_collector.compat import (
+    ABCMeta,
+    Iterable,
+    Mapping,
+    abstractmethod,
+    pformat,
+)
+from closure_collector.util import (
+    ClosureCollectorException,
+    get_cell_contents,
+    is_rule,
+    is_zero_arg,
+    rebind,
+)
 
 CLOSURE_ATTRS = {"root", "cache", "peers", "promises"}
 
@@ -150,17 +158,18 @@ class ClosurePromiseCollector(DynamicClosureCollector):
         return bool(self.promises)
 
     def make_callable(self, value):
-        if callable(value) and len(inspect.signature(value).parameters) == 0:
+        if is_zero_arg(value):
             ret = value
             if isinstance(value, DynamicClosureCollector):
                 value.peers.add(self)
-                if value.root is None:
+                if getattr(value, "root", None) is None:
                     value.root = self
             # if it's a closure and there is something in there
             if hasattr(value, "__closure__") and value.__closure__:
                 for closure in value.__closure__:
-                    if isinstance(closure.cell_contents, DynamicClosureCollector):
-                        closure.cell_contents.peers.add(self)
+                    contents = get_cell_contents(closure)
+                    if isinstance(contents, DynamicClosureCollector):
+                        contents.peers.add(self)
         else:
             ret = lambda: value
         return ret
