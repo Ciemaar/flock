@@ -4,12 +4,11 @@ from closure_collector.compat import (
     Mapping,
     MutableMapping,
     MutableSequence,
-    Sequence,
     OrderedDict,
+    Sequence,
     abstractmethod,
-    pformat,
-    inspect,
     chain,
+    pformat,
 )
 from closure_collector.util import (
     ClosureCollectorException,
@@ -20,6 +19,8 @@ from closure_collector.util import (
 )
 
 CLOSURE_ATTRS = {"root", "cache", "_peers", "promises"}
+
+
 class ShearedBase:
     """A basic, dynamic object used as a return type from shear() functions."""
 

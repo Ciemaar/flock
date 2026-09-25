@@ -123,3 +123,9 @@ class FlockAggregator(ClosureMappingReduction, FlockBase):
 
     def __repr__(self):
         return f"flock.core.FlockAggregator({str(self.shear())})"
+
+class Aggregator(FlockAggregator):
+    pass
+
+class MetaAggregator(FlockAggregator):
+    pass
