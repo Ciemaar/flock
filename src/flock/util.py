@@ -1,4 +1,5 @@
-from closure_collector.compat import Hashable, MutableMapping, logging
+import logging
+from collections.abc import Hashable, MutableMapping
 
 log = logging.getLogger(__name__)
 

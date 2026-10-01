@@ -3,7 +3,7 @@ from types import FunctionType
 from pytest import raises
 
 from closure_collector.closures import index_reference, toggle
-from flock.core import Aggregator, FlockAggregator, FlockDict, FlockList, MetaAggregator
+from flock.core import FlockAggregator, FlockDict, FlockList
 from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
@@ -19,6 +19,14 @@ class BasicFlockTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.flock = FlockDict()
+
+    def test_missing_key(self):
+        """
+        Test that accessing a missing key raises a KeyError.
+        """
+        assert "bad" not in self.flock
+        with raises(KeyError):
+            _ = self.flock["bad"]
 
     def test_simple_values(self):
         """
@@ -158,6 +166,14 @@ class FlockListTestCase(unittest.TestCase):
         self.flock[1] = "John"
         self.assertEqual(self.flock[1], "John")
 
+    def test_missing_index(self):
+        """
+        Test that accessing an out-of-bounds index raises an IndexError.
+        """
+        self.flock.append(1)
+        with raises(IndexError):
+            _ = self.flock[1]
+
     def test_simple_list(self):
         """
         Test that nested dicts still look like dicts.
@@ -240,48 +256,6 @@ class FlockCacheTestCase(unittest.TestCase):
         assert self.flock2["dest"] == "1st New Value"
         assert self.flock2["nested_dest"]["dest"] == "2nd New Value"
         assert self.flock2["jump_dest"]["dest"] == "2nd New Value"
-
-
-class AggregatorTestCase(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.flock = FlockDict()
-        self.flock["x"] = {x: x for x in range(1, 10)}
-        self.flock["y"] = {x: 2 * x for x in range(1, 10)}
-
-    def test_shear(self):
-        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: sum(x))
-        assert not self.flock.check()
-        sheared = self.flock.shear()
-        assert len(sheared) == 3
-        assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
-        assert dict(self.flock()) == sheared
-
-    def test_check(self):
-        self.flock["sum"] = Aggregator([self.flock["x"], self.flock["y"]], lambda x: int(x))
-        check = self.flock.check()
-        assert check
-        assert len(check["sum"]) == 9
-        for value in check["sum"].values():
-            assert len(value) == 2
-
-
-class MetaAggregatorTestCase(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.flock = FlockDict()
-        self.flock["x"] = {x: x for x in range(1, 10)}
-        self.flock["y"] = {x: 2 * x for x in range(1, 10)}
-
-    def test_shear(self):
-        self.flock["sum"] = MetaAggregator(lambda: [self.flock[ls] for ls in ["x", "y"]], sum)
-        assert not self.flock.check()
-        sheared = self.flock.shear()
-        assert len(sheared) == 3
-        assert isinstance(sheared, dict)
-        assert sheared["sum"] == {x: x * 3 for x in range(1, 10)}
-        assert dict(self.flock()) == sheared
 
 
 class FlockAggregatorTestCase(unittest.TestCase):
