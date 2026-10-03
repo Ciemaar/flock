@@ -1,4 +1,4 @@
-from closure_collector.compat import (
+lazy from closure_collector.compat import (
     ABCMeta,
     Iterable,
     Mapping,
@@ -10,7 +10,7 @@ from closure_collector.compat import (
     chain,
     pformat,
 )
-from closure_collector.util import (
+lazy from closure_collector.util import (
     ClosureCollectorException,
     get_cell_contents,
     is_rule,

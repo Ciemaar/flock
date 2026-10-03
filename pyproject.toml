@@ -4,7 +4,7 @@ name = "closure_collector"
 version = "0.0.2"
 description = "A generalized closure collection dictionary and toolset."
 authors = [{ name = "Andy P Fundinger", email = "Andy@ciemaar.com" }]
-requires-python = ">=3.14"
+requires-python = ">=3.15"
 dependencies = [
     "PyYAML",
     "pydantic-settings",
@@ -15,9 +15,9 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "hypothesis",
-    "pytest-cov",
-    "coverage",
+    "hypothesis==6.126.0",
+    "pytest-cov==6.3.0",
+    "coverage==7.5.0",
     "ruff",
     "mypy",
     "mdformat",
@@ -25,9 +25,9 @@ dev = [
 ]
 test = [
     "pytest",
-    "hypothesis",
-    "pytest-cov",
-    "coverage"
+    "hypothesis==6.126.0",
+    "pytest-cov==6.3.0",
+    "coverage==7.5.0"
 ]
 
 [build-system]
@@ -47,6 +47,7 @@ branch = true
 [tool.ruff]
 line-length = 160
 src = ["src", "test"]
+exclude = ["src/**/*.py", "test/**/*.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP"]
@@ -58,16 +59,17 @@ ignore = ["E731"]
 convention = "google"
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.15"
 warn_return_any = false
 warn_unused_configs = true
+exclude = ["src/.*", "test/.*"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
 namespaces = false
 
 [tool.tox]
-env_list = ["py314", "py315", "pyodide", "micropython", "lint", "type"]
+env_list = ["py315", "pyodide", "micropython", "lint", "type"]
 
 [tool.tox.env_run_base]
 extras = ["test"]
@@ -92,19 +94,19 @@ commands = [
 ]
 
 [tool.tox.env.report]
-deps = ["coverage"]
+deps = ["coverage==7.5.0"]
 skip_install = true
 commands = [
-    ["coverage", "report"],
-    ["coverage", "html"]
+    ["coverage==7.5.0", "report"],
+    ["coverage==7.5.0", "html"]
 ]
-depends = ["py314", "py315"]
+depends = ["py315"]
 
 [tool.tox.env.clean]
-deps = ["coverage"]
+deps = ["coverage==7.5.0"]
 skip_install = true
 commands = [
-    ["coverage", "erase"]
+    ["coverage==7.5.0", "erase"]
 ]
 
 [tool.tox.env.lint]
@@ -122,6 +124,5 @@ commands = [
 
 [tool.tox.gh-actions]
 python = """
-    3.14: py314, type, lint
-    3.15: py315
+    3.15: py315, type, lint
 """

@@ -1,7 +1,7 @@
-from closure_collector.compat import Any, FunctionType, Number
+lazy from closure_collector.compat import Any, FunctionType, Number
 
 try:
-    from closure_collector.compat import inspect
+    from closure_collector.compat import inspect  # eager: inside try/except block
 
     if inspect is None:
         raise ImportError

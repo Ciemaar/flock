@@ -1,7 +1,7 @@
-import unittest
+lazy import unittest
 
-from closure_collector.core import ClosureCollector, ClosureReduction, ShearedBase
-from closure_collector.util import ClosureCollectorException
+lazy from closure_collector.core import ClosureCollector, ClosureReduction, ShearedBase
+lazy from closure_collector.util import ClosureCollectorException
 
 
 class ReductionTestCase(unittest.TestCase):

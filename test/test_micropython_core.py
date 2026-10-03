@@ -1,4 +1,4 @@
-from flock.core import FlockDict
+lazy from flock.core import FlockDict
 
 
 def test_flockdict_basic():
@@ -44,7 +44,7 @@ def run_all_tests():
             failed += 1
             print(f"FAIL: {test.__name__}")
             try:
-                import sys
+                import sys  # eager: inside function/class scope
 
                 sys.print_exception(e)
             except Exception:
@@ -52,7 +52,7 @@ def run_all_tests():
 
     print(f"\nResults: {passed} passed, {failed} failed")
     if failed > 0:
-        import sys
+        import sys  # eager: inside function/class scope
 
         sys.exit(1)
 

@@ -1,4 +1,4 @@
-from glom import Path, T, glom  # type: ignore
+lazy from glom import Path, T, glom  # type: ignore
 
 
 def collection_reduce(int_collection, func):

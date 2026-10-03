@@ -1,4 +1,4 @@
-from collections import UserDict
+lazy from collections import UserDict
 
 
 class TagView:

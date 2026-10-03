@@ -1,18 +1,18 @@
-import unittest
-import uuid as uuid
+lazy import unittest
+lazy import uuid as uuid
 
-import pytest
-from glom import GlomError, PathAccessError  # type: ignore
+lazy import pytest
+lazy from glom import GlomError, PathAccessError  # type: ignore
 
-from closure_collector.closures import (
+lazy from closure_collector.closures import (
     attr_reference,
     collection_reduce,
     index_reference,
     toggle,
 )
-from closure_collector.core import ClosureCollector, ShearedBase
-from flock import FlockDict
-from flock.closures import lookup
+lazy from closure_collector.core import ClosureCollector, ShearedBase
+lazy from flock import FlockDict
+lazy from flock.closures import lookup
 
 
 def test_list_reduce():
