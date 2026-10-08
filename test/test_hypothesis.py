@@ -1,18 +1,18 @@
-import math
-from collections.abc import MutableMapping
+lazy import math
+lazy from collections.abc import MutableMapping
 
-from hypothesis import given, settings
-from hypothesis import strategies as st
-from pytest import raises
+lazy from hypothesis import given, settings
+lazy from hypothesis import strategies as st
+lazy from pytest import raises
 
-import closure_collector.util
-import flock
-import flock.closures
-import flock.core
-import flock.util
-from closure_collector.closures import attr_reference, index_reference
-from closure_collector.core import ClosureCollector
-from flock import FlockDict
+lazy import closure_collector.util
+lazy import flock
+lazy import flock.closures
+lazy import flock.core
+lazy import flock.util
+lazy from closure_collector.closures import attr_reference, index_reference
+lazy from closure_collector.core import ClosureCollector
+lazy from flock import FlockDict
 
 MAX_TEST_LENGTH = 100
 

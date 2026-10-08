@@ -1,4 +1,4 @@
-from closure_collector.tags import AttributeTagset
+lazy from closure_collector.tags import AttributeTagset
 
 
 class SimpleObj:

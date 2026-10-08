@@ -1,5 +1,5 @@
-import logging
-from collections.abc import Hashable, MutableMapping
+import logging  # eager: import-time side effects (logging setup)
+lazy from collections.abc import Hashable, MutableMapping
 
 log = logging.getLogger(__name__)
 

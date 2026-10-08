@@ -1,14 +1,14 @@
-from types import FunctionType
+lazy from types import FunctionType
 
-from pytest import raises
+lazy from pytest import raises
 
-from closure_collector.closures import index_reference, toggle
-from flock.core import FlockAggregator, FlockDict, FlockList
-from flock.util import FlockException
+lazy from closure_collector.closures import index_reference, toggle
+lazy from flock.core import FlockAggregator, FlockDict, FlockList
+lazy from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
 
-import unittest
+lazy import unittest
 
 
 class BasicFlockTestCase(unittest.TestCase):

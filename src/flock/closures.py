@@ -1,6 +1,6 @@
 __author__ = "Andy Fundinger"
 
-from closure_collector.closures import index_reference
+lazy from closure_collector.closures import index_reference
 
 """
 The closures module provides helper functions for creating common sorts of closures that you might need in

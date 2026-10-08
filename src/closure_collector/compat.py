@@ -25,17 +25,17 @@ __all__ = [
 ]
 
 try:
-    from typing import Any
+    from typing import Any  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing typing
     Any = object  # type: ignore[assignment,misc]
 
 try:
-    from collections.abc import Callable
+    from collections.abc import Callable  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing collections.abc
     Callable = object  # type: ignore[assignment,misc]
 
 try:
-    from typing import TypeVar
+    from typing import TypeVar  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing typing
 
     def TypeVar(name: str, bound: Any = Any) -> Any:  # type: ignore[misc,no-redef]
@@ -48,7 +48,7 @@ except TypeError:
     _FuncT = object  # type: ignore[assignment,misc]
 
 try:
-    from abc import ABCMeta, abstractmethod
+    from abc import ABCMeta, abstractmethod  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing abc
 
     class ABCMeta(type):  # type: ignore[no-redef]
@@ -59,13 +59,13 @@ except ImportError:  # MicroPython compatibility fallback for missing abc
 
 
 try:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable, Mapping  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing collections.abc
     Iterable = object  # type: ignore[assignment,misc]
     Mapping = object  # type: ignore[assignment,misc]
 
 try:
-    from itertools import chain
+    from itertools import chain  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing itertools
 
     class chain:  # type: ignore[no-redef]
@@ -82,27 +82,27 @@ except ImportError:  # MicroPython compatibility fallback for missing itertools
 
 
 try:
-    from pprint import pformat
+    from pprint import pformat  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing pprint
     pformat = repr  # type: ignore[assignment]
 
 try:
-    from numbers import Number
+    from numbers import Number  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing numbers
     Number = (int, float, complex)  # type: ignore[assignment,misc]
 
 try:
-    from types import FunctionType
+    from types import FunctionType  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing types
     FunctionType = type(lambda: None)  # type: ignore[assignment,misc]
 
 try:
-    import inspect
+    import inspect  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing inspect
     inspect = None  # type: ignore[assignment]
 
 try:
-    import warnings
+    import warnings  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing warnings
 
     class warnings:  # type: ignore[no-redef]
@@ -112,7 +112,7 @@ except ImportError:  # MicroPython compatibility fallback for missing warnings
 
 
 try:
-    from collections import OrderedDict, defaultdict
+    from collections import OrderedDict, defaultdict  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing collections
 
     class OrderedDict(dict):  # type: ignore[no-redef]
@@ -131,7 +131,7 @@ except ImportError:  # MicroPython compatibility fallback for missing collection
 
 
 try:
-    from collections.abc import MutableMapping, MutableSequence, Sequence
+    from collections.abc import MutableMapping, MutableSequence, Sequence  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing collections.abc
     MutableMapping = object  # type: ignore[assignment,misc]
     MutableSequence = object  # type: ignore[assignment,misc]
@@ -143,7 +143,7 @@ except TypeError:
     _T = object  # type: ignore[assignment,misc]
 
 try:
-    from copy import copy
+    from copy import copy  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing copy
 
     def copy(x: _T) -> _T:  # noqa: UP047  # type: ignore[misc,no-redef]
@@ -151,7 +151,7 @@ except ImportError:  # MicroPython compatibility fallback for missing copy
 
 
 try:
-    import logging
+    import logging  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing logging
 
     class logging:  # type: ignore[no-redef]
@@ -174,6 +174,6 @@ except ImportError:  # MicroPython compatibility fallback for missing logging
 
 
 try:
-    from collections.abc import Hashable
+    from collections.abc import Hashable  # eager: inside try/except block
 except ImportError:  # MicroPython compatibility fallback for missing collections.abc
     Hashable = object  # type: ignore[assignment,misc]

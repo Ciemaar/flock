@@ -1,15 +1,15 @@
-import unittest
+lazy import unittest
 
-from pytest import raises
+lazy from pytest import raises
 
-from closure_collector.closures import attr_reference, toggle
-from closure_collector.core import (
+lazy from closure_collector.closures import attr_reference, toggle
+lazy from closure_collector.core import (
     ClosureCollector,
     DynamicClosureCollector,
     ShearedBase,
 )
-from closure_collector.util import ClosureCollectorException
-from flock import FlockDict
+lazy from closure_collector.util import ClosureCollectorException
+lazy from flock import FlockDict
 
 __author__ = "Andy Fundinger"
 

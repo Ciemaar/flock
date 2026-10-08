@@ -1,11 +1,11 @@
-import logging
-import unittest
+import logging  # eager: import-time side effects (logging setup)
+lazy import unittest
 
-import pytest
+lazy import pytest
 
-from closure_collector.util import is_rule
-from flock import FlockDict
-from flock.util import patch
+lazy from closure_collector.util import is_rule
+lazy from flock import FlockDict
+lazy from flock.util import patch
 
 log = logging.getLogger(__name__)
 

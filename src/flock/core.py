@@ -1,17 +1,17 @@
-from abc import ABCMeta, abstractmethod
-from collections.abc import (
+lazy from abc import ABCMeta, abstractmethod
+lazy from collections.abc import (
     Iterable,
     Mapping,
 )
 
-from closure_collector.core import (
+lazy from closure_collector.core import (
     CCBase,
     ClosureList,
     ClosureMapping,
     ClosureMappingReduction,
     ClosurePromiseMapping,
 )
-from flock.util import FlockException
+lazy from flock.util import FlockException
 
 __author__ = "Andy Fundinger"
 
